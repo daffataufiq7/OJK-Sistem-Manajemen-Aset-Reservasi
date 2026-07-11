@@ -1,0 +1,96 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+@source '../**/*.ts';
+@source '../**/*.tsx';
+
+@theme {
+    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    --color-ojk-red: #C8102E;
+    --color-ojk-red-hover: #A00D25;
+    --color-ojk-red-light: #FDF2F4;
+    --color-ojk-dark: #0F172A;
+    --color-ojk-card-light: #FFFFFF;
+    --color-ojk-card-dark: #1E293B;
+}
+
+@layer base {
+  body {
+    @apply transition-colors duration-300;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.4);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.7);
+}
+
+/* Glassmorphism Classes */
+.glass-effect {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+}
+
+.dark .glass-effect {
+  background: rgba(30, 41, 59, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Soft Premium Shadow */
+.soft-shadow {
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.02), 0 2px 10px -1px rgba(0, 0, 0, 0.015);
+}
+
+.soft-shadow-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.soft-shadow-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.04), 0 4px 12px -2px rgba(0, 0, 0, 0.025);
+}
+
+/* Custom FullCalendar Styling */
+.fc {
+  --fc-button-bg-color: #C8102E;
+  --fc-button-border-color: #C8102E;
+  --fc-button-hover-bg-color: #A00D25;
+  --fc-button-hover-border-color: #A00D25;
+  --fc-button-active-bg-color: #8C0B20;
+  --fc-button-active-border-color: #8C0B20;
+  --fc-today-bg-color: rgba(200, 16, 46, 0.03);
+}
+.fc-theme-standard td, .fc-theme-standard th {
+  border-color: rgba(226, 232, 240, 0.7) !important;
+}
+.fc-theme-standard .fc-scrollgrid {
+  border-color: rgba(226, 232, 240, 0.7) !important;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.fc .fc-toolbar-title {
+  font-size: 1.15rem !important;
+  font-weight: 700 !important;
+  color: #0F172A;
+}
+.dark .fc .fc-toolbar-title {
+  color: #F8FAFC;
+}
