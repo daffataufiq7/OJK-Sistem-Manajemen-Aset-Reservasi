@@ -1,59 +1,149 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# OJK Sistem Manajemen Aset & Reservasi
 
 <p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
+  <strong>Sistem Manajemen Aset dan Reservasi Terintegrasi untuk Kantor Otoritas Jasa Keuangan (OJK)</strong>
 </p>
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## 📌 Deskripsi Proyek
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+**OJK Sistem Manajemen Aset & Reservasi** adalah aplikasi web modern yang dirancang khusus untuk mempermudah pengelolaan aset (seperti ruang rapat, kendaraan operasional, proyektor, dan fasilitas kantor lainnya) serta proses reservasi/peminjaman aset di lingkungan kantor OJK. 
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+Sistem ini dikembangkan menggunakan arsitektur **Single Page Application (SPA)** dengan integrasi **Laravel** sebagai Backend API dan **React + TypeScript + Tailwind CSS** di bagian Frontend untuk menghadirkan pengalaman pengguna yang cepat, responsif, dan interaktif.
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+## ✨ Fitur Utama
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+- 📊 **Dashboard Interaktif**: Statistik real-time mengenai status reservasi, peminjaman terpopuler, distribusi kategori aset, serta diagram tren aktivitas peminjaman.
+- 🏢 **Manajemen Aset**: Fitur CRUD lengkap untuk aset kantor beserta status ketersediaannya (Tersedia, Digunakan, Pemeliharaan).
+- 📅 **Kalender Reservasi (FullCalendar)**: Visualisasi jadwal peminjaman aset secara komprehensif untuk menghindari bentrok jadwal (*double booking*).
+- 🔑 **Sistem Persetujuan (Role-based Approval)**: Alur kerja persetujuan reservasi oleh admin atau kepala divisi sebelum aset dapat digunakan.
+- 🔍 **Log Audit (Audit Logs)**: Pencatatan otomatis setiap tindakan penting dalam sistem untuk menjaga transparansi dan keamanan data.
+- 📱 **Kode QR Terintegrasi**: Pembuatan kode QR otomatis untuk setiap reservasi guna mempermudah check-in/validasi penggunaan aset.
+- 📋 **Laporan & Riwayat**: Riwayat peminjaman lengkap yang dapat difilter untuk kebutuhan pelaporan internal divisi.
 
-## Laravel Sponsors
+---
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## 🛠️ Tech Stack
 
-### Premium Partners
+### Backend (API)
+- **Framework**: Laravel 11
+- **Database**: MySQL / PostgreSQL (didukung oleh Eloquent ORM)
+- **Autentikasi**: Laravel Sanctum (Token-based API Authentication)
+- **Arsitektur**: Repository Pattern & Service Layer untuk memisahkan logika bisnis dengan controller.
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+### Frontend (Single Page Application)
+- **Library**: React 18 & TypeScript
+- **Styling**: Tailwind CSS v4.0 (Modern, utility-first CSS framework)
+- **State Management & Data Fetching**: TanStack React Query v5
+- **Routing**: React Router DOM v6
+- **Schedules & Calendars**: FullCalendar React Integration
+- **Charts & Visualizations**: Recharts
+- **Animations**: Framer Motion
+- **Icons**: Lucide React
 
-## Contributing
+---
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## 🚀 Panduan Instalasi & Penggunaan
 
-## Code of Conduct
+### Prasyarat (*Prerequisites*)
+Pastikan komputer Anda sudah terinstal:
+- PHP >= 8.2
+- Composer
+- Node.js >= 18 & NPM
+- Database server (MySQL / MariaDB)
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### Langkah-langkah Setup
 
-## Security Vulnerabilities
+1. **Clone Repositori**
+   ```bash
+   git clone https://github.com/daffataufiq7/OJK-Sistem-Manajemen-Aset-Reservasi.git
+   cd OJK-Sistem-Manajemen-Aset-Reservasi
+   ```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+2. **Setup Backend (Laravel)**
+   - Instal dependensi PHP:
+     ```bash
+     composer install
+     ```
+   - Salin file konfigurasi lingkungan:
+     ```bash
+     cp .env.example .env
+     ```
+   - Konfigurasikan database pada file `.env`:
+     ```env
+     DB_CONNECTION=mysql
+     DB_HOST=127.0.0.1
+     DB_PORT=3306
+     DB_DATABASE=nama_database_anda
+     DB_USERNAME=username_database
+     DB_PASSWORD=password_database
+     ```
+   - Generate application key:
+     ```bash
+     php artisan key:generate
+     ```
+   - Jalankan migrasi dan seeder database untuk data awal:
+     ```bash
+     php artisan migrate --seed
+     ```
 
-## License
+3. **Setup Frontend (React & Vite)**
+   - Instal dependensi JavaScript:
+     ```bash
+     npm install
+     ```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+### Menjalankan Server Lokal
+
+Untuk menjalankan aplikasi secara lokal dalam mode pengembangan, jalankan kedua perintah berikut:
+
+- **Jalankan Laravel Backend**:
+  ```bash
+  php artisan serve
+  ```
+  *Backend secara default akan berjalan di `http://127.0.0.1:8000`*
+
+- **Jalankan Vite Development Server**:
+  ```bash
+  npm run dev
+  ```
+  *Frontend akan berjalan di `http://localhost:5173` (atau port lain yang tersedia)*
+
+---
+
+## 📂 Struktur Folder Utama
+
+```
+OJK-Sistem-Manajemen-Aset-Reservasi/
+├── app/
+│   ├── Http/Controllers/API/   # Controller yang menangani request API frontend
+│   ├── Models/                 # Definsi database model
+│   ├── Repositories/           # Layer abstraksi database (Repository Pattern)
+│   └── Services/               # Layer logika bisnis utama (Service Layer)
+├── config/                     # Konfigurasi Laravel
+├── database/
+│   ├── migrations/             # Struktur skema tabel database
+│   └── seeders/                # Pengisian data awal (dummy data)
+├── resources/
+│   ├── js/
+│   │   ├── components/         # Komponen reusable React (UI, Layout, DataTable, dll.)
+│   │   ├── context/            # AuthContext untuk manajemen login state
+│   │   ├── pages/              # Halaman-halaman aplikasi (Dashboard, Assets, Calendar, dll.)
+│   │   ├── types/              # Definisi TypeScript Interfaces
+│   │   └── app.tsx             # Entrypoint aplikasi frontend & React Router
+│   └── views/
+│       └── app.blade.php       # Halaman HTML utama penampung SPA
+├── routes/
+│   ├── api.php                 # Rute endpoint API
+│   └── web.php                 # Rute SPA fallback
+└── vite.config.js              # Konfigurasi bundler Vite
+```
+
+---
+
+## 📄 Lisensi
+
+Proyek ini dibuat untuk kebutuhan internal Otoritas Jasa Keuangan (OJK).
