@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, Input, Button, Select, toast } from '../components/UI';
-import { Settings as SettingsIcon, User, Layers, Share2, Database, Download, ShieldCheck, Plus, Check, Trash2 } from 'lucide-react';
+import { Settings as SettingsIcon, User, Layers, Share2, Database, Download, ShieldCheck, Plus, Check, Trash2, Info } from 'lucide-react';
 
 interface Division {
     id: number;
@@ -19,7 +19,7 @@ export const Settings: React.FC = () => {
     const { user, refreshUser } = useAuth();
     const isAdmin = user?.role === 'super_admin';
 
-    const [activeTab, setActiveTab] = useState<'profile' | 'divisions' | 'categories' | 'backup'>('profile');
+    const [activeTab, setActiveTab] = useState<'profile' | 'divisions' | 'categories' | 'backup' | 'about'>('profile');
     
     // Lists
     const [divisions, setDivisions] = useState<Division[]>([]);
@@ -171,6 +171,7 @@ export const Settings: React.FC = () => {
         { id: 'divisions', label: 'Master Divisi', icon: <Share2 className="w-4 h-4" />, adminOnly: true },
         { id: 'categories', label: 'Master Kategori', icon: <Layers className="w-4 h-4" />, adminOnly: true },
         { id: 'backup', label: 'Pencadangan', icon: <Database className="w-4 h-4" />, adminOnly: true },
+        { id: 'about', label: 'Tentang Aplikasi', icon: <Info className="w-4 h-4" /> },
     ];
 
     const visibleTabs = tabs.filter(t => !t.adminOnly || isAdmin);
@@ -376,6 +377,75 @@ export const Settings: React.FC = () => {
                                         <Download className="w-4.5 h-4.5" />
                                         {submitting ? 'Memproses Cadangan...' : 'Unduh Cadangan Database'}
                                     </Button>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {/* TAB: ABOUT US & DEVELOPMENT TEAM */}
+                    {activeTab === 'about' && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-sm">Tentang Aplikasi & Kantor</CardTitle>
+                                <CardDescription>Informasi sistem dan tim pengembang aplikasi SMART OJK Kantor Regional Jawa Barat.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-6">
+                                <div className="space-y-6 text-xs text-slate-650 dark:text-slate-350 leading-relaxed font-sans">
+                                    <div className="flex flex-col md:flex-row gap-6 items-center md:items-start p-5 bg-slate-50 dark:bg-slate-850 rounded-2xl border border-slate-100 dark:border-slate-800/40">
+                                        <img src="/logo ojk.png" alt="OJK Logo" className="h-16 object-contain shrink-0" />
+                                        <div>
+                                            <h4 className="font-extrabold text-sm text-slate-850 dark:text-white mb-2">Sistem Manajemen Aset & Reservasi Terintegrasi (SMART)</h4>
+                                            <p className="mb-2.5">
+                                                <strong>Sistem Reservasi Aset</strong> adalah portal digital internal Kantor OJK Regional Jawa Barat untuk mempermudah peminjaman ruang rapat, kendaraan dinas, laptop, dan proyektor dinas.
+                                            </p>
+                                            <p>
+                                                Melalui sistem ini, pegawai dapat dengan mudah mengajukan peminjaman aset, memeriksa jadwal ketersediaan melalui kalender interaktif, serta memantau status persetujuan dari divisi terkait secara langsung.
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <h4 className="text-[11px] font-extrabold text-slate-800 dark:text-white uppercase tracking-wider text-center border-b border-slate-100 dark:border-slate-800/80 pb-2">
+                                            Tim Pengembang Aplikasi
+                                        </h4>
+                                        
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                            {/* UNY */}
+                                            <div className="flex flex-col items-center text-center bg-slate-55 dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-100/60 dark:border-slate-800/50 h-full justify-between hover:shadow-xs transition-all duration-200">
+                                                <div className="flex flex-col items-center space-y-2">
+                                                    <img src="/uny logo.png" alt="UNY Logo" className="w-12 h-12 object-contain" />
+                                                    <p className="text-xs font-extrabold text-slate-850 dark:text-white leading-tight">UNY</p>
+                                                </div>
+                                                <div className="space-y-1.5 mt-3.5 w-full border-t border-slate-200/40 dark:border-slate-800/40 pt-3 flex flex-col items-center">
+                                                    <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 leading-tight">Daffa Taufiqurahman</p>
+                                                    <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 leading-tight">Naufal Hanif R.</p>
+                                                    <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 leading-tight">Angga Baihaki Y.</p>
+                                                </div>
+                                            </div>
+
+                                            {/* ITB */}
+                                            <div className="flex flex-col items-center text-center bg-slate-55 dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-100/60 dark:border-slate-800/50 h-full justify-between hover:shadow-xs transition-all duration-200">
+                                                <div className="flex flex-col items-center space-y-2">
+                                                    <img src="/itb logo.png" alt="ITB Logo" className="w-12 h-12 object-contain" />
+                                                    <p className="text-xs font-extrabold text-slate-850 dark:text-white leading-tight">ITB</p>
+                                                </div>
+                                                <div className="space-y-1.5 mt-3.5 w-full border-t border-slate-200/40 dark:border-slate-800/40 pt-3 flex flex-col items-center justify-start min-h-[58px]">
+                                                    <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 leading-tight">Ratu Khansa</p>
+                                                </div>
+                                            </div>
+
+                                            {/* Telkom University */}
+                                            <div className="flex flex-col items-center text-center bg-slate-55 dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-100/60 dark:border-slate-800/50 h-full justify-between hover:shadow-xs transition-all duration-200">
+                                                <div className="flex flex-col items-center space-y-2">
+                                                    <img src="/telkom logo.png" alt="Telkom Logo" className="w-12 h-12 object-contain" />
+                                                    <p className="text-xs font-extrabold text-slate-850 dark:text-white leading-tight">Telkom Univ</p>
+                                                </div>
+                                                <div className="space-y-1.5 mt-3.5 w-full border-t border-slate-200/40 dark:border-slate-800/40 pt-3 flex flex-col items-center justify-start min-h-[58px]">
+                                                    <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 leading-tight">Bunga Nazwa S.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </CardContent>
                         </Card>
