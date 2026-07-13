@@ -26,10 +26,11 @@ class DatabaseSeeder extends Seeder
         $div3 = Division::create(['name' => 'Divisi Perbankan']);
         $div4 = Division::create(['name' => 'Divisi Hukum']);
         $div5 = Division::create(['name' => 'Divisi Bidang Umum']);
+        $div6 = Division::create(['name' => 'Kepala OJK']);
 
         // 2. Seed Users (Super Admin, Validator, and Pegawai)
         $admin = User::create([
-            'name' => 'Budi Santoso',
+            'name' => 'Daffa Taufiq',
             'nip' => '10001',
             'email' => 'admin@ojk.go.id',
             'password' => Hash::make('password'),
@@ -38,7 +39,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $validator = User::create([
-            'name' => 'Hendra Wijaya',
+            'name' => 'Angga Baihaki',
             'nip' => '20001',
             'email' => 'validator@ojk.go.id',
             'password' => Hash::make('password'),
@@ -47,7 +48,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $pegawai1 = User::create([
-            'name' => 'Andi Wijaya',
+            'name' => 'Ratu Khansa',
             'nip' => '30001',
             'email' => 'pegawai1@ojk.go.id',
             'password' => Hash::make('password'),
@@ -56,7 +57,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $pegawai2 = User::create([
-            'name' => 'Siti Rahma',
+            'name' => 'Bunga Nazwa',
             'nip' => '30002',
             'email' => 'pegawai2@ojk.go.id',
             'password' => Hash::make('password'),
@@ -71,6 +72,15 @@ class DatabaseSeeder extends Seeder
             'password' => Hash::make('password'),
             'role' => 'pegawai',
             'division_id' => $div3->id,
+        ]);
+
+        $kepala = User::create([
+            'name' => 'Naufal Hanif Ramadhan D.',
+            'nip' => '2028',
+            'email' => 'kepalaojk@ojk.go.id',
+            'password' => Hash::make('password'),
+            'role' => 'validator',
+            'division_id' => $div6->id,
         ]);
 
         // 3. Seed Asset Categories
@@ -177,7 +187,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // 5. Seed Reservations
-        // Booking 1: Innova In Use by Andi (today)
+        // Booking 1: Innova In Use by Ratu (today)
         Reservation::create([
             'user_id' => $pegawai1->id,
             'asset_id' => $asset1->id,
@@ -210,7 +220,7 @@ class DatabaseSeeder extends Seeder
             'status' => 'approved',
         ]);
 
-        // Booking 4: Ruang Rapat B Pending by Andi (today afternoon)
+        // Booking 4: Ruang Rapat B Pending by Ratu (today afternoon)
         Reservation::create([
             'user_id' => $pegawai1->id,
             'asset_id' => $asset4->id,
@@ -220,7 +230,7 @@ class DatabaseSeeder extends Seeder
             'status' => 'pending',
         ]);
 
-        // Booking 5: Proyektor Epson Completed by Siti (yesterday)
+        // Booking 5: Proyektor Epson Completed by Bunga (yesterday)
         Reservation::create([
             'user_id' => $pegawai2->id,
             'asset_id' => $asset6->id,
@@ -253,7 +263,7 @@ class DatabaseSeeder extends Seeder
         Notification::create([
             'user_id' => $pegawai1->id,
             'title' => 'Pengajuan Toyota Innova Disetujui',
-            'message' => 'Reservasi Toyota Innova B 1234 OJK untuk hari ini telah disetujui oleh Hendra Wijaya.',
+            'message' => 'Reservasi Toyota Innova B 1234 OJK untuk hari ini telah disetujui oleh Angga Baihaki.',
             'type' => 'approval',
             'is_read' => true,
         ]);
@@ -269,7 +279,7 @@ class DatabaseSeeder extends Seeder
         Notification::create([
             'user_id' => $validator->id,
             'title' => 'Pengajuan Reservasi Baru',
-            'message' => 'Andi Wijaya mengajukan reservasi Ruang Rapat B untuk hari ini pukul 15.00 WIB.',
+            'message' => 'Ratu Khansa mengajukan reservasi Ruang Rapat B untuk hari ini pukul 15.00 WIB.',
             'type' => 'approval',
             'is_read' => false,
         ]);
@@ -302,7 +312,7 @@ class DatabaseSeeder extends Seeder
         AuditLog::create([
             'user_id' => $validator->id,
             'action' => 'approve_reservation',
-            'description' => 'Menyetujui reservasi Toyota Innova B 1234 OJK oleh Andi Wijaya',
+            'description' => 'Menyetujui reservasi Toyota Innova B 1234 OJK oleh Ratu Khansa',
             'ip_address' => '127.0.0.1',
             'user_agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
         ]);
@@ -318,7 +328,7 @@ class DatabaseSeeder extends Seeder
         AuditLog::create([
             'user_id' => $pegawai1->id,
             'action' => 'login',
-            'description' => 'Pegawai Andi Wijaya berhasil melakukan login sistem.',
+            'description' => 'Pegawai Ratu Khansa berhasil melakukan login sistem.',
             'ip_address' => '127.0.0.1',
             'user_agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
         ]);
