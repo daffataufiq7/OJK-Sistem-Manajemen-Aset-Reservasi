@@ -14,6 +14,51 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         //
     })
+    ->withSchedule(function (\Illuminate\Console\Scheduling\Schedule $schedule) {
+        $schedule->call(function () {
+            $now = now();
+            // 1. approved/reserved -> in_use
+            \App\Models\Reservation::whereIn('status', ['approved', 'reserved'])
+                ->where('start_date', '<=', $now)
+                ->where('end_date', '>', $now)
+                ->chunk(100, function ($reservations) {
+                    foreach ($reservations as $res) {
+                        $res->status = 'in_use';
+                        $res->save();
+
+                        $asset = $res->asset;
+                        if ($asset) {
+                            $asset->status = 'in_use';
+                            $asset->save();
+                        }
+                    }
+                });
+
+            // 2. approved/reserved/in_use -> completed
+            \App\Models\Reservation::whereIn('status', ['approved', 'reserved', 'in_use'])
+                ->where('end_date', '<=', $now)
+                ->chunk(100, function ($reservations) {
+                    foreach ($reservations as $res) {
+                        $res->status = 'completed';
+                        $res->save();
+
+                        $asset = $res->asset;
+                        if ($asset && $asset->status === 'in_use') {
+                            $hasActive = \App\Models\Reservation::where('asset_id', $asset->id)
+                                ->where('id', '!=', $res->id)
+                                ->whereIn('status', ['approved', 'reserved', 'in_use'])
+                                ->where('start_date', '<=', now())
+                                ->where('end_date', '>', now())
+                                ->exists();
+                            if (!$hasActive) {
+                                $asset->status = 'available';
+                                $asset->save();
+                            }
+                        }
+                    }
+                });
+        })->everyMinute();
+    })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
     })->create();

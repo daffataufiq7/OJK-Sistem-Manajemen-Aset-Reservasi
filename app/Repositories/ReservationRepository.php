@@ -9,6 +9,50 @@ class ReservationRepository implements ReservationRepositoryInterface
 {
     public function all(array $filters = [])
     {
+        $now = now();
+
+        // 1. Auto-transition: approved/reserved -> in_use (when start_date passes but not end_date yet)
+        Reservation::whereIn('status', ['approved', 'reserved'])
+            ->where('start_date', '<=', $now)
+            ->where('end_date', '>', $now)
+            ->chunk(100, function ($reservations) {
+                foreach ($reservations as $res) {
+                    $res->status = 'in_use';
+                    $res->save();
+
+                    $asset = $res->asset;
+                    if ($asset) {
+                        $asset->status = 'in_use';
+                        $asset->save();
+                    }
+                }
+            });
+
+        // 2. Auto-transition: approved/reserved/in_use -> completed (when end_date has passed)
+        Reservation::whereIn('status', ['approved', 'reserved', 'in_use'])
+            ->where('end_date', '<=', $now)
+            ->chunk(100, function ($reservations) {
+                foreach ($reservations as $res) {
+                    $res->status = 'completed';
+                    $res->save();
+
+                    $asset = $res->asset;
+                    if ($asset && $asset->status === 'in_use') {
+                        // Check if there is another currently active reservation for the same asset
+                        $hasActive = Reservation::where('asset_id', $asset->id)
+                            ->where('id', '!=', $res->id)
+                            ->whereIn('status', ['approved', 'reserved', 'in_use'])
+                            ->where('start_date', '<=', now())
+                            ->where('end_date', '>', now())
+                            ->exists();
+                        if (!$hasActive) {
+                            $asset->status = 'available';
+                            $asset->save();
+                        }
+                    }
+                }
+            });
+
         $query = Reservation::with(['user.division', 'asset.category']);
 
         if (isset($filters['user_id'])) {

@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { DataTable } from '../components/DataTable';
-import { Button, Dialog, TextArea, Badge, toast } from '../components/UI';
+import { Button, Dialog, Input, Select, TextArea, Badge, toast } from '../components/UI';
+import { DRIVER_LIST } from '../constants/drivers';
 import { 
     CheckSquare, 
     XOctagon, 
@@ -11,7 +12,9 @@ import {
     Clock, 
     User,
     ClipboardList,
-    AlertCircle
+    AlertCircle,
+    Trash2,
+    CheckCircle2
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -68,6 +71,9 @@ export const Approvals: React.FC = () => {
     // Modal states
     const [selectedReq, setSelectedReq] = useState<Reservation | null>(null);
     const [detailOpen, setDetailOpen] = useState(false);
+    const [approvalOpen, setApprovalOpen] = useState(false);
+    const [assignedDriver, setAssignedDriver] = useState('');
+    const [selectedDriverOption, setSelectedDriverOption] = useState('');
     const [rejectionOpen, setRejectionOpen] = useState(false);
     const [rejectionReason, setRejectionReason] = useState('');
     const [submitting, setSubmitting] = useState(false);
@@ -89,13 +95,34 @@ export const Approvals: React.FC = () => {
         fetchRequests();
     }, []);
 
-    const handleApprove = async (id: number) => {
-        if (!window.confirm('Apakah Anda yakin ingin menyetujui peminjaman aset ini?')) return;
+    const handleApproveOpen = (req: Reservation) => {
+        setSelectedReq(req);
+        const existingDriver = req.driver_name || '';
+        setAssignedDriver(existingDriver);
         
+        // Check if existing driver is in master list
+        const found = DRIVER_LIST.find(d => d.name === existingDriver);
+        if (found) {
+            setSelectedDriverOption(existingDriver);
+        } else if (existingDriver) {
+            setSelectedDriverOption('custom');
+        } else {
+            setSelectedDriverOption('');
+        }
+        setApprovalOpen(true);
+    };
+
+    const handleApproveSubmit = async () => {
+        if (!selectedReq) return;
         try {
             setSubmitting(true);
-            await axios.post(`/reservations/${id}/approve`);
-            toast.success('Permintaan peminjaman disetujui.');
+            await axios.post(`/reservations/${selectedReq.id}/approve`, {
+                driver_name: assignedDriver.trim() || null
+            });
+            toast.success('Permintaan peminjaman berhasil disetujui.');
+            setApprovalOpen(false);
+            setAssignedDriver('');
+            setSelectedReq(null);
             fetchRequests();
         } catch (error: any) {
             toast.error(error.response?.data?.message || 'Gagal menyetujui.');
@@ -129,6 +156,66 @@ export const Approvals: React.FC = () => {
             fetchRequests();
         } catch (error: any) {
             toast.error(error.response?.data?.message || 'Gagal menolak.');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const handleComplete = async (id: number) => {
+        if (!window.confirm('Apakah Anda yakin ingin menyelesaikan peminjaman ini secara manual?')) return;
+        
+        try {
+            setSubmitting(true);
+            await axios.post(`/reservations/${id}/complete-usage`);
+            toast.success('Peminjaman telah selesai.');
+            fetchRequests();
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || 'Gagal menyelesaikan peminjaman.');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const handleDelete = async (id: number) => {
+        if (!window.confirm('Apakah Anda yakin ingin menghapus data reservasi ini secara permanen?')) return;
+        
+        try {
+            setSubmitting(true);
+            await axios.delete(`/reservations/${id}`);
+            toast.success('Reservasi berhasil dihapus.');
+            fetchRequests();
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || 'Gagal menghapus reservasi.');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const handleStatusChange = async (id: number, newStatus: string) => {
+        const statusLabels: Record<string, string> = {
+            pending: 'Menunggu',
+            approved: 'Disetujui',
+            rejected: 'Ditolak',
+            in_use: 'Sedang Dipakai',
+            completed: 'Selesai',
+            cancelled: 'Batal'
+        };
+
+        const targetLabel = statusLabels[newStatus] || newStatus;
+
+        if (!window.confirm(`Apakah Anda yakin ingin mengubah status reservasi ini menjadi "${targetLabel}"?`)) {
+            fetchRequests();
+            return;
+        }
+
+        try {
+            setSubmitting(true);
+            await axios.put(`/reservations/${id}`, { status: newStatus });
+            toast.success('Status reservasi berhasil diperbarui.');
+            fetchRequests();
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || 'Gagal memperbarui status.');
+            fetchRequests();
         } finally {
             setSubmitting(false);
         }
@@ -178,7 +265,47 @@ export const Approvals: React.FC = () => {
         {
             key: 'status',
             header: 'Status',
-            render: (res: Reservation) => <Badge status={res.status} />
+            render: (res: Reservation) => {
+                const getSelectStyle = (status: string) => {
+                    const s = status.toLowerCase();
+                    if (s === 'available' || s === 'tersedia') {
+                        return 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/30';
+                    } else if (s === 'reserved' || s === 'disetujui' || s === 'approved') {
+                        return 'bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-900/30';
+                    } else if (s === 'in_use' || s === 'sedang dipakai' || s === 'in use') {
+                        return 'bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-900/30';
+                    } else if (s === 'maintenance' || s === 'perawatan') {
+                        return 'bg-purple-50 text-purple-700 border-purple-100 dark:bg-purple-950/30 dark:text-purple-400 dark:border-purple-900/30';
+                    } else if (s === 'inactive' || s === 'tidak aktif') {
+                        return 'bg-slate-100 text-slate-650 border-slate-200 dark:bg-slate-800/50 dark:text-slate-400 dark:border-slate-750';
+                    } else if (s === 'pending' || s === 'menunggu') {
+                        return 'bg-yellow-50 text-yellow-750 border-yellow-100 dark:bg-yellow-950/30 dark:text-yellow-400 dark:border-yellow-900/30';
+                    } else if (s === 'rejected' || s === 'ditolak') {
+                        return 'bg-red-50 text-red-750 border-red-100 dark:bg-red-950/30 dark:text-red-400 dark:border-red-900/30';
+                    } else if (s === 'completed' || s === 'selesai') {
+                        return 'bg-slate-50 text-slate-600 border-slate-100 dark:bg-slate-850 dark:text-slate-400 dark:border-slate-800';
+                    } else if (s === 'cancelled' || s === 'dibatalkan') {
+                        return 'bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-800/40 dark:text-slate-500 dark:border-slate-750';
+                    }
+                    return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300';
+                };
+
+                return (
+                    <select
+                        value={res.status}
+                        onChange={(e) => handleStatusChange(res.id, e.target.value)}
+                        disabled={submitting}
+                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border transition-all cursor-pointer focus:outline-none focus:ring-1 focus:ring-ojk-red/25 dark:bg-slate-900 ${getSelectStyle(res.status)}`}
+                    >
+                        <option value="pending" className="text-slate-850 bg-white dark:bg-slate-950">Menunggu</option>
+                        <option value="approved" className="text-slate-850 bg-white dark:bg-slate-950">Disetujui</option>
+                        <option value="rejected" className="text-slate-850 bg-white dark:bg-slate-950">Ditolak</option>
+                        <option value="in_use" className="text-slate-850 bg-white dark:bg-slate-950">Sedang Dipakai</option>
+                        <option value="completed" className="text-slate-850 bg-white dark:bg-slate-950">Selesai</option>
+                        <option value="cancelled" className="text-slate-850 bg-white dark:bg-slate-950">Batal</option>
+                    </select>
+                );
+            }
         },
         {
             key: 'actions',
@@ -193,13 +320,13 @@ export const Approvals: React.FC = () => {
                     >
                         <FileText className="w-4 h-4" />
                     </button>
-                    {res.status === 'pending' ? (
+                    {res.status === 'pending' && (
                         <React.Fragment>
                             <Button 
                                 variant="primary" 
                                 size="sm" 
                                 className="rounded-lg px-2.5 py-1 text-[10px] font-extrabold bg-emerald-600 hover:bg-emerald-700 border-none shrink-0"
-                                onClick={() => handleApprove(res.id)}
+                                onClick={() => handleApproveOpen(res)}
                                 disabled={submitting}
                             >
                                 Setujui
@@ -214,9 +341,36 @@ export const Approvals: React.FC = () => {
                                 Tolak
                             </Button>
                         </React.Fragment>
-                    ) : (
-                        <span className="text-[10px] font-semibold text-slate-400">Diproses</span>
                     )}
+                    {['approved', 'reserved', 'in_use'].includes(res.status) && (
+                        <Button 
+                            variant="secondary" 
+                            size="sm" 
+                            className="rounded-lg px-2.5 py-1 text-[10px] font-extrabold bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 text-white border-none shrink-0 flex items-center gap-1"
+                            onClick={() => handleComplete(res.id)}
+                            disabled={submitting}
+                        >
+                            <CheckCircle2 className="w-3 h-3" />
+                            Selesaikan
+                        </Button>
+                    )}
+                </div>
+            )
+        },
+        {
+            key: 'delete_action',
+            header: 'Aksi',
+            sortable: false,
+            render: (res: Reservation) => (
+                <div className="flex items-center">
+                    <button 
+                        onClick={() => handleDelete(res.id)}
+                        className="p-1.5 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg text-red-500 hover:text-red-700 transition-colors shrink-0"
+                        title="Hapus"
+                        disabled={submitting}
+                    >
+                        <Trash2 className="w-4 h-4" />
+                    </button>
                 </div>
             )
         }
@@ -273,6 +427,62 @@ export const Approvals: React.FC = () => {
                     exportName="laporan_persetujuan_validator"
                 />
             </div>
+
+            {/* Approval & Driver Assignment Modal */}
+            <Dialog 
+                isOpen={approvalOpen} 
+                onClose={() => { setApprovalOpen(false); setSelectedReq(null); setAssignedDriver(''); }} 
+                title="Persetujuan & Penugasan Driver"
+            >
+                <div className="space-y-4">
+                    <div className="text-xs text-slate-600 dark:text-slate-300 font-medium p-3 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 rounded-xl leading-relaxed">
+                        Anda akan menyetujui peminjaman aset <strong>{selectedReq?.asset?.name}</strong> oleh <strong>{selectedReq?.user?.name}</strong>.
+                    </div>
+
+                    <div className="space-y-3">
+                        <Select 
+                            label="Pilih Driver Kantor yang Ditugaskan"
+                            value={selectedDriverOption}
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                setSelectedDriverOption(val);
+                                if (val !== 'custom') {
+                                    setAssignedDriver(val);
+                                } else {
+                                    setAssignedDriver('');
+                                }
+                            }}
+                            options={[
+                                { value: '', label: '-- Pilih Driver Kantor --' },
+                                ...DRIVER_LIST.map(d => ({ value: d.name, label: `${d.name} (${d.nip}) - ${d.phone}` })),
+                                { value: 'custom', label: '+ Input Nama Driver Lainnya...' }
+                            ]}
+                        />
+
+                        {selectedDriverOption === 'custom' && (
+                            <Input 
+                                label="Nama Driver Kantor (Custom)"
+                                placeholder="Tuliskan nama driver..."
+                                value={assignedDriver}
+                                onChange={(e) => setAssignedDriver(e.target.value)}
+                            />
+                        )}
+
+                        <p className="text-[10px] text-slate-400 font-semibold">
+                            * Nama driver akan otomatis tercantum pada notifikasi persetujuan yang dikirim ke pemohon.
+                        </p>
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-2">
+                        <Button variant="secondary" onClick={() => { setApprovalOpen(false); setSelectedReq(null); setAssignedDriver(''); }} disabled={submitting}>
+                            Batal
+                        </Button>
+                        <Button variant="primary" onClick={handleApproveSubmit} disabled={submitting} className="bg-emerald-600 hover:bg-emerald-700 border-none">
+                            {submitting ? 'Memproses...' : 'Setujui Peminjaman'}
+                        </Button>
+                    </div>
+                </div>
+            </Dialog>
 
             {/* Rejection Reason Modal */}
             <Dialog 
@@ -364,18 +574,23 @@ export const Approvals: React.FC = () => {
                                 </div>
                             )}
 
-                            {selectedReq.driver_required && (
+                            {selectedReq.driver_name ? (
+                                <div className="flex items-start gap-2.5">
+                                    <User className="w-4.5 h-4.5 text-emerald-600 shrink-0 mt-0.5" />
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] text-slate-400 font-medium">Driver Ditugaskan</span>
+                                        <span className="text-emerald-700 dark:text-emerald-400 font-bold">{selectedReq.driver_name}</span>
+                                    </div>
+                                </div>
+                            ) : selectedReq.driver_required ? (
                                 <div className="flex items-start gap-2.5">
                                     <User className="w-4.5 h-4.5 text-slate-400 shrink-0 mt-0.5" />
                                     <div className="flex flex-col">
                                         <span className="text-[10px] text-slate-400 font-medium">Layanan Driver</span>
-                                        <span className="text-slate-850 dark:text-slate-350 font-bold">Butuh Driver Kantor</span>
-                                        {selectedReq.driver_name && (
-                                            <span className="text-[9px] text-emerald-600 font-bold">Diajukan: {selectedReq.driver_name}</span>
-                                        )}
+                                        <span className="text-slate-850 dark:text-slate-350 font-bold">Driver Ditugaskan Kantor</span>
                                     </div>
                                 </div>
-                            )}
+                            ) : null}
 
                             <div className="flex items-start gap-2.5 sm:col-span-2">
                                 <ClipboardList className="w-4.5 h-4.5 text-slate-400 shrink-0 mt-0.5" />
@@ -424,7 +639,7 @@ export const Approvals: React.FC = () => {
                                     </Button>
                                     <Button 
                                         variant="primary"
-                                        onClick={() => { setDetailOpen(false); handleApprove(selectedReq.id); }}
+                                        onClick={() => { setDetailOpen(false); handleApproveOpen(selectedReq); }}
                                     >
                                         Setujui
                                     </Button>

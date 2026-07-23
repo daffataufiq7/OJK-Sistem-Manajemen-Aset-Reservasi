@@ -14,9 +14,11 @@ import { CalendarView } from './pages/CalendarView';
 import { Approvals } from './pages/Approvals';
 import { History } from './pages/History';
 import { Reports } from './pages/Reports';
+import { DriverReports } from './pages/DriverReports';
 import { AuditLogs } from './pages/AuditLogs';
 import { Users } from './pages/Users';
 import { Settings } from './pages/Settings';
+import { Partnership } from './pages/Partnership';
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -57,15 +59,20 @@ export const App: React.FC = () => {
                     {/* Public Login Route */}
                     <Route path="/login" element={<Login />} />
 
+                    {/* Root Route Redirect */}
+                    <Route path="/" element={<Navigate to="/dashboard" replace />} />
+
                     {/* Guarded Application Routes */}
                     <Route element={<ProtectedRoute />}>
                         <Route path="/dashboard" element={<Dashboard />} />
                         <Route path="/assets" element={<Assets />} />
                         <Route path="/reservations" element={<Reservations />} />
+                        <Route path="/partnership" element={<Partnership />} />
                         <Route path="/calendar" element={<CalendarView />} />
                         <Route path="/approvals" element={<Approvals />} />
                         <Route path="/history" element={<History />} />
                         <Route path="/reports" element={<Reports />} />
+                        <Route path="/driver-reports" element={<DriverReports />} />
                         <Route path="/audit-logs" element={<AuditLogs />} />
                         <Route path="/users" element={<Users />} />
                         <Route path="/settings" element={<Settings />} />

@@ -17,7 +17,7 @@ import {
     UserCheck,
     HelpCircle
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 interface AssetCategory {
     id: number;
@@ -56,6 +56,7 @@ interface Reservation {
 export const Reservations: React.FC = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
 
     // Data lists
     const [reservations, setReservations] = useState<Reservation[]>([]);
@@ -64,7 +65,7 @@ export const Reservations: React.FC = () => {
     const [filteredAssets, setFilteredAssets] = useState<Asset[]>([]);
 
     // Form inputs
-    const [selectedCategory, setSelectedCategory] = useState<string>('');
+    const [selectedCategory, setSelectedCategory] = useState<string | number>('');
     const [assetId, setAssetId] = useState<number>(0);
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
@@ -92,8 +93,17 @@ export const Reservations: React.FC = () => {
             setCategories(catResponse.data);
             setAssets(assetResponse.data);
 
-            if (catResponse.data.length > 0) {
-                setSelectedCategory(catResponse.data[0].slug);
+            // Auto select category if query param exists
+            const searchParams = new URLSearchParams(location.search);
+            const catQuery = searchParams.get('category');
+            if (catQuery && catResponse.data.length > 0) {
+                const foundCat = catResponse.data.find((c: any) => 
+                    c.name.toLowerCase().includes(catQuery.toLowerCase()) || 
+                    c.slug.toLowerCase().includes(catQuery.toLowerCase())
+                );
+                if (foundCat) {
+                    setSelectedCategory(foundCat.id);
+                }
             }
         } catch (error) {
             console.error('Error loading data', error);
@@ -105,25 +115,32 @@ export const Reservations: React.FC = () => {
 
     useEffect(() => {
         fetchData();
-    }, []);
+    }, [location.search]);
 
     // Filter assets dynamically based on category
     useEffect(() => {
-        if (!selectedCategory) return;
-        const matchedCat = categories.find(c => c.slug === selectedCategory);
+        if (!selectedCategory) {
+            setFilteredAssets([]);
+            setAssetId(0);
+            return;
+        }
+        const matchedCat = categories.find(c => c.id == selectedCategory);
         if (!matchedCat) return;
 
-        const filtered = assets.filter(a => a.category_id === matchedCat.id);
-        setFilteredAssets(filtered);
+        const filtered = assets.filter(a => a.category_id == matchedCat.id);
         
-        if (filtered.length > 0) {
-            setAssetId(filtered[0].id);
-        } else {
-            setAssetId(0);
-        }
+        // Sort: available assets at the top
+        const sorted = [...filtered].sort((a, b) => {
+            if (a.status === 'available' && b.status !== 'available') return -1;
+            if (a.status !== 'available' && b.status === 'available') return 1;
+            return 0;
+        });
+
+        setFilteredAssets(sorted);
+        setAssetId(0); // Default to empty selection
         
         // Reset driver flag if category changes from vehicle
-        if (selectedCategory !== 'kendaraan') {
+        if (matchedCat.slug !== 'kendaraan') {
             setDriverRequired(false);
             setDriverName('');
             setDestination('');
@@ -190,15 +207,18 @@ export const Reservations: React.FC = () => {
             return;
         }
 
+        const matchedCat = categories.find(c => c.id == selectedCategory);
+        const isVehicle = matchedCat?.slug === 'kendaraan';
+
         setSubmitting(true);
         const payload = {
             asset_id: assetId,
             start_date: startDate,
             end_date: endDate,
             purpose,
-            destination: selectedCategory === 'kendaraan' ? destination : null,
-            driver_required: selectedCategory === 'kendaraan' ? driverRequired : false,
-            driver_name: selectedCategory === 'kendaraan' && driverRequired ? driverName : null,
+            destination: isVehicle ? destination : null,
+            driver_required: false,
+            driver_name: null,
             notes: notes || null
         };
 
@@ -396,21 +416,38 @@ export const Reservations: React.FC = () => {
                         
                         {/* Category selection */}
                         <Select 
+                            key={`cat-select-${categories.length}`}
                             label="Kategori Aset (Wajib)"
-                            options={categories.map(c => ({ value: c.slug, label: c.name }))}
+                            options={[
+                                { value: '', label: '--- Pilih Kategori Aset ---' },
+                                ...categories.map(c => ({ value: c.id, label: c.name }))
+                            ]}
                             value={selectedCategory}
                             onChange={(e) => setSelectedCategory(e.target.value)}
                             required
+                            autoComplete="off"
                         />
 
                         {/* Asset selection */}
                         <Select 
+                            key="asset-select"
                             label="Pilih Aset (Wajib)"
-                            options={filteredAssets.map(a => ({ value: a.id, label: `${a.name} (${a.code}) - ${a.status === 'available' ? 'Tersedia' : 'Sibuk'}` }))}
-                            value={assetId}
-                            onChange={(e) => setAssetId(Number(e.target.value))}
+                            options={[
+                                { 
+                                    value: '', 
+                                    label: selectedCategory 
+                                        ? '--- Silahkan Pilih Aset ---' 
+                                        : '--- Silahkan Pilih Kategori Terlebih Dahulu ---' 
+                                },
+                                ...filteredAssets.map(a => ({ 
+                                    value: a.id, 
+                                    label: `${a.name} (${a.code}) - ${a.status === 'available' ? 'Tersedia' : 'Sibuk'}` 
+                                }))
+                            ]}
+                            value={assetId === 0 ? '' : assetId}
+                            onChange={(e) => setAssetId(Number(e.target.value) || 0)}
                             required
-                            disabled={filteredAssets.length === 0}
+                            autoComplete="off"
                         />
 
                         {/* Date Start */}
@@ -432,41 +469,15 @@ export const Reservations: React.FC = () => {
                         />
 
                         {/* Vehicle details */}
-                        {selectedCategory === 'kendaraan' && (
-                            <React.Fragment>
-                                <Input 
-                                    label="Tujuan Perjalanan (Wajib)"
-                                    placeholder="Misal: Kantor OJK Pusat, Jakarta"
-                                    value={destination}
-                                    onChange={(e) => setDestination(e.target.value)}
-                                    required
-                                />
-
-                                <div className="flex flex-col space-y-1.5 justify-end">
-                                    <label className="text-xs font-semibold text-slate-650 dark:text-slate-350 mb-2">Bantuan Pengemudi</label>
-                                    <div className="flex items-center space-x-4 h-10">
-                                        <label className="inline-flex items-center text-xs font-semibold cursor-pointer">
-                                            <input 
-                                                type="checkbox" 
-                                                checked={driverRequired} 
-                                                onChange={(e) => setDriverRequired(e.target.checked)}
-                                                className="mr-2 rounded border-slate-300 text-ojk-red focus:ring-ojk-red" 
-                                            />
-                                            Butuh Driver Kantor
-                                        </label>
-                                    </div>
-                                </div>
-
-                                {driverRequired && (
-                                    <Input 
-                                        label="Nama Driver (Opsional)"
-                                        placeholder="Tulis driver yang diajukan..."
-                                        value={driverName}
-                                        onChange={(e) => setDriverName(e.target.value)}
-                                        className="sm:col-span-2"
-                                    />
-                                )}
-                            </React.Fragment>
+                        {categories.find(c => c.id == selectedCategory)?.slug === 'kendaraan' && (
+                            <Input 
+                                label="Tujuan Perjalanan (Wajib)"
+                                placeholder="Misal: Kantor OJK Pusat, Jakarta"
+                                value={destination}
+                                onChange={(e) => setDestination(e.target.value)}
+                                className="sm:col-span-2"
+                                required
+                            />
                         )}
 
                         {/* Purpose */}

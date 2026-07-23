@@ -109,8 +109,13 @@ class ReservationController extends Controller
             return response()->json(['message' => 'Akses ditolak. Hanya Validator atau Admin yang dapat menyetujui.'], 403);
         }
 
+        $validated = $request->validate([
+            'driver_name' => 'nullable|string',
+        ]);
+
         try {
-            $reservation = $this->reservationService->approve($id, $request->user()->id);
+            $driverName = $validated['driver_name'] ?? null;
+            $reservation = $this->reservationService->approve($id, $request->user()->id, $driverName);
             return response()->json($reservation);
         } catch (Exception $e) {
             return response()->json(['message' => $e->getMessage()], 422);
@@ -161,6 +166,65 @@ class ReservationController extends Controller
         try {
             $reservation = $this->reservationService->cancel($id, $request->user()->id, $isAdmin);
             return response()->json($reservation);
+        } catch (Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+    }
+
+    public function update(Request $request, $id)
+    {
+        if (!in_array($request->user()->role, ['validator', 'super_admin'])) {
+            return response()->json(['message' => 'Akses ditolak. Hanya Validator atau Admin yang dapat memperbarui.'], 403);
+        }
+
+        $validated = $request->validate([
+            'status' => 'required|in:pending,approved,rejected,reserved,in_use,completed,cancelled',
+            'rejection_reason' => 'nullable|string',
+            'notes' => 'nullable|string',
+        ]);
+
+        try {
+            $reservation = $this->reservationRepo->find($id);
+            if (!$reservation) {
+                return response()->json(['message' => 'Reservasi tidak ditemukan.'], 404);
+            }
+
+            $oldStatus = $reservation->status;
+            $newStatus = $validated['status'];
+
+            if ($oldStatus !== $newStatus) {
+                $asset = $reservation->asset;
+                if ($asset) {
+                    if (in_array($newStatus, ['approved', 'reserved'])) {
+                        $asset->status = 'reserved';
+                    } elseif ($newStatus === 'in_use') {
+                        $asset->status = 'in_use';
+                    } elseif (in_array($newStatus, ['completed', 'cancelled', 'rejected'])) {
+                        $asset->status = 'available';
+                    }
+                    $asset->save();
+                }
+            }
+
+            $reservation = $this->reservationRepo->update($id, $validated);
+
+            AuditLogService::log('update_reservation', "Memperbarui status reservasi ID: {$id} menjadi {$newStatus}", $request->user()->id);
+
+            return response()->json($reservation);
+        } catch (Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+    }
+
+    public function destroy(Request $request, $id)
+    {
+        if (!in_array($request->user()->role, ['validator', 'super_admin'])) {
+            return response()->json(['message' => 'Akses ditolak. Hanya Validator atau Admin yang dapat menghapus.'], 403);
+        }
+
+        try {
+            $this->reservationService->deleteReservation($id, $request->user()->id);
+            return response()->json(['message' => 'Reservasi berhasil dihapus.']);
         } catch (Exception $e) {
             return response()->json(['message' => $e->getMessage()], 422);
         }

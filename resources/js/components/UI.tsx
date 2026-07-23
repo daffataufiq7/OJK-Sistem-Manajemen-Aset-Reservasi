@@ -119,10 +119,11 @@ export const TextArea: React.FC<TextAreaProps> = ({ label, error, className = ''
 interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
     label?: string;
     error?: string;
-    options: { value: string | number; label: string }[];
+    options?: { value: string | number; label: string }[];
+    children?: React.ReactNode;
 }
 
-export const Select: React.FC<SelectProps> = ({ label, error, options, className = '', ...props }) => (
+export const Select: React.FC<SelectProps> = ({ label, error, options, children, className = '', ...props }) => (
     <div className="flex flex-col space-y-1.5 w-full">
         {label && <label className="text-xs font-semibold text-slate-650 dark:text-slate-350">{label}</label>}
         <div className="relative">
@@ -130,9 +131,9 @@ export const Select: React.FC<SelectProps> = ({ label, error, options, className
                 className={`w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:border-ojk-red dark:focus:border-ojk-red focus:ring-2 focus:ring-ojk-red/10 text-slate-850 dark:text-slate-200 transition-all appearance-none cursor-pointer ${error ? 'border-red-500' : ''} ${className}`} 
                 {...props}
             >
-                {options.map((opt, i) => (
+                {options ? options.map((opt, i) => (
                     <option key={i} value={opt.value}>{opt.label}</option>
-                ))}
+                )) : children}
             </select>
             <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500 dark:text-slate-400">
                 <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
@@ -160,8 +161,8 @@ export const Badge: React.FC<{
     if (s === 'available' || s === 'tersedia') {
         text = 'Tersedia';
         style = 'bg-emerald-50 text-emerald-700 border border-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/30';
-    } else if (s === 'reserved' || s === 'disetujui') {
-        text = s === 'disetujui' ? 'Disetujui' : 'Reserved';
+    } else if (s === 'reserved' || s === 'disetujui' || s === 'approved') {
+        text = 'Disetujui';
         style = 'bg-blue-50 text-blue-700 border border-blue-100 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-900/30';
     } else if (s === 'in_use' || s === 'sedang dipakai' || s === 'in use') {
         text = 'Sedang Dipakai';

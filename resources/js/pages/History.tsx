@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { DataTable } from '../components/DataTable';
-import { Badge } from '../components/UI';
+import { Badge, Button, toast } from '../components/UI';
 import { History as HistoryIcon, MapPin, User, Calendar } from 'lucide-react';
 
 interface Asset {
@@ -43,6 +43,22 @@ export const History: React.FC = () => {
     const { user } = useAuth();
     const [history, setHistory] = useState<Reservation[]>([]);
     const [loading, setLoading] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
+
+    const handleCancel = async (id: number) => {
+        if (!window.confirm('Apakah Anda yakin ingin membatalkan pengajuan reservasi ini?')) return;
+
+        try {
+            setSubmitting(true);
+            await axios.post(`/reservations/${id}/cancel`);
+            toast.success('Reservasi berhasil dibatalkan.');
+            fetchHistory();
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || 'Gagal membatalkan reservasi.');
+        } finally {
+            setSubmitting(false);
+        }
+    };
 
     const fetchHistory = async () => {
         try {
@@ -108,7 +124,18 @@ export const History: React.FC = () => {
         {
             key: 'purpose',
             header: 'Agenda / Keperluan',
-            render: (res: Reservation) => <span className="truncate max-w-[150px] font-semibold text-xs text-slate-500 block" title={res.purpose}>{res.purpose}</span>
+            render: (res: Reservation) => (
+                <div className="flex flex-col">
+                    <span className="truncate max-w-[160px] font-semibold text-xs text-slate-700 dark:text-slate-300 block" title={res.purpose}>
+                        {res.purpose}
+                    </span>
+                    {res.driver_name && (
+                        <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                            Driver: {res.driver_name}
+                        </span>
+                    )}
+                </div>
+            )
         },
         {
             key: 'status',
@@ -123,6 +150,28 @@ export const History: React.FC = () => {
                     )}
                 </div>
             )
+        },
+        {
+            key: 'actions',
+            header: 'Aksi',
+            sortable: false,
+            render: (res: Reservation) => {
+                const canCancel = ['pending', 'approved', 'reserved'].includes(res.status);
+                if (canCancel) {
+                    return (
+                        <Button
+                            variant="danger"
+                            size="sm"
+                            className="rounded-lg px-2.5 py-1 text-[10px] font-extrabold bg-red-600 hover:bg-red-700 border-none shrink-0"
+                            onClick={() => handleCancel(res.id)}
+                            disabled={submitting}
+                        >
+                            Batalkan
+                        </Button>
+                    );
+                }
+                return <span className="text-[10px] text-slate-400 font-semibold">-</span>;
+            }
         }
     ];
 

@@ -193,10 +193,10 @@ class DashboardController extends Controller
                 ->map(function ($res) {
                     return [
                         'id' => $res->id,
-                        'employee_name' => $res->user->name,
-                        'division' => $res->user->division->name ?? '-',
-                        'asset_name' => $res->asset->name,
-                        'asset_category' => $res->asset->category->name,
+                        'employee_name' => $res->user?->name ?? 'Pengguna',
+                        'division' => $res->user?->division?->name ?? '-',
+                        'asset_name' => $res->asset?->name ?? 'Aset Kantor',
+                        'asset_category' => $res->asset?->category?->name ?? 'Umum',
                         'date' => Carbon::parse($res->start_date)->format('d M Y'),
                         'time' => Carbon::parse($res->start_date)->format('H:i') . ' - ' . Carbon::parse($res->end_date)->format('H:i') . ' WIB',
                         'status' => $res->status,
@@ -212,8 +212,8 @@ class DashboardController extends Controller
                     return [
                         'id' => $res->id,
                         'time' => Carbon::parse($res->start_date)->format('H:i'),
-                        'asset_name' => $res->asset->name,
-                        'division' => $res->user->division->name ?? '-',
+                        'asset_name' => $res->asset?->name ?? 'Aset Kantor',
+                        'division' => $res->user?->division?->name ?? '-',
                         'status' => $res->status
                     ];
                 });
@@ -256,8 +256,8 @@ class DashboardController extends Controller
                 ->map(function ($res) {
                     return [
                         'id' => $res->id,
-                        'asset_name' => $res->asset->name,
-                        'category' => $res->asset->category->name,
+                        'asset_name' => $res->asset?->name ?? 'Aset Kantor',
+                        'category' => $res->asset?->category?->name ?? 'Umum',
                         'start_date' => Carbon::parse($res->start_date)->format('d M Y'),
                         'time' => Carbon::parse($res->start_date)->format('H:i') . ' - ' . Carbon::parse($res->end_date)->format('H:i') . ' WIB',
                         'status' => $res->status,
@@ -275,7 +275,7 @@ class DashboardController extends Controller
                 ->map(function ($res) {
                     return [
                         'id' => $res->id,
-                        'asset_name' => $res->asset->name,
+                        'asset_name' => $res->asset?->name ?? 'Aset Kantor',
                         'date' => Carbon::parse($res->start_date)->format('d M Y'),
                         'time' => Carbon::parse($res->start_date)->format('H:i') . ' - ' . Carbon::parse($res->end_date)->format('H:i') . ' WIB',
                         'status' => $res->status
@@ -290,7 +290,7 @@ class DashboardController extends Controller
                     return [
                         'id' => $asset->id,
                         'name' => $asset->name,
-                        'category' => $asset->category->name,
+                        'category' => $asset->category?->name ?? 'Umum',
                         'location' => $asset->location,
                         'condition' => $asset->condition
                     ];

@@ -47,6 +47,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const login = async (identifier: string, password: string): Promise<User> => {
         try {
+            setLoading(true);
             const response = await axios.post('/login', { identifier, password });
             const { access_token, user: loggedUser } = response.data;
             
@@ -54,8 +55,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
             setToken(access_token);
             setUser(loggedUser);
+            setLoading(false);
             return loggedUser;
         } catch (error: any) {
+            setLoading(false);
             const message = error.response?.data?.message || 'Login gagal. Periksa koneksi Anda.';
             throw new Error(message);
         }

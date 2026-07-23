@@ -48,8 +48,8 @@ class ReservationService
         $data['status'] = 'pending';
         $reservation = $this->reservationRepo->create($data);
 
-        // Notify Validators
-        $validators = User::where('role', 'validator')->get();
+        // Notify Validators and Super Admins
+        $validators = User::whereIn('role', ['validator', 'super_admin'])->get();
         foreach ($validators as $val) {
             Notification::create([
                 'user_id' => $val->id,
@@ -65,7 +65,7 @@ class ReservationService
         return $reservation;
     }
 
-    public function approve($id, $validatorId)
+    public function approve($id, $validatorId, $driverName = null)
     {
         $reservation = $this->reservationRepo->find($id);
 
@@ -89,24 +89,45 @@ class ReservationService
             throw new Exception('Gagal menyetujui. Terdapat bentrok jadwal dengan reservasi lain yang baru disetujui.');
         }
 
-        $reservation->status = 'approved';
+        if ($driverName) {
+            $reservation->driver_required = true;
+            $reservation->driver_name = trim($driverName);
+        }
+
+        $now = now();
+        $driverDetails = $reservation->driver_name ? " Driver yang ditugaskan: {$reservation->driver_name}." : "";
+
+        if ($now >= $reservation->start_date && $now < $reservation->end_date) {
+            $reservation->status = 'in_use';
+            $assetStatus = 'in_use';
+            $notificationTitle = 'Aset Sedang Digunakan';
+            $notificationMessage = "Reservasi Anda untuk {$reservation->asset->name} telah disetujui{$driverDetails} dan saat ini sedang digunakan.";
+        } else {
+            $reservation->status = 'approved';
+            $assetStatus = 'reserved';
+            $notificationTitle = 'Reservasi Disetujui';
+            $notificationMessage = "Reservasi Anda untuk {$reservation->asset->name} pada tanggal " . Carbon::parse($reservation->start_date)->format('d M Y') . " telah disetujui.{$driverDetails}";
+        }
+
         $reservation->save();
 
         // Update asset status
         $asset = $reservation->asset;
-        $asset->status = 'reserved';
-        $asset->save();
+        if ($asset) {
+            $asset->status = $assetStatus;
+            $asset->save();
+        }
 
         // Notify applicant
         Notification::create([
             'user_id' => $reservation->user_id,
-            'title' => 'Reservasi Disetujui',
-            'message' => "Reservasi Anda untuk {$asset->name} pada tanggal " . Carbon::parse($reservation->start_date)->format('d M Y') . " telah disetujui.",
+            'title' => $notificationTitle,
+            'message' => $notificationMessage,
             'type' => 'approval',
             'is_read' => false,
         ]);
 
-        AuditLogService::log('approve_reservation', "Menyetujui reservasi ID: {$reservation->id} untuk {$asset->name}", $validatorId);
+        AuditLogService::log('approve_reservation', "Menyetujui reservasi ID: {$reservation->id} untuk " . ($asset->name ?? 'Aset') . ($reservation->driver_name ? " dengan Driver: {$reservation->driver_name}" : ""), $validatorId);
 
         return $reservation;
     }
@@ -221,5 +242,26 @@ class ReservationService
         AuditLogService::log('cancel_reservation', "Membatalkan reservasi ID: {$reservation->id} untuk {$asset->name}", $userId);
 
         return $reservation;
+    }
+
+    public function deleteReservation($id, $actorId)
+    {
+        $reservation = $this->reservationRepo->find($id);
+
+        if (!$reservation) {
+            throw new Exception('Reservasi tidak ditemukan.');
+        }
+
+        $asset = $reservation->asset;
+        if ($asset && in_array($reservation->status, ['pending', 'approved', 'reserved', 'in_use'])) {
+            $asset->status = 'available';
+            $asset->save();
+        }
+
+        $this->reservationRepo->delete($id);
+
+        AuditLogService::log('delete_reservation', "Menghapus paksa reservasi ID: {$id} untuk " . ($asset->name ?? 'Aset'), $actorId);
+
+        return true;
     }
 }

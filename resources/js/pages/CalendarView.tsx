@@ -21,6 +21,7 @@ interface EventDetail {
         division: string;
         purpose: string;
         status: string;
+        driver_name?: string | null;
         notes: string | null;
     };
 }
@@ -188,6 +189,16 @@ export const CalendarView: React.FC = () => {
                                     </span>
                                 </div>
                             </div>
+
+                            {selectedEvent.extendedProps.driver_name && (
+                                <div className="flex items-start gap-2.5 sm:col-span-2">
+                                    <User className="w-4.5 h-4.5 text-emerald-600 shrink-0 mt-0.5" />
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] text-slate-400 font-medium">Driver Ditugaskan</span>
+                                        <span className="text-emerald-700 dark:text-emerald-400 font-bold">{selectedEvent.extendedProps.driver_name}</span>
+                                    </div>
+                                </div>
+                            )}
 
                             <div className="flex items-start gap-2.5 sm:col-span-2">
                                 <FileText className="w-4.5 h-4.5 text-slate-400 shrink-0 mt-0.5" />

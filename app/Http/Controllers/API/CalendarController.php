@@ -50,6 +50,7 @@ class CalendarController extends Controller
                     'division' => $res->user->division->name ?? '-',
                     'purpose' => $res->purpose,
                     'status' => $res->status,
+                    'driver_name' => $res->driver_name,
                     'notes' => $res->notes,
                 ]
             ];

@@ -1,8 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Button, Input, toast } from '../components/UI';
-import { Lock, User as UserIcon, Eye, EyeOff, ShieldCheck, Sun, Moon, Info, ArrowLeft } from 'lucide-react';
+import { Button, Input, Dialog, toast } from '../components/UI';
+import { 
+    Lock, 
+    User as UserIcon, 
+    Eye, 
+    EyeOff, 
+    Sun, 
+    Moon, 
+    Info, 
+    ArrowRight, 
+    Play, 
+    X,
+    Building,
+    CheckCircle2,
+    Sparkles
+} from 'lucide-react';
 
 export const Login: React.FC = () => {
     const { login } = useAuth();
@@ -12,13 +26,43 @@ export const Login: React.FC = () => {
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [showAbout, setShowAbout] = useState(false);
+    
+    // Modal states
+    const [showAboutModal, setShowAboutModal] = useState(false);
+    const [showVideoModal, setShowVideoModal] = useState(false);
+    
+    // Active slide index for left banner
+    const [activeSlide, setActiveSlide] = useState(0);
+
     const [theme, setTheme] = useState<'light' | 'dark'>(
         (localStorage.getItem('ojk_theme') as 'light' | 'dark') || 'light'
     );
 
-    // Toggle Theme
-    React.useEffect(() => {
+    const slides = [
+        {
+            title: "Sistem Manajemen Aset & Reservasi",
+            subtitle: "Portal layanan digital internal Kantor OJK Regional Jawa Barat."
+        },
+        {
+            title: "Digitalisasi Tata Kelola Facility Office",
+            subtitle: "Kemudahan pengajuan ruang rapat, kendaraan dinas, dan inventaris operasional."
+        },
+        {
+            title: "Layanan Efisien, Transparan & Terintegrasi",
+            subtitle: "Mendukung kelancaran operasional pengawasan sektor jasa keuangan Jawa Barat."
+        }
+    ];
+
+    // Slide auto play
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setActiveSlide(prev => (prev + 1) % slides.length);
+        }, 5000);
+        return () => clearInterval(interval);
+    }, [slides.length]);
+
+    // Manage Dark Mode
+    useEffect(() => {
         if (theme === 'dark') {
             document.documentElement.classList.add('dark');
         } else {
@@ -30,7 +74,7 @@ export const Login: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!identifier || !password) {
-            toast.error('Silakan isi NIP/Email dan Password.');
+            toast.error('Silakan masukkan NIP/ID Pengguna dan Password.');
             return;
         }
 
@@ -40,267 +84,386 @@ export const Login: React.FC = () => {
             toast.success(`Selamat datang kembali, ${user.name}!`);
             navigate('/dashboard');
         } catch (error: any) {
-            toast.error(error.message || 'Login gagal.');
+            toast.error(error.message || 'Login gagal. Periksa kembali NIP/Email dan Password Anda.');
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div className="min-h-screen flex flex-col lg:flex-row bg-slate-50 dark:bg-[#090D16] transition-colors duration-300 font-sans relative overflow-hidden">
+        <div className="min-h-screen w-full bg-[#F4F6F9] dark:bg-[#090D16] transition-colors duration-300 font-sans flex flex-col justify-between items-center p-4 sm:p-6 lg:p-8 relative overflow-x-hidden select-none">
             
-            {/* Custom Interactive Styles for floating orbs */}
-            <style dangerouslySetInnerHTML={{__html: `
-                .animate-float-1 {
-                    animation: float-1 16s infinite ease-in-out;
-                }
-                .animate-float-2 {
-                    animation: float-2 20s infinite ease-in-out;
-                }
-                .animate-float-3 {
-                    animation: float-3 14s infinite ease-in-out;
-                }
-                .animate-bg-gradient {
-                    background-size: 200% 200%;
-                    animation: gradient-shift 12s infinite ease-in-out;
-                }
-                @keyframes float-1 {
-                    0% { transform: translate(0px, 0px) scale(1); }
-                    33% { transform: translate(35px, -50px) scale(1.12); }
-                    66% { transform: translate(-25px, 25px) scale(0.92); }
-                    100% { transform: translate(0px, 0px) scale(1); }
-                }
-                @keyframes float-2 {
-                    0% { transform: translate(0px, 0px) scale(1); }
-                    33% { transform: translate(-45px, 35px) scale(0.88); }
-                    66% { transform: translate(25px, -25px) scale(1.08); }
-                    100% { transform: translate(0px, 0px) scale(1); }
-                }
-                @keyframes float-3 {
-                    0% { transform: translate(0px, 0px) scale(1); }
-                    50% { transform: translate(25px, 45px) scale(1.04); }
-                    100% { transform: translate(0px, 0px) scale(1); }
-                }
-                @keyframes gradient-shift {
-                    0% { background-position: 0% 50%; }
-                    50% { background-position: 100% 50%; }
-                    100% { background-position: 0% 50%; }
-                }
-            `}} />
+            {/* Background Decorative Patterns (Top Right Dots Matrix & Bottom Right Red Curve) */}
+            <div className="absolute top-6 right-6 pointer-events-none opacity-20 dark:opacity-10 z-0">
+                <svg width="140" height="140" viewBox="0 0 100 100" fill="none">
+                    <pattern id="dot-matrix" x="0" y="0" width="12" height="12" patternUnits="userSpaceOnUse">
+                        <circle cx="2" cy="2" r="1.5" className="fill-slate-700 dark:fill-slate-300" />
+                    </pattern>
+                    <rect width="100" height="100" fill="url(#dot-matrix)" />
+                </svg>
+            </div>
 
-            {/* Theme Switcher (Absolute Top Left of page to keep it clean) */}
-            <div className="absolute top-6 left-6 z-20">
+            <div className="absolute bottom-6 left-6 pointer-events-none opacity-20 dark:opacity-10 z-0 hidden sm:block">
+                <svg width="120" height="120" viewBox="0 0 100 100" fill="none">
+                    <rect width="100" height="100" fill="url(#dot-matrix)" />
+                </svg>
+            </div>
+
+            {/* Bottom-right red accent wave decorative background */}
+            <div className="absolute -bottom-24 -right-24 w-[420px] h-[420px] rounded-full bg-red-600/10 dark:bg-red-900/10 blur-3xl pointer-events-none z-0"></div>
+            <div className="absolute -bottom-16 -right-16 w-[280px] h-[280px] rounded-full bg-red-600/20 pointer-events-none z-0 hidden lg:block"></div>
+
+            {/* Top Bar Header Navigation */}
+            <div className="w-full max-w-[1140px] flex justify-between items-center z-10 mb-3 sm:mb-4">
+                <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 tracking-wider uppercase">
+                        Otoritas Jasa Keuangan &bull; Regional Jawa Barat
+                    </span>
+                </div>
+
+                {/* Theme Toggle Button */}
                 <button 
                     onClick={() => setTheme(prev => prev === 'light' ? 'dark' : 'light')}
-                    className="p-2.5 bg-white/80 dark:bg-slate-900/80 hover:bg-slate-100 dark:hover:bg-slate-855 text-slate-600 hover:text-slate-800 dark:text-slate-350 dark:hover:text-white border border-slate-200/60 dark:border-slate-800/60 rounded-xl transition-all cursor-pointer shadow-sm backdrop-blur-md"
+                    className="p-2.5 bg-white/80 dark:bg-slate-900/80 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 rounded-xl transition-all cursor-pointer shadow-xs backdrop-blur-md flex items-center gap-2 text-xs font-semibold"
+                    title="Ubah Tema"
                 >
-                    {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4 text-yellow-400" />}
+                    {theme === 'light' ? (
+                        <>
+                            <Moon className="w-4 h-4 text-slate-700" />
+                            <span className="hidden sm:inline">Gelap</span>
+                        </>
+                    ) : (
+                        <>
+                            <Sun className="w-4 h-4 text-amber-400" />
+                            <span className="hidden sm:inline">Terang</span>
+                        </>
+                    )}
                 </button>
             </div>
 
-            {/* Left Column: Card Form Panel (50% Width, Full Height, Animated Gradient background) */}
-            <div className="w-full lg:w-1/2 min-h-screen lg:h-screen flex items-center justify-center p-4 sm:p-12 border-r border-slate-200/60 dark:border-slate-800/60 relative overflow-y-auto lg:overflow-hidden animate-bg-gradient bg-gradient-to-tr from-slate-50 via-red-500/5 to-slate-100 dark:from-[#090D16] dark:via-red-950/10 dark:to-slate-900">
+            {/* Main Login Card Container (Landscape Double Panel) */}
+            <div className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-200/80 dark:border-slate-800 shadow-2xl p-4 sm:p-6 lg:p-8 max-w-[1280px] w-full grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center relative z-10 my-auto">
                 
-                {/* Floating Interactive Glowing Orbs in the background */}
-                <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden select-none">
-                    {/* Orb 1: OJK Red */}
-                    <div className="absolute top-[15%] left-[10%] w-[320px] h-[320px] rounded-full bg-red-600/10 dark:bg-red-700/10 blur-3xl animate-float-1"></div>
-                    {/* Orb 2: OJK Gold/Amber */}
-                    <div className="absolute bottom-[15%] right-[10%] w-[340px] h-[340px] rounded-full bg-amber-500/5 dark:bg-amber-600/5 blur-3xl animate-float-2"></div>
-                    {/* Orb 3: Soft Gray / Slate */}
-                    <div className="absolute top-[40%] right-[20%] w-[250px] h-[250px] rounded-full bg-slate-400/10 dark:bg-red-950/10 blur-3xl animate-float-3"></div>
+                {/* LEFT PANEL: Landscape Media Video Showcase (7 Columns) */}
+                <div className="lg:col-span-7 flex flex-col space-y-4">
+                    
+                    {/* Header Website Name Above Video Frame */}
+                    <div className="flex flex-col space-y-0.5 px-1">
+                        <h1 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white tracking-tight leading-tight flex items-center gap-2">
+                            <span className="w-2.5 h-2.5 rounded-full bg-red-600 animate-pulse inline-block shrink-0"></span>
+                            Sistem Manajemen Aset & Reservasi
+                        </h1>
+                        <span className="text-[11px] font-extrabold text-slate-400 dark:text-slate-400 tracking-widest uppercase pl-4">
+                            Kantor Regional Jawa Barat
+                        </span>
+                    </div>
+
+                    {/* Enlarged Video Container (100% Clean Video View, NO text overlay) */}
+                    <div className="relative rounded-[26px] overflow-hidden aspect-[16/10] sm:aspect-video w-full min-h-[400px] sm:min-h-[460px] lg:min-h-[500px] shadow-xl border border-slate-200/60 dark:border-slate-800 group select-none">
+                        
+                        {/* Background Backdrop Video (Autoplay & Looping: vidio ojk.mp4) */}
+                        <video 
+                            autoPlay 
+                            loop 
+                            muted 
+                            playsInline 
+                            poster="/Kantor OJK 2.jpeg"
+                            className="absolute inset-0 w-full h-full object-cover object-center transform group-hover:scale-105 transition-transform duration-1000 ease-out"
+                        >
+                            <source src="/vidio ojk.mp4" type="video/mp4" />
+                            <source src="/video-bg.mp4" type="video/mp4" />
+                            <img 
+                                src="/Kantor OJK 2.jpeg" 
+                                alt="Kantor Regional OJK Jawa Barat" 
+                                className="w-full h-full object-cover object-center" 
+                            />
+                        </video>
+
+                    </div>
+
+                    {/* Title & Subtitle BELOW Video Frame (Clean & Non-Obstructive) */}
+                    <div className="px-1 space-y-2 pt-1">
+                        <div className="space-y-1 transition-all duration-500">
+                            <h3 className="text-base sm:text-lg font-black text-slate-850 dark:text-white tracking-tight leading-snug">
+                                {slides[activeSlide].title}
+                            </h3>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold leading-relaxed">
+                                {slides[activeSlide].subtitle}
+                            </p>
+                        </div>
+
+                        {/* Carousel Indicators (Dots) */}
+                        <div className="flex items-center space-x-2 pt-1">
+                            {slides.map((_, idx) => (
+                                <button
+                                    key={idx}
+                                    type="button"
+                                    onClick={() => setActiveSlide(idx)}
+                                    className={`transition-all duration-300 cursor-pointer ${
+                                        activeSlide === idx 
+                                            ? 'w-7 h-2 bg-red-600 rounded-full' 
+                                            : 'w-2 h-2 bg-slate-300 dark:bg-slate-700 hover:bg-slate-400 rounded-full'
+                                    }`}
+                                    aria-label={`Slide ${idx + 1}`}
+                                />
+                            ))}
+                        </div>
+                    </div>
+
                 </div>
 
-                {/* Staggered Card Wrapper */}
-                <div className="relative w-full max-w-[540px] min-h-[520px] sm:min-h-[580px] flex items-stretch z-10">
+                {/* RIGHT PANEL: System Authentication Form (5 Columns) */}
+                <div className="lg:col-span-5 flex flex-col justify-between py-2 sm:py-4 px-2 sm:px-4 space-y-6">
                     
-                    {/* Login Card */}
-                    <div 
-                        className={`bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-3xl p-5 sm:p-8 shadow-2xl w-full flex flex-col justify-between transition-all duration-500 ease-in-out ${showAbout ? 'opacity-0 -translate-x-12 pointer-events-none absolute' : 'opacity-100 translate-x-0'}`}
-                    >
-                        {/* Brand Header */}
-                        <div className="flex flex-col items-center justify-center space-y-3 mb-6">
-                            <img src="/logo ojk.png" alt="Logo OJK" className="h-16 w-auto object-contain" />
-                            <div className="text-center space-y-1">
-                                <h2 className="text-sm font-extrabold text-slate-850 dark:text-white tracking-tight leading-snug">
-                                    Sistem Manajemen Aset & Reservasi
+                    <div className="space-y-6">
+                        
+                        {/* Red OJK Emblem Logo Header */}
+                        <div className="space-y-3">
+                            <div className="flex items-center gap-3">
+                                <img src="/logo ojk.png" alt="Logo OJK" className="h-12 sm:h-14 w-auto object-contain" />
+                            </div>
+                            
+                            <div className="space-y-1 pt-2">
+                                <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                                    Otentikasi Sistem
                                 </h2>
-                                <p className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none">
-                                    Kantor Regional Jawa Barat
+                                <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
+                                    Masukkan kredensial Anda untuk mengakses portal.
                                 </p>
                             </div>
                         </div>
 
-                        {/* Form */}
-                        <form onSubmit={handleSubmit} className="space-y-4">
+                        {/* Login Form */}
+                        <form onSubmit={handleSubmit} className="space-y-4 pt-1">
+                            
+                            {/* ID Pengguna / NIP */}
                             <div className="relative">
                                 <Input
-                                    label="NIP atau Email"
-                                    placeholder="Masukkan NIP atau Email OJK Anda"
+                                    label="ID Pengguna / NIP"
+                                    placeholder="Masukkan ID Pengguna atau NIP"
                                     value={identifier}
                                     onChange={(e) => setIdentifier(e.target.value)}
-                                    className="pl-11 text-xs"
+                                    className="pl-11 text-xs sm:text-sm py-3"
                                     required
                                 />
-                                <UserIcon className="absolute bottom-3.5 left-4 w-4 h-4 text-slate-400" />
+                                <UserIcon className="absolute bottom-3.5 left-4 w-4.5 h-4.5 text-slate-400" />
                             </div>
 
+                            {/* Kata Sandi */}
                             <div className="relative">
                                 <Input
                                     label="Kata Sandi"
                                     type={showPassword ? 'text' : 'password'}
-                                    placeholder="••••••••"
+                                    placeholder="Masukkan kata sandi"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="pl-11 pr-11 text-xs"
+                                    className="pl-11 pr-11 text-xs sm:text-sm py-3"
                                     required
                                 />
-                                <Lock className="absolute bottom-3.5 left-4 w-4 h-4 text-slate-400" />
+                                <Lock className="absolute bottom-3.5 left-4 w-4.5 h-4.5 text-slate-400" />
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute bottom-3.5 right-4 text-slate-400 hover:text-slate-655 cursor-pointer"
+                                    className="absolute bottom-3.5 right-4 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer"
+                                    title={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
                                 >
-                                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                    {showPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
                                 </button>
                             </div>
 
+                            {/* Checkbox Ingat Saya & Lupa Kata Sandi */}
                             <div className="flex items-center justify-between text-xs pt-1">
-                                <label className="flex items-center text-slate-600 dark:text-slate-400 font-semibold cursor-pointer select-none">
-                                    <input type="checkbox" className="mr-2 rounded border-slate-300 dark:border-slate-700 text-ojk-red focus:ring-ojk-red" />
+                                <label className="flex items-center text-slate-700 dark:text-slate-300 font-semibold cursor-pointer select-none">
+                                    <input 
+                                        type="checkbox" 
+                                        className="mr-2.5 rounded border-slate-300 dark:border-slate-700 text-ojk-red focus:ring-ojk-red w-4 h-4" 
+                                    />
                                     Ingat saya
                                 </label>
                                 <a 
                                     href="#forgot" 
-                                    className="text-ojk-red dark:text-red-400 hover:underline font-bold" 
-                                    onClick={(e) => { e.preventDefault(); toast.info('Silakan hubungi Super Admin Divisi Umum untuk reset password.'); }}
+                                    className="text-[#C8102E] dark:text-red-400 hover:underline font-bold" 
+                                    onClick={(e) => { 
+                                        e.preventDefault(); 
+                                        toast.info('Silakan hubungi Super Admin Divisi Umum OJK Jawa Barat untuk bantuan reset password.'); 
+                                    }}
                                 >
-                                    Lupa sandi?
+                                    Lupa kata sandi?
                                 </a>
                             </div>
 
+                            {/* Primary Red Action Button: Masuk ke Portal */}
                             <Button
                                 type="submit"
-                                className="w-full py-3.5 font-bold rounded-xl text-xs mt-2"
+                                className="w-full py-3.5 font-extrabold rounded-xl text-sm bg-[#A60C25] hover:bg-[#8B091E] text-white shadow-md active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer mt-2"
                                 disabled={loading}
                             >
                                 {loading ? (
                                     <div className="flex items-center justify-center gap-2">
-                                        <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                                        <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
                                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                                         </svg>
                                         <span>Memproses...</span>
                                     </div>
-                                ) : 'Masuk Portal'}
+                                ) : (
+                                    <>
+                                        <span>Masuk ke Portal</span>
+                                        <ArrowRight className="w-4.5 h-4.5" />
+                                    </>
+                                )}
                             </Button>
                         </form>
 
-                        {/* About Us trigger */}
-                        <div className="flex justify-center pt-5 border-t border-slate-100 dark:border-slate-800/80 mt-5">
-                            <button
-                                type="button"
-                                onClick={() => setShowAbout(true)}
-                                className="text-xs text-slate-500 hover:text-ojk-red dark:text-slate-400 dark:hover:text-red-400 font-bold hover:underline cursor-pointer flex items-center gap-1.5 focus:outline-none"
-                            >
-                                <Info className="w-4 h-4 shrink-0" /> Tentang Aplikasi & Kantor (About Us)
-                            </button>
+                        {/* Divider Line */}
+                        <div className="relative flex py-2 items-center">
+                            <div className="flex-grow border-t border-slate-200 dark:border-slate-800"></div>
+                            <span className="flex-shrink mx-4 text-[11px] text-slate-400 font-semibold uppercase tracking-wider">
+                                atau
+                            </span>
+                            <div className="flex-grow border-t border-slate-200 dark:border-slate-800"></div>
                         </div>
+
+                        {/* Replaced SSO button with About Us Button */}
+                        <button
+                            type="button"
+                            onClick={() => setShowAboutModal(true)}
+                            className="w-full py-3 px-4 bg-slate-50 hover:bg-slate-100 dark:bg-slate-850 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-750 font-bold rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all cursor-pointer shadow-2xs hover:border-slate-300"
+                        >
+                            <Info className="w-4.5 h-4.5 text-[#C8102E] shrink-0" />
+                            <span>Tentang Aplikasi & Tim Pengembang (About Us)</span>
+                        </button>
+
                     </div>
 
-                    {/* About Us Card */}
-                    <div 
-                        className={`bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-3xl p-5 sm:p-8 shadow-2xl w-full flex flex-col justify-between transition-all duration-500 ease-in-out ${!showAbout ? 'opacity-0 translate-x-12 pointer-events-none absolute' : 'opacity-100 translate-x-0'}`}
-                    >
-                        <div className="space-y-5">
-                            {/* Logo */}
-                            <div className="flex flex-col items-center justify-center space-y-3 pb-3 border-b border-slate-100 dark:border-slate-800/85">
-                                <img src="/logo ojk.png" alt="Logo OJK" className="h-16 w-auto object-contain" />
-                                <span className="text-[10px] font-bold text-slate-450 dark:text-slate-500 uppercase tracking-widest">
-                                    Kantor Regional Jawa Barat
-                                </span>
-                            </div>
 
-                            {/* About Content */}
-                            <div className="space-y-3 text-xs font-semibold text-slate-655 dark:text-slate-350 leading-relaxed text-justify">
-                                <p>
-                                    <strong>Sistem Reservasi Aset</strong> adalah portal digital internal Kantor OJK Regional Jawa Barat untuk mempermudah peminjaman ruang rapat, kendaraan dinas, laptop, dan proyektor dinas.
+
+                </div>
+
+            </div>
+
+            {/* Footer Copyright */}
+            <div className="z-10 text-center py-2">
+                <p className="text-[11px] font-semibold text-slate-400 dark:text-slate-500">
+                    &copy; 2026 Otoritas Jasa Keuangan. All rights reserved.
+                </p>
+            </div>
+
+            {/* Video Modal Player Dialog */}
+            <Dialog 
+                isOpen={showVideoModal} 
+                onClose={() => setShowVideoModal(false)}
+                title="Profil Gedung Kantor Regional OJK Jawa Barat"
+                size="lg"
+            >
+                <div className="space-y-4">
+                    <div className="relative rounded-2xl overflow-hidden bg-black aspect-video flex items-center justify-center">
+                        <img 
+                            src="/Kantor OJK.jpeg" 
+                            alt="Kantor OJK Video Preview" 
+                            className="w-full h-full object-cover opacity-80" 
+                        />
+                        <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6 bg-black/40 backdrop-blur-xs space-y-3">
+                            <Building className="w-12 h-12 text-white/90" />
+                            <div className="space-y-1">
+                                <h4 className="text-base font-bold text-white">Kantor Otoritas Jasa Keuangan Regional Jawa Barat</h4>
+                                <p className="text-xs text-slate-300 max-w-md">
+                                    Jl. Ir. H. Juanda No. 152, Bandung, Jawa Barat. Portal Sistem Manajemen Aset & Reservasi Terintegrasi.
                                 </p>
                             </div>
+                        </div>
+                    </div>
+                    <div className="flex justify-end">
+                        <Button variant="secondary" onClick={() => setShowVideoModal(false)}>
+                            Tutup Preview
+                        </Button>
+                    </div>
+                </div>
+            </Dialog>
 
-                            {/* Developer Team Section */}
-                            <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800/85">
-                                <h4 className="text-[11px] font-extrabold text-slate-800 dark:text-white uppercase tracking-wider text-center">
-                                    Tim Pengembang Aplikasi
-                                </h4>
-                                
-                                <div className="grid grid-cols-3 gap-2 sm:gap-4">
-                                    {/* UNY */}
-                                    <div className="flex flex-col items-center text-center bg-slate-50/50 dark:bg-slate-900/40 p-2 sm:p-3 rounded-2xl border border-slate-100/60 dark:border-slate-800/50 h-full justify-between">
-                                        <div className="flex flex-col items-center space-y-1 sm:space-y-2">
-                                            <img src="/uny logo.png" alt="UNY Logo" className="w-8 h-8 sm:w-11 sm:h-11 object-contain" />
-                                            <p className="text-[8.5px] sm:text-[10px] font-extrabold text-slate-800 dark:text-white leading-tight">UNY</p>
-                                        </div>
-                                        <div className="space-y-1 mt-2.5 w-full border-t border-slate-200/40 dark:border-slate-800/40 pt-2 flex flex-col items-center">
-                                            <p className="text-[8px] sm:text-[10px] font-bold text-slate-600 dark:text-slate-400 leading-tight">Daffa Taufiqurahman</p>
-                                            <p className="text-[8px] sm:text-[10px] font-bold text-slate-600 dark:text-slate-400 leading-tight">Naufal Hanif R.</p>
-                                            <p className="text-[8px] sm:text-[10px] font-bold text-slate-600 dark:text-slate-400 leading-tight">Angga Baihaki Y.</p>
-                                        </div>
-                                    </div>
+            {/* About Us & Developer Team Dialog */}
+            <Dialog
+                isOpen={showAboutModal}
+                onClose={() => setShowAboutModal(false)}
+                title="Tentang Aplikasi & Tim Pengembang"
+                size="md"
+            >
+                <div className="space-y-6">
+                    
+                    {/* Header Logo */}
+                    <div className="flex flex-col items-center justify-center text-center space-y-2 pb-4 border-b border-slate-100 dark:border-slate-800">
+                        <img src="/logo ojk.png" alt="Logo OJK" className="h-14 w-auto object-contain" />
+                        <h3 className="text-sm font-extrabold text-slate-850 dark:text-white tracking-tight">
+                            Sistem Manajemen Aset & Reservasi
+                        </h3>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                            Kantor Regional Jawa Barat
+                        </span>
+                    </div>
 
-                                    {/* ITB */}
-                                    <div className="flex flex-col items-center text-center bg-slate-50/50 dark:bg-slate-900/40 p-2 sm:p-3 rounded-2xl border border-slate-100/60 dark:border-slate-800/50 h-full justify-between">
-                                        <div className="flex flex-col items-center space-y-1 sm:space-y-2">
-                                            <img src="/itb logo.png" alt="ITB Logo" className="w-8 h-8 sm:w-11 sm:h-11 object-contain" />
-                                            <p className="text-[8.5px] sm:text-[10px] font-extrabold text-slate-800 dark:text-white leading-tight">ITB</p>
-                                        </div>
-                                        <div className="space-y-1 mt-2.5 w-full border-t border-slate-200/40 dark:border-slate-800/40 pt-2 flex flex-col items-center justify-start min-h-[44px] sm:min-h-[60px]">
-                                            <p className="text-[8.5px] sm:text-[10px] font-bold text-slate-600 dark:text-slate-400 leading-tight">Ratu Khansa</p>
-                                        </div>
-                                    </div>
+                    {/* App Description */}
+                    <div className="space-y-2 text-xs font-medium text-slate-650 dark:text-slate-350 leading-relaxed text-justify">
+                        <p>
+                            <strong>Sistem Manajemen Aset & Reservasi (SIMA-R)</strong> adalah platform manajemen internal berbasis web yang dirancang untuk mengotomatiskan proses pengajuan peminjaman ruang rapat, kendaraan dinas, dan fasilitas operasional kantor secara efisien, transparan, serta realtime.
+                        </p>
+                    </div>
 
-                                    {/* Telkom University */}
-                                    <div className="flex flex-col items-center text-center bg-slate-50/50 dark:bg-slate-900/40 p-2 sm:p-3 rounded-2xl border border-slate-100/60 dark:border-slate-800/50 h-full justify-between">
-                                        <div className="flex flex-col items-center space-y-1 sm:space-y-2">
-                                            <img src="/telkom logo.png" alt="Telkom Logo" className="w-8 h-8 sm:w-11 sm:h-11 object-contain" />
-                                            <p className="text-[8.5px] sm:text-[10px] font-extrabold text-slate-800 dark:text-white leading-tight">Telkom Univ</p>
-                                        </div>
-                                        <div className="space-y-1 mt-2.5 w-full border-t border-slate-200/40 dark:border-slate-800/40 pt-2 flex flex-col items-center justify-start min-h-[44px] sm:min-h-[60px]">
-                                            <p className="text-[8.5px] sm:text-[10px] font-bold text-slate-600 dark:text-slate-400 leading-tight">Bunga Nazwa S.</p>
-                                        </div>
-                                    </div>
+                    {/* Developer Team */}
+                    <div className="space-y-3 pt-2">
+                        <h4 className="text-[11px] font-extrabold text-slate-800 dark:text-white uppercase tracking-wider text-center flex items-center justify-center gap-1.5">
+                            <Sparkles className="w-4 h-4 text-ojk-red" />
+                            Tim Pengembang Aplikasi (Magang OJK Jawa Barat)
+                        </h4>
+
+                        <div className="grid grid-cols-3 gap-3">
+                            
+                            {/* UNY */}
+                            <div className="flex flex-col items-center text-center bg-slate-50 dark:bg-slate-850 p-3 rounded-2xl border border-slate-100 dark:border-slate-800 justify-between h-full">
+                                <div className="flex flex-col items-center space-y-1.5">
+                                    <img src="/uny logo.png" alt="UNY Logo" className="w-9 h-9 object-contain" />
+                                    <span className="text-[10px] font-extrabold text-slate-800 dark:text-white">UNY</span>
+                                </div>
+                                <div className="space-y-1 mt-2 w-full border-t border-slate-200/50 dark:border-slate-750 pt-2 text-[9px] font-bold text-slate-600 dark:text-slate-400">
+                                    <p>Daffa Taufiqurahman</p>
+                                    <p>Naufal Hanif R.</p>
+                                    <p>Angga Baihaki Y.</p>
                                 </div>
                             </div>
 
-                            {/* Action: Slide Back */}
-                            <Button
-                                type="button"
-                                onClick={() => setShowAbout(false)}
-                                className="w-full py-3 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5"
-                            >
-                                <ArrowLeft className="w-4 h-4 shrink-0" /> Kembali ke Login
-                            </Button>
+                            {/* ITB */}
+                            <div className="flex flex-col items-center text-center bg-slate-50 dark:bg-slate-850 p-3 rounded-2xl border border-slate-100 dark:border-slate-800 justify-between h-full">
+                                <div className="flex flex-col items-center space-y-1.5">
+                                    <img src="/itb logo.png" alt="ITB Logo" className="w-9 h-9 object-contain" />
+                                    <span className="text-[10px] font-extrabold text-slate-800 dark:text-white">ITB</span>
+                                </div>
+                                <div className="space-y-1 mt-2 w-full border-t border-slate-200/50 dark:border-slate-750 pt-2 text-[9px] font-bold text-slate-600 dark:text-slate-400">
+                                    <p>Ratu Khansa</p>
+                                </div>
+                            </div>
+
+                            {/* Telkom University */}
+                            <div className="flex flex-col items-center text-center bg-slate-50 dark:bg-slate-850 p-3 rounded-2xl border border-slate-100 dark:border-slate-800 justify-between h-full">
+                                <div className="flex flex-col items-center space-y-1.5">
+                                    <img src="/telkom logo.png" alt="Telkom Logo" className="w-9 h-9 object-contain" />
+                                    <span className="text-[10px] font-extrabold text-slate-800 dark:text-white">Telkom Univ</span>
+                                </div>
+                                <div className="space-y-1 mt-2 w-full border-t border-slate-200/50 dark:border-slate-750 pt-2 text-[9px] font-bold text-slate-600 dark:text-slate-400">
+                                    <p>Bunga Nazwa S.</p>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
-                </div>
 
-            </div>
+                    {/* Modal Footer Close Button */}
+                    <div className="flex justify-end pt-2 border-t border-slate-100 dark:border-slate-800">
+                        <Button variant="primary" onClick={() => setShowAboutModal(false)} className="px-5 py-2">
+                            Tutup
+                        </Button>
+                    </div>
 
-            {/* Right Column: Full-Height Clean Image Panel (50% Width, Full Height) */}
-            <div className="hidden lg:block lg:w-1/2 h-screen relative overflow-hidden bg-slate-900">
-                <img 
-                    src="/Kantor OJK 2.jpeg" 
-                    alt="Kantor Otoritas Jasa Keuangan Regional Jawa Barat" 
-                    className="w-full h-full object-cover object-center transform hover:scale-102 transition-transform duration-[10s] ease-out" 
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent pointer-events-none"></div>
-                
-                {/* Elegant floating watermark badge */}
-                <div className="absolute bottom-8 left-8 text-white flex items-center gap-3 drop-shadow-md bg-black/30 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/10">
-                    <span className="w-2.5 h-2.5 rounded-full bg-red-600 animate-pulse"></span>
-                    <span className="text-xs font-bold tracking-wide">Kantor OJK Regional Jawa Barat</span>
                 </div>
-            </div>
+            </Dialog>
 
         </div>
     );

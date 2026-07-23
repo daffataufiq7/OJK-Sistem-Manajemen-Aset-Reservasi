@@ -25,7 +25,10 @@ import {
     Car,
     Home as HomeIcon,
     Laptop,
-    Briefcase
+    Briefcase,
+    Building2,
+    Armchair,
+    Sparkles
 } from 'lucide-react';
 import { toast, ToastContainer, Button } from './UI';
 
@@ -35,18 +38,21 @@ export const Layout: React.FC = () => {
     const location = useLocation();
     
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [reservationsSubOpen, setReservationsSubOpen] = useState(true);
     const [theme, setTheme] = useState<'light' | 'dark'>(
         (localStorage.getItem('ojk_theme') as 'light' | 'dark') || 'light'
     );
     const [currentTime, setCurrentTime] = useState(new Date());
     
-    // Notifications State
+    // Notifications & Pending Approvals State
     const [notifications, setNotifications] = useState<any[]>([]);
+    const [pendingApprovalCount, setPendingApprovalCount] = useState(0);
     const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
     const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
     
     const notifRef = useRef<HTMLDivElement>(null);
     const profileRef = useRef<HTMLDivElement>(null);
+    const loadedNotifIdsRef = useRef<Set<number>>(new Set());
 
     // Dynamic Clock ticking
     useEffect(() => {
@@ -64,22 +70,50 @@ export const Layout: React.FC = () => {
         localStorage.setItem('ojk_theme', theme);
     }, [theme]);
 
-    // Fetch Notifications
-    const fetchNotifications = async () => {
+    // Fetch Notifications & Pending Approvals
+    const fetchData = async () => {
         try {
-            const response = await axios.get('/notifications');
-            setNotifications(response.data);
+            // 1. Fetch Notifications
+            const notifResponse = await axios.get('/notifications');
+            
+            // Check for new unread notifications to trigger real-time toast
+            if (loadedNotifIdsRef.current.size === 0) {
+                // Initial load: populate the ref
+                notifResponse.data.forEach((n: any) => loadedNotifIdsRef.current.add(n.id));
+            } else {
+                // Subsequent loads: toast new unread notifications
+                notifResponse.data.forEach((n: any) => {
+                    if (!loadedNotifIdsRef.current.has(n.id)) {
+                        loadedNotifIdsRef.current.add(n.id);
+                        if (!n.is_read) {
+                            toast.info(`${n.title}: ${n.message}`);
+                        }
+                    }
+                });
+            }
+            setNotifications(notifResponse.data);
+
+            // 2. Fetch Pending Approvals Count for Admin / Validator
+            if (user && ['super_admin', 'validator'].includes(user.role)) {
+                const approvalResponse = await axios.get('/reservations?status=pending');
+                setPendingApprovalCount(approvalResponse.data.length);
+            }
         } catch (error) {
-            console.error('Error fetching notifications', error);
+            console.error('Error fetching layout data', error);
         }
     };
 
     useEffect(() => {
-        fetchNotifications();
-        // Poll notifications every 30 seconds
-        const poll = setInterval(fetchNotifications, 30000);
-        return () => clearInterval(poll);
-    }, []);
+        let poll: any;
+        if (user) {
+            fetchData();
+            // Poll notifications and approvals every 10 seconds for real-time responsiveness
+            poll = setInterval(fetchData, 10000);
+        }
+        return () => {
+            if (poll) clearInterval(poll);
+        };
+    }, [user]);
 
     // Click outside handler
     useEffect(() => {
@@ -146,9 +180,22 @@ export const Layout: React.FC = () => {
             roles: ['super_admin']
         },
         {
-            label: 'Reservasi',
+            label: 'Reservasi Aset',
             path: '/reservations',
             icon: <PlusCircle className="w-5 h-5" />,
+            roles: ['super_admin', 'validator', 'pegawai'],
+            hasSub: true,
+            subItems: [
+                { label: 'Semua Reservasi', path: '/reservations', icon: <PlusCircle className="w-3.5 h-3.5" /> },
+                { label: 'Ruang Rapat', path: '/reservations?category=Ruangan', icon: <HomeIcon className="w-3.5 h-3.5" /> },
+                { label: 'Mobil Dinas', path: '/reservations?category=Kendaraan', icon: <Car className="w-3.5 h-3.5" /> },
+                { label: 'Elektronik & Inventaris', path: '/reservations?category=Elektronik', icon: <Laptop className="w-3.5 h-3.5" /> }
+            ]
+        },
+        {
+            label: 'Partnership',
+            path: '/partnership',
+            icon: <Building2 className="w-5 h-5 text-amber-500" />,
             roles: ['super_admin', 'validator', 'pegawai']
         },
         {
@@ -162,7 +209,7 @@ export const Layout: React.FC = () => {
             path: '/approvals',
             icon: <CheckSquare className="w-5 h-5" />,
             roles: ['super_admin', 'validator'],
-            badge: user?.role !== 'pegawai' ? unreadCount : 0 // Show count badge on approvals tab
+            badge: user?.role !== 'pegawai' ? pendingApprovalCount : 0 // Show count badge on approvals tab
         },
         {
             label: 'Riwayat',
@@ -174,6 +221,12 @@ export const Layout: React.FC = () => {
             label: 'Laporan',
             path: '/reports',
             icon: <FileBarChart2 className="w-5 h-5" />,
+            roles: ['super_admin', 'validator']
+        },
+        {
+            label: 'Report Driver',
+            path: '/driver-reports',
+            icon: <Car className="w-5 h-5" />,
             roles: ['super_admin', 'validator']
         },
         {
@@ -254,9 +307,46 @@ export const Layout: React.FC = () => {
                     </div>
 
                     {/* Navigation Items */}
-                    <nav className="p-4 space-y-1 overflow-y-auto max-h-[60vh] mt-4">
+                    <nav className="p-4 space-y-1 overflow-y-auto max-h-[62vh] mt-4">
                         {filteredMenu.map((item, index) => {
-                            const isActive = location.pathname === item.path;
+                            const isActive = location.pathname === item.path && !location.search;
+                            if (item.hasSub) {
+                                const isSubActive = location.pathname.startsWith('/reservations');
+                                return (
+                                    <div key={index} className="space-y-1">
+                                        <button 
+                                            onClick={() => setReservationsSubOpen(!reservationsSubOpen)}
+                                            className={`w-full flex items-center justify-between px-4 py-3 text-xs font-semibold rounded-xl transition-all duration-200 cursor-pointer ${isSubActive ? 'bg-red-50 dark:bg-red-950/40 text-ojk-red dark:text-red-400 font-bold' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-850'}`}
+                                        >
+                                            <div className="flex items-center gap-3.5">
+                                                {item.icon}
+                                                <span>{item.label}</span>
+                                            </div>
+                                            <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${reservationsSubOpen ? 'transform rotate-180' : ''}`} />
+                                        </button>
+
+                                        {reservationsSubOpen && (
+                                            <div className="pl-8 pr-1 space-y-1 py-1 border-l-2 border-slate-100 dark:border-slate-800 ml-4">
+                                                {item.subItems?.map((sub, sIdx) => {
+                                                    const isSubMatch = (location.pathname + location.search) === sub.path || (sub.path === '/reservations' && location.pathname === '/reservations' && !location.search);
+                                                    return (
+                                                        <Link
+                                                            key={sIdx}
+                                                            to={sub.path}
+                                                            onClick={() => setSidebarOpen(false)}
+                                                            className={`flex items-center gap-2 px-3 py-2 text-[11px] font-semibold rounded-lg transition-all ${isSubMatch ? 'bg-ojk-red text-white font-extrabold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                                                        >
+                                                            {sub.icon}
+                                                            <span>{sub.label}</span>
+                                                        </Link>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            }
+
                             return (
                                 <Link 
                                     key={index} 

@@ -64,6 +64,54 @@ export const Assets: React.FC = () => {
     const [maintenanceSchedule, setMaintenanceSchedule] = useState('');
 
     const [submitting, setSubmitting] = useState(false);
+    const [dragActive, setDragActive] = useState(false);
+
+    const handleFileChange = (file: File) => {
+        if (!file.type.startsWith('image/')) {
+            toast.error('File harus berupa gambar (JPG, PNG, WEBP).');
+            return;
+        }
+        
+        if (file.size > 2 * 1024 * 1024) {
+            toast.error('Ukuran gambar maksimal 2 MB.');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = () => {
+            setPhoto(reader.result as string);
+            toast.success('Gambar berhasil dimuat.');
+        };
+        reader.onerror = () => {
+            toast.error('Gagal membaca file gambar.');
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const handleDrag = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.type === "dragenter" || e.type === "dragover") {
+            setDragActive(true);
+        } else if (e.type === "dragleave") {
+            setDragActive(false);
+        }
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDragActive(false);
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+            handleFileChange(e.dataTransfer.files[0]);
+        }
+    };
+
+    const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            handleFileChange(e.target.files[0]);
+        }
+    };
 
     // Fetch Assets and Categories
     const fetchData = async () => {
@@ -447,12 +495,47 @@ export const Assets: React.FC = () => {
                         required
                     />
 
-                    <Input 
-                        label="URL Foto Aset (Opsional)" 
-                        placeholder="https://example.com/photo.jpg" 
-                        value={photo}
-                        onChange={(e) => setPhoto(e.target.value)}
-                    />
+                    <div className="col-span-1 md:col-span-2 space-y-2">
+                        <label className="text-xs font-semibold text-slate-650 dark:text-slate-350">Foto Aset (Opsional)</label>
+                        {photo ? (
+                            <div className="relative w-full h-40 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800">
+                                <img src={photo} alt="Preview Aset" className="w-full h-full object-cover" />
+                                <button
+                                    type="button"
+                                    onClick={() => setPhoto('')}
+                                    className="absolute top-2 right-2 bg-red-650 text-white rounded-lg px-2.5 py-1.5 text-xs font-bold hover:bg-red-750 transition-colors cursor-pointer"
+                                >
+                                    Hapus Foto
+                                </button>
+                            </div>
+                        ) : (
+                            <div
+                                onDragEnter={handleDrag}
+                                onDragOver={handleDrag}
+                                onDragLeave={handleDrag}
+                                onDrop={handleDrop}
+                                onClick={() => document.getElementById('photo-upload-input')?.click()}
+                                className={`w-full h-40 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center p-6 text-center cursor-pointer transition-colors ${dragActive ? 'border-ojk-red bg-red-500/5' : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-850/30'}`}
+                            >
+                                <input
+                                    id="photo-upload-input"
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleFileInput}
+                                    className="hidden"
+                                />
+                                <svg className="w-8 h-8 text-slate-450 dark:text-slate-550 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                                    Drag & drop gambar ke sini, atau klik untuk memilih file
+                                </span>
+                                <span className="text-[10px] font-medium text-slate-450 dark:text-slate-500 mt-1">
+                                    Format: JPG, PNG, WEBP (Maks. 2MB)
+                                </span>
+                            </div>
+                        )}
+                    </div>
 
                     <Input 
                         label="Jadwal Perawatan Terdekat (Opsional)" 
