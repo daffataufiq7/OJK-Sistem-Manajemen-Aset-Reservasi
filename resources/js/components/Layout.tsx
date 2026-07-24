@@ -58,7 +58,7 @@ export const Layout: React.FC = () => {
 
     const isClickScrollingRef = useRef(false);
 
-    // Direct Container scrollTop Scroll Spy Listener for 100% Guaranteed Sidebar Active Highlight Updates
+    // Bulletproof Relative BoundingClientRect Scroll Spy Listener
     useEffect(() => {
         const sectionIds = ['sec-dashboard', 'sec-kendaraan', 'sec-ruangan', 'sec-kalender', 'sec-riwayat', 'sec-pengaturan'];
 
@@ -66,14 +66,16 @@ export const Layout: React.FC = () => {
             if (isClickScrollingRef.current) return;
 
             const container = document.getElementById('snap-scroll-container');
-            const scrollPos = container ? container.scrollTop : window.scrollY;
+            if (!container) return;
+            const containerTop = container.getBoundingClientRect().top;
+            const containerHeight = container.getBoundingClientRect().height;
 
             let currentSection = 'sec-dashboard';
             for (let i = sectionIds.length - 1; i >= 0; i--) {
                 const el = document.getElementById(sectionIds[i]);
                 if (el) {
-                    const elTop = el.offsetTop;
-                    if (scrollPos + 220 >= elTop) {
+                    const relativeTop = el.getBoundingClientRect().top - containerTop;
+                    if (relativeTop <= containerHeight * 0.45) {
                         currentSection = sectionIds[i];
                         break;
                     }
