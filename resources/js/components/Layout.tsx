@@ -56,49 +56,43 @@ export const Layout: React.FC = () => {
 
     const [activeSection, setActiveSection] = useState<string>('sec-dashboard');
 
-    // Real-time IntersectionObserver directly inside Layout.tsx for scroll spy
+    // Direct scroll position listener in Layout.tsx for instant sidebar scroll spy highlight
     useEffect(() => {
         const sectionIds = ['sec-dashboard', 'sec-kendaraan', 'sec-ruangan', 'sec-kalender', 'sec-riwayat', 'sec-pengaturan'];
-        const container = document.getElementById('snap-scroll-container');
 
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    const id = entry.target.id;
-                    setActiveSection(id);
-                    if (['sec-kendaraan', 'sec-ruangan'].includes(id)) {
-                        setReservationsSubOpen(true);
+        const updateActiveSection = () => {
+            const container = document.getElementById('snap-scroll-container');
+            const scrollPos = container ? container.scrollTop + 200 : window.scrollY + 200;
+
+            for (let i = sectionIds.length - 1; i >= 0; i--) {
+                const el = document.getElementById(sectionIds[i]);
+                if (el) {
+                    const top = el.offsetTop;
+                    if (scrollPos >= top) {
+                        setActiveSection(sectionIds[i]);
+                        if (['sec-kendaraan', 'sec-ruangan'].includes(sectionIds[i])) {
+                            setReservationsSubOpen(true);
+                        }
+                        break;
                     }
-                }
-            });
-        }, {
-            root: container || null,
-            threshold: 0.3
-        });
-
-        const timer = setInterval(() => {
-            sectionIds.forEach(id => {
-                const el = document.getElementById(id);
-                if (el) observer.observe(el);
-            });
-        }, 300);
-
-        const handleSectionChange = (e: CustomEvent<string>) => {
-            if (e.detail) {
-                setActiveSection(e.detail);
-                if (['sec-kendaraan', 'sec-ruangan'].includes(e.detail)) {
-                    setReservationsSubOpen(true);
                 }
             }
         };
-        window.addEventListener('ojk-active-section', handleSectionChange as EventListener);
+
+        const container = document.getElementById('snap-scroll-container');
+        if (container) {
+            container.addEventListener('scroll', updateActiveSection, { passive: true });
+        }
+        window.addEventListener('scroll', updateActiveSection, { passive: true });
+
+        const timer = setInterval(updateActiveSection, 250);
 
         return () => {
+            if (container) container.removeEventListener('scroll', updateActiveSection);
+            window.removeEventListener('scroll', updateActiveSection);
             clearInterval(timer);
-            observer.disconnect();
-            window.removeEventListener('ojk-active-section', handleSectionChange as EventListener);
         };
-    }, [location.pathname]);
+    }, []);
 
     const scrollToSection = (secId: string) => {
         setSidebarOpen(false);
