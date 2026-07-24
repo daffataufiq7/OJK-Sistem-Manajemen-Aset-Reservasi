@@ -118,21 +118,11 @@ export const Layout: React.FC = () => {
 
         isClickScrollingRef.current = true;
 
-        const navigateAndScroll = () => {
-            const container = document.getElementById('snap-scroll-container');
+        const performScroll = () => {
             const el = document.getElementById(secId);
-            if (container && el) {
-                const containerRect = container.getBoundingClientRect();
-                const elRect = el.getBoundingClientRect();
-                const targetScrollTop = container.scrollTop + (elRect.top - containerRect.top);
-                container.scrollTo({
-                    top: targetScrollTop,
-                    behavior: 'smooth'
-                });
-            } else if (el) {
-                el.scrollIntoView({ behavior: 'smooth' });
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
-
             setTimeout(() => {
                 isClickScrollingRef.current = false;
             }, 800);
@@ -140,9 +130,9 @@ export const Layout: React.FC = () => {
 
         if (location.pathname !== '/dashboard') {
             navigate('/dashboard');
-            setTimeout(navigateAndScroll, 150);
+            setTimeout(performScroll, 150);
         } else {
-            navigateAndScroll();
+            performScroll();
         }
     };
 
@@ -392,7 +382,7 @@ export const Layout: React.FC = () => {
 
                 {/* Navigation Items - Fully Scrollable with Scroll Spy */}
                 <nav className="p-4 space-y-1.5 overflow-y-auto flex-1 min-h-0 custom-scrollbar">
-                    {user?.role === 'pegawai' ? (
+                    {user?.role === 'pegawai' || location.pathname === '/dashboard' ? (
                         <React.Fragment>
                             {/* Dashboard */}
                             <button
