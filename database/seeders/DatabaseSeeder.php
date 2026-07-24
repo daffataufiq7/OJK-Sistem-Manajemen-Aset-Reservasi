@@ -83,114 +83,98 @@ class DatabaseSeeder extends Seeder
             'division_id' => $div6->id,
         ]);
 
-        // 3. Seed Asset Categories
+        // 3. Seed Asset Categories (Only Kendaraan and Ruangan)
         $catVehicle = AssetCategory::create(['name' => 'Kendaraan', 'slug' => 'kendaraan']);
         $catRoom = AssetCategory::create(['name' => 'Ruangan', 'slug' => 'ruangan']);
-        $catElec = AssetCategory::create(['name' => 'Elektronik', 'slug' => 'elektronik']);
-        $catInv = AssetCategory::create(['name' => 'Inventaris', 'slug' => 'inventaris']);
 
-        // 4. Seed Assets
-        $asset1 = Asset::create([
-            'code' => 'AST-KND-001',
-            'name' => 'Toyota Innova B 1234 OJK',
-            'category_id' => $catVehicle->id,
-            'location' => 'Gedung A Parkir Lt. 1',
-            'status' => 'in_use',
-            'condition' => 'good',
-            'photo' => 'https://images.unsplash.com/photo-1609521263047-f8f205293f24?q=80&w=300&auto=format&fit=crop',
-            'qr_code' => 'AST-KND-001|Toyota Innova B 1234 OJK|OJK Jawa Barat',
-            'maintenance_schedule' => Carbon::now()->addDays(5),
-        ]);
+        // 4. Seed Vehicles (15 Official Units)
+        $vehiclesData = [
+            ['code' => 'AST-KND-001', 'name' => 'Toyota Fortuner D 1882 E', 'location' => 'Basement Lt. 1', 'status' => 'available'],
+            ['code' => 'AST-KND-002', 'name' => 'Toyota Alphard B 1707 NZU', 'location' => 'Basement Lt. 1 / VIP', 'status' => 'available'],
+            ['code' => 'AST-KND-003', 'name' => 'Toyota Kijang Innova D 1872 E', 'location' => 'Basement Lt. 1', 'status' => 'in_use'],
+            ['code' => 'AST-KND-004', 'name' => 'Toyota Kijang Innova D 1870 E', 'location' => 'Basement Lt. 1', 'status' => 'available'],
+            ['code' => 'AST-KND-005', 'name' => 'Toyota Kijang Innova D 1869 E', 'location' => 'Basement Lt. 1', 'status' => 'available'],
+            ['code' => 'AST-KND-006', 'name' => 'Toyota Hilux D 8069 D', 'location' => 'Basement Lt. 1', 'status' => 'available'],
+            ['code' => 'AST-KND-007', 'name' => 'Nissan X Trail D 1868 E', 'location' => 'Basement Lt. 1', 'status' => 'available'],
+            ['code' => 'AST-KND-008', 'name' => 'Toyota Camry 2.5 HV D 13', 'location' => 'Basement Lt. 1 / Pimpinan', 'status' => 'available'],
+            ['code' => 'AST-KND-009', 'name' => 'Toyota Zenix 2.0 Q HV D 1041 C', 'location' => 'Basement Lt. 1', 'status' => 'available'],
+            ['code' => 'AST-KND-010', 'name' => 'Toyota Zenix 2.0 G CVT D 1162 F', 'location' => 'Basement Lt. 1', 'status' => 'available'],
+            ['code' => 'AST-KND-011', 'name' => 'Toyota Zenix 2.0 G CVT D 1056 F', 'location' => 'Basement Lt. 1', 'status' => 'available'],
+            ['code' => 'AST-KND-012', 'name' => 'Isuzu Traga Box B 9455 PQW', 'location' => 'Parkiran Logistik', 'status' => 'available'],
+            ['code' => 'AST-KND-013', 'name' => 'Isuzu Traga Box B 9545 PQW', 'location' => 'Parkiran Logistik', 'status' => 'available'],
+            ['code' => 'AST-KND-014', 'name' => 'Isuzu Traga Box B 9543 PQW', 'location' => 'Parkiran Logistik', 'status' => 'available'],
+            ['code' => 'AST-KND-015', 'name' => 'Honda CB 150 R D 3044 F', 'location' => 'Parkiran Motor', 'status' => 'available'],
+        ];
 
-        $asset2 = Asset::create([
-            'code' => 'AST-KND-002',
-            'name' => 'Toyota Avanza B 5678 OJK',
-            'category_id' => $catVehicle->id,
-            'location' => 'Gedung A Parkir Lt. 1',
-            'status' => 'available',
-            'condition' => 'good',
-            'photo' => 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?q=80&w=300&auto=format&fit=crop',
-            'qr_code' => 'AST-KND-002|Toyota Avanza B 5678 OJK|OJK Jawa Barat',
-            'maintenance_schedule' => Carbon::now()->addDays(12),
-        ]);
+        $vehicleAssets = [];
+        foreach ($vehiclesData as $v) {
+            $vehicleAssets[$v['code']] = Asset::create([
+                'code' => $v['code'],
+                'name' => $v['name'],
+                'category_id' => $catVehicle->id,
+                'location' => $v['location'],
+                'status' => $v['status'],
+                'condition' => 'good',
+                'photo' => 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?q=80&w=300&auto=format&fit=crop',
+                'qr_code' => "{$v['code']}|{$v['name']}|OJK Jawa Barat",
+                'maintenance_schedule' => Carbon::now()->addDays(rand(10, 30)),
+            ]);
+        }
 
-        $asset3 = Asset::create([
+        // 5. Seed Rooms
+        $room1 = Asset::create([
             'code' => 'AST-RNG-001',
-            'name' => 'Ruang Rapat A',
+            'name' => 'Ruang Rapat Bale Astama',
             'category_id' => $catRoom->id,
             'location' => 'Gedung Utama Lt. 2',
             'status' => 'in_use',
             'condition' => 'good',
-            'photo' => 'https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=300&auto=format&fit=crop',
-            'qr_code' => 'AST-RNG-001|Ruang Rapat A|OJK Jawa Barat',
+            'photo' => 'https://images.unsplash.com/photo-1431540015161-0bf868a2d407?q=80&w=300&auto=format&fit=crop',
+            'qr_code' => 'AST-RNG-001|Ruang Rapat Bale Astama|OJK Jawa Barat',
             'maintenance_schedule' => null,
         ]);
 
-        $asset4 = Asset::create([
+        $room2 = Asset::create([
             'code' => 'AST-RNG-002',
-            'name' => 'Ruang Rapat B',
+            'name' => 'Ruang Rapat Nakula',
+            'category_id' => $catRoom->id,
+            'location' => 'Gedung Utama Lt. 3',
+            'status' => 'available',
+            'condition' => 'good',
+            'photo' => 'https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=300&auto=format&fit=crop',
+            'qr_code' => 'AST-RNG-002|Ruang Rapat Nakula|OJK Jawa Barat',
+            'maintenance_schedule' => null,
+        ]);
+
+        $room3 = Asset::create([
+            'code' => 'AST-RNG-003',
+            'name' => 'Aula Catur Dharma',
+            'category_id' => $catRoom->id,
+            'location' => 'Gedung Utama Lt. 1',
+            'status' => 'available',
+            'condition' => 'good',
+            'photo' => 'https://images.unsplash.com/photo-1517502884422-41eaead166d4?q=80&w=300&auto=format&fit=crop',
+            'qr_code' => 'AST-RNG-003|Aula Catur Dharma|OJK Jawa Barat',
+            'maintenance_schedule' => null,
+        ]);
+
+        $room4 = Asset::create([
+            'code' => 'AST-RNG-004',
+            'name' => 'Ruang Rapat Sadewa',
             'category_id' => $catRoom->id,
             'location' => 'Gedung Utama Lt. 2',
             'status' => 'available',
             'condition' => 'good',
             'photo' => 'https://images.unsplash.com/photo-1497366811353-6870744d04b2?q=80&w=300&auto=format&fit=crop',
-            'qr_code' => 'AST-RNG-002|Ruang Rapat B|OJK Jawa Barat',
+            'qr_code' => 'AST-RNG-004|Ruang Rapat Sadewa|OJK Jawa Barat',
             'maintenance_schedule' => null,
         ]);
 
-        $asset5 = Asset::create([
-            'code' => 'AST-ELC-001',
-            'name' => 'Laptop Dell Latitude 5420',
-            'category_id' => $catElec->id,
-            'location' => 'Gudang IT Lt. 3',
-            'status' => 'reserved',
-            'condition' => 'good',
-            'photo' => 'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?q=80&w=300&auto=format&fit=crop',
-            'qr_code' => 'AST-ELC-001|Laptop Dell Latitude 5420|OJK Jawa Barat',
-            'maintenance_schedule' => Carbon::now()->addDays(2),
-        ]);
-
-        $asset6 = Asset::create([
-            'code' => 'AST-ELC-002',
-            'name' => 'Proyektor Epson X500',
-            'category_id' => $catElec->id,
-            'location' => 'Gudang IT Lt. 3',
-            'status' => 'available',
-            'condition' => 'good',
-            'photo' => 'https://images.unsplash.com/photo-1535016120720-40c646be5580?q=80&w=300&auto=format&fit=crop',
-            'qr_code' => 'AST-ELC-002|Proyektor Epson X500|OJK Jawa Barat',
-            'maintenance_schedule' => Carbon::now()->subDays(1), // Underwent yesterday
-        ]);
-
-        $asset7 = Asset::create([
-            'code' => 'AST-INV-001',
-            'name' => 'Sound System Portable',
-            'category_id' => $catInv->id,
-            'location' => 'Gudang Umum Lt. 1',
-            'status' => 'available',
-            'condition' => 'good',
-            'photo' => 'https://images.unsplash.com/photo-1545454675-3531b543be5d?q=80&w=300&auto=format&fit=crop',
-            'qr_code' => 'AST-INV-001|Sound System Portable|OJK Jawa Barat',
-            'maintenance_schedule' => null,
-        ]);
-
-        $asset8 = Asset::create([
-            'code' => 'AST-INV-002',
-            'name' => 'Whiteboard Standing',
-            'category_id' => $catInv->id,
-            'location' => 'Gudang Umum Lt. 1',
-            'status' => 'maintenance',
-            'condition' => 'fair',
-            'photo' => null,
-            'qr_code' => 'AST-INV-002|Whiteboard Standing|OJK Jawa Barat',
-            'maintenance_schedule' => Carbon::now()->addDays(1),
-        ]);
-
-        // 5. Seed Reservations
-        // Booking 1: Innova In Use by Ratu (today)
+        // 6. Seed Reservations
+        // Booking 1: Toyota Kijang Innova D 1872 E In Use by Ratu (today)
         Reservation::create([
             'user_id' => $pegawai1->id,
-            'asset_id' => $asset1->id,
+            'asset_id' => $vehicleAssets['AST-KND-003']->id,
             'start_date' => Carbon::today()->setHour(8)->setMinute(0),
             'end_date' => Carbon::today()->setHour(17)->setMinute(0),
             'purpose' => 'Kunjungan Kerja Tim Pengawasan ke OJK Pusat Jakarta',
@@ -200,78 +184,84 @@ class DatabaseSeeder extends Seeder
             'status' => 'in_use',
         ]);
 
-        // Booking 2: Ruang Rapat A In Use by Siti (today)
+        // Booking 2: Ruang Rapat Bale Astama In Use by Bunga (today)
         Reservation::create([
             'user_id' => $pegawai2->id,
-            'asset_id' => $asset3->id,
+            'asset_id' => $room1->id,
             'start_date' => Carbon::today()->setHour(9)->setMinute(0),
             'end_date' => Carbon::today()->setHour(11)->setMinute(0),
             'purpose' => 'Rapat Koordinasi Edukasi Keuangan Daerah',
             'status' => 'in_use',
         ]);
 
-        // Booking 3: Dell Laptop Approved (Reserved) by Rudi (today afternoon)
+        // Booking 3: Toyota Alphard B 1707 NZU Approved (Reserved) by Rudi (today afternoon)
         Reservation::create([
             'user_id' => $pegawai3->id,
-            'asset_id' => $asset5->id,
+            'asset_id' => $vehicleAssets['AST-KND-002']->id,
             'start_date' => Carbon::today()->setHour(13)->setMinute(0),
             'end_date' => Carbon::today()->setHour(17)->setMinute(0),
-            'purpose' => 'Pemeriksaan Lapangan dan Remote Kerja Audit',
+            'purpose' => 'Penjemputan Tamu Pimpinan OJK Pusat',
+            'destination' => 'Bandara Kertajati / Stasiun Tegalluar',
+            'driver_required' => true,
+            'driver_name' => 'Ahmad Suhendar',
             'status' => 'approved',
         ]);
 
-        // Booking 4: Ruang Rapat B Pending by Ratu (today afternoon)
+        // Booking 4: Ruang Rapat Nakula Pending by Ratu (today afternoon)
         Reservation::create([
             'user_id' => $pegawai1->id,
-            'asset_id' => $asset4->id,
+            'asset_id' => $room2->id,
             'start_date' => Carbon::today()->setHour(15)->setMinute(0),
             'end_date' => Carbon::today()->setHour(17)->setMinute(0),
             'purpose' => 'Video Conference Sosialisasi Kebijakan Baru',
             'status' => 'pending',
         ]);
 
-        // Booking 5: Proyektor Epson Completed by Bunga (yesterday)
+        // Booking 5: Toyota Fortuner D 1882 E Completed by Bunga (yesterday)
         Reservation::create([
             'user_id' => $pegawai2->id,
-            'asset_id' => $asset6->id,
+            'asset_id' => $vehicleAssets['AST-KND-001']->id,
             'start_date' => Carbon::yesterday()->setHour(7)->setMinute(0),
             'end_date' => Carbon::yesterday()->setHour(16)->setMinute(0),
             'purpose' => 'Sosialisasi Literasi Keuangan ke UMKM',
+            'destination' => 'Kantor Bupati Cirebon',
+            'driver_required' => true,
+            'driver_name' => 'Deden',
             'status' => 'completed',
         ]);
 
-        // Booking 6: Toyota Avanza Rejected by Rudi (yesterday)
+        // Booking 6: Nissan X Trail D 1868 E Rejected by Rudi (yesterday)
         Reservation::create([
             'user_id' => $pegawai3->id,
-            'asset_id' => $asset2->id,
+            'asset_id' => $vehicleAssets['AST-KND-007']->id,
             'start_date' => Carbon::yesterday()->setHour(9)->setMinute(0),
             'end_date' => Carbon::yesterday()->setHour(12)->setMinute(0),
             'purpose' => 'Kunjungan Monitoring ke Tasikmalaya',
             'status' => 'rejected',
-            'rejection_reason' => 'Unit Avanza sedang masuk jadwal service berkala di bengkel resmi.',
+            'rejection_reason' => 'Unit Nissan X Trail sedang masuk jadwal service berkala di bengkel resmi.',
         ]);
 
-        // 6. Seed Notifications
+        // 7. Seed Notifications
         Notification::create([
             'user_id' => $pegawai1->id,
-            'title' => 'Pengajuan Ruang Rapat B Dikirim',
-            'message' => 'Pengajuan reservasi Anda untuk Ruang Rapat B (15.00 - 17.00) telah dikirim ke Validator.',
+            'title' => 'Pengajuan Ruang Rapat Nakula Dikirim',
+            'message' => 'Pengajuan reservasi Anda untuk Ruang Rapat Nakula (15.00 - 17.00) telah dikirim ke Validator.',
             'type' => 'approval',
             'is_read' => false,
         ]);
 
         Notification::create([
             'user_id' => $pegawai1->id,
-            'title' => 'Pengajuan Toyota Innova Disetujui',
-            'message' => 'Reservasi Toyota Innova B 1234 OJK untuk hari ini telah disetujui oleh Angga Baihaki.',
+            'title' => 'Pengajuan Toyota Kijang Innova Disetujui',
+            'message' => 'Reservasi Toyota Kijang Innova D 1872 E untuk hari ini telah disetujui oleh Angga Baihaki.',
             'type' => 'approval',
             'is_read' => true,
         ]);
 
         Notification::create([
             'user_id' => $pegawai3->id,
-            'title' => 'Pengajuan Toyota Avanza Ditolak',
-            'message' => 'Reservasi Toyota Avanza B 5678 OJK ditolak. Alasan: Unit Avanza sedang masuk jadwal service berkala.',
+            'title' => 'Pengajuan Nissan X Trail Ditolak',
+            'message' => 'Reservasi Nissan X Trail D 1868 E ditolak. Alasan: Unit sedang masuk jadwal service berkala.',
             'type' => 'reject',
             'is_read' => false,
         ]);
@@ -279,24 +269,16 @@ class DatabaseSeeder extends Seeder
         Notification::create([
             'user_id' => $validator->id,
             'title' => 'Pengajuan Reservasi Baru',
-            'message' => 'Ratu Khansa mengajukan reservasi Ruang Rapat B untuk hari ini pukul 15.00 WIB.',
+            'message' => 'Ratu Khansa mengajukan reservasi Ruang Rapat Nakula untuk hari ini pukul 15.00 WIB.',
             'type' => 'approval',
             'is_read' => false,
         ]);
 
-        Notification::create([
-            'user_id' => $admin->id,
-            'title' => 'Aset Memasuki Jadwal Perawatan',
-            'message' => 'Whiteboard Standing (AST-INV-002) dijadwalkan untuk maintenance besok.',
-            'type' => 'maintenance',
-            'is_read' => false,
-        ]);
-
-        // 7. Seed Audit Logs
+        // 8. Seed Audit Logs
         AuditLog::create([
             'user_id' => $admin->id,
             'action' => 'create_asset',
-            'description' => 'Menambahkan aset baru: Toyota Innova B 1234 OJK (AST-KND-001)',
+            'description' => 'Menambahkan aset baru: Toyota Fortuner D 1882 E (AST-KND-001)',
             'ip_address' => '127.0.0.1',
             'user_agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
         ]);
@@ -304,7 +286,7 @@ class DatabaseSeeder extends Seeder
         AuditLog::create([
             'user_id' => $admin->id,
             'action' => 'create_asset',
-            'description' => 'Menambahkan aset baru: Ruang Rapat A (AST-RNG-001)',
+            'description' => 'Menambahkan aset baru: Ruang Rapat Bale Astama (AST-RNG-001)',
             'ip_address' => '127.0.0.1',
             'user_agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
         ]);
@@ -312,7 +294,7 @@ class DatabaseSeeder extends Seeder
         AuditLog::create([
             'user_id' => $validator->id,
             'action' => 'approve_reservation',
-            'description' => 'Menyetujui reservasi Toyota Innova B 1234 OJK oleh Ratu Khansa',
+            'description' => 'Menyetujui reservasi Toyota Kijang Innova D 1872 E oleh Ratu Khansa',
             'ip_address' => '127.0.0.1',
             'user_agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
         ]);
@@ -320,7 +302,7 @@ class DatabaseSeeder extends Seeder
         AuditLog::create([
             'user_id' => $validator->id,
             'action' => 'reject_reservation',
-            'description' => 'Menolak reservasi Toyota Avanza B 5678 OJK oleh Rudi Hermawan',
+            'description' => 'Menolak reservasi Nissan X Trail D 1868 E oleh Rudi Hermawan',
             'ip_address' => '127.0.0.1',
             'user_agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
         ]);

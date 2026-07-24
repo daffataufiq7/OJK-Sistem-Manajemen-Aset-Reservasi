@@ -54,6 +54,40 @@ export const Layout: React.FC = () => {
     const profileRef = useRef<HTMLDivElement>(null);
     const loadedNotifIdsRef = useRef<Set<number>>(new Set());
 
+    const [activeSection, setActiveSection] = useState<string>('sec-dashboard');
+
+    // Scroll Spy event listener for single-page vertical scroll
+    useEffect(() => {
+        const handleSectionChange = (e: CustomEvent<string>) => {
+            if (e.detail) {
+                setActiveSection(e.detail);
+                if (['sec-kendaraan', 'sec-ruangan'].includes(e.detail)) {
+                    setReservationsSubOpen(true);
+                }
+            }
+        };
+        window.addEventListener('ojk-active-section', handleSectionChange as EventListener);
+        return () => window.removeEventListener('ojk-active-section', handleSectionChange as EventListener);
+    }, []);
+
+    const scrollToSection = (secId: string) => {
+        setSidebarOpen(false);
+        setActiveSection(secId);
+        if (['sec-kendaraan', 'sec-ruangan'].includes(secId)) {
+            setReservationsSubOpen(true);
+        }
+        if (location.pathname !== '/dashboard') {
+            navigate('/dashboard');
+            setTimeout(() => {
+                const el = document.getElementById(secId);
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }, 150);
+        } else {
+            const el = document.getElementById(secId);
+            if (el) el.scrollIntoView({ behavior: 'smooth' });
+        }
+    };
+
     // Dynamic Clock ticking
     useEffect(() => {
         const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -187,9 +221,8 @@ export const Layout: React.FC = () => {
             hasSub: true,
             subItems: [
                 { label: 'Semua Reservasi', path: '/reservations', icon: <PlusCircle className="w-3.5 h-3.5" /> },
-                { label: 'Ruang Rapat', path: '/reservations?category=Ruangan', icon: <HomeIcon className="w-3.5 h-3.5" /> },
                 { label: 'Mobil Dinas', path: '/reservations?category=Kendaraan', icon: <Car className="w-3.5 h-3.5" /> },
-                { label: 'Elektronik & Inventaris', path: '/reservations?category=Elektronik', icon: <Laptop className="w-3.5 h-3.5" /> }
+                { label: 'Ruang Rapat & Aula', path: '/reservations?category=Ruangan', icon: <HomeIcon className="w-3.5 h-3.5" /> }
             ]
         },
         {
@@ -221,12 +254,6 @@ export const Layout: React.FC = () => {
             label: 'Laporan',
             path: '/reports',
             icon: <FileBarChart2 className="w-5 h-5" />,
-            roles: ['super_admin', 'validator']
-        },
-        {
-            label: 'Report Driver',
-            path: '/driver-reports',
-            icon: <Car className="w-5 h-5" />,
             roles: ['super_admin', 'validator']
         },
         {
@@ -286,29 +313,109 @@ export const Layout: React.FC = () => {
         <div className="flex min-h-screen bg-slate-50 dark:bg-[#090D16] text-slate-800 dark:text-slate-100 transition-colors duration-250">
             
             {/* ==========================================
-                SIDEBAR (Desktop)
+                SIDEBAR (Desktop & Mobile)
                 ========================================== */}
             <aside className={`fixed inset-y-0 left-0 z-40 w-72 bg-white dark:bg-slate-900 border-r border-slate-100 dark:border-slate-800 flex flex-col justify-between transform transition-transform duration-300 xl:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
                 
-                <div>
-                    {/* Sidebar Header Brand Logo */}
-                    <div className="p-6 pb-2.5 border-b border-slate-50 dark:border-slate-800/60 flex items-center justify-between">
-                        <Link to="/" className="flex flex-col items-start gap-1.5">
-                            <img src="/logo ojk.png" alt="Logo OJK" className="h-20 w-auto max-w-[220px] object-contain" />
-                            <span className="text-[9.5px] font-bold text-slate-450 dark:text-slate-500 uppercase tracking-widest leading-none pl-1">
-                                Kantor Regional 2 Jawa Barat
-                            </span>
-                        </Link>
-                        
-                        {/* Mobile Close */}
-                        <button className="xl:hidden p-1.5 rounded-lg text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer" onClick={() => setSidebarOpen(false)}>
-                            <X className="w-5 h-5" />
-                        </button>
-                    </div>
+                {/* Sidebar Header Brand Logo */}
+                <div className="p-6 pb-3 border-b border-slate-100 dark:border-slate-800/60 flex items-center justify-between shrink-0">
+                    <Link to="/" className="flex flex-col items-start gap-1.5">
+                        <img src="/logo ojk.png" alt="Logo OJK" className="h-16 w-auto max-w-[200px] object-contain" />
+                        <span className="text-[9.5px] font-bold text-slate-450 dark:text-slate-500 uppercase tracking-widest leading-none pl-1">
+                            Kantor Regional 2 Jawa Barat
+                        </span>
+                    </Link>
+                    
+                    {/* Mobile Close */}
+                    <button className="xl:hidden p-1.5 rounded-lg text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer" onClick={() => setSidebarOpen(false)}>
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
 
-                    {/* Navigation Items */}
-                    <nav className="p-4 space-y-1 overflow-y-auto max-h-[62vh] mt-4">
-                        {filteredMenu.map((item, index) => {
+                {/* Navigation Items - Fully Scrollable with Scroll Spy */}
+                <nav className="p-4 space-y-1.5 overflow-y-auto flex-1 min-h-0 custom-scrollbar">
+                    {user?.role === 'pegawai' ? (
+                        <React.Fragment>
+                            {/* Dashboard */}
+                            <button
+                                onClick={() => scrollToSection('sec-dashboard')}
+                                className={`w-full flex items-center justify-between px-4 py-3 text-xs font-semibold rounded-xl transition-all duration-200 cursor-pointer ${activeSection === 'sec-dashboard' ? 'bg-ojk-red text-white shadow-sm shadow-red-500/10 font-bold' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-850'}`}
+                            >
+                                <div className="flex items-center gap-3.5">
+                                    <LayoutDashboard className="w-5 h-5" />
+                                    <span>Dashboard</span>
+                                </div>
+                            </button>
+
+                            {/* Reservasi Aset (Collapsible Parent) */}
+                            <div className="space-y-1">
+                                <button
+                                    onClick={() => setReservationsSubOpen(!reservationsSubOpen)}
+                                    className={`w-full flex items-center justify-between px-4 py-3 text-xs font-semibold rounded-xl transition-all duration-200 cursor-pointer ${['sec-kendaraan', 'sec-ruangan'].includes(activeSection) ? 'bg-red-50 dark:bg-red-950/40 text-ojk-red dark:text-red-400 font-bold' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-850'}`}
+                                >
+                                    <div className="flex items-center gap-3.5">
+                                        <PlusCircle className="w-5 h-5" />
+                                        <span>Reservasi Aset</span>
+                                    </div>
+                                    <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${reservationsSubOpen ? 'transform rotate-180' : ''}`} />
+                                </button>
+
+                                {reservationsSubOpen && (
+                                    <div className="pl-8 pr-1 space-y-1 py-1 border-l-2 border-slate-100 dark:border-slate-800 ml-4">
+                                        <button
+                                            onClick={() => scrollToSection('sec-kendaraan')}
+                                            className={`w-full flex items-center gap-2 px-3 py-2 text-[11px] font-semibold rounded-lg transition-all cursor-pointer ${activeSection === 'sec-kendaraan' ? 'bg-ojk-red text-white font-extrabold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                                        >
+                                            <Car className="w-3.5 h-3.5" />
+                                            <span>Kendaraan Dinas</span>
+                                        </button>
+
+                                        <button
+                                            onClick={() => scrollToSection('sec-ruangan')}
+                                            className={`w-full flex items-center gap-2 px-3 py-2 text-[11px] font-semibold rounded-lg transition-all cursor-pointer ${activeSection === 'sec-ruangan' ? 'bg-ojk-red text-white font-extrabold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                                        >
+                                            <HomeIcon className="w-3.5 h-3.5" />
+                                            <span>Ruang Rapat & Aula</span>
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Kalender */}
+                            <button
+                                onClick={() => scrollToSection('sec-kalender')}
+                                className={`w-full flex items-center justify-between px-4 py-3 text-xs font-semibold rounded-xl transition-all duration-200 cursor-pointer ${activeSection === 'sec-kalender' ? 'bg-ojk-red text-white shadow-sm shadow-red-500/10 font-bold' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-850'}`}
+                            >
+                                <div className="flex items-center gap-3.5">
+                                    <Calendar className="w-5 h-5" />
+                                    <span>Kalender</span>
+                                </div>
+                            </button>
+
+                            {/* Riwayat */}
+                            <button
+                                onClick={() => scrollToSection('sec-riwayat')}
+                                className={`w-full flex items-center justify-between px-4 py-3 text-xs font-semibold rounded-xl transition-all duration-200 cursor-pointer ${activeSection === 'sec-riwayat' ? 'bg-ojk-red text-white shadow-sm shadow-red-500/10 font-bold' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-850'}`}
+                            >
+                                <div className="flex items-center gap-3.5">
+                                    <History className="w-5 h-5" />
+                                    <span>Riwayat</span>
+                                </div>
+                            </button>
+
+                            {/* Pengaturan */}
+                            <button
+                                onClick={() => scrollToSection('sec-pengaturan')}
+                                className={`w-full flex items-center justify-between px-4 py-3 text-xs font-semibold rounded-xl transition-all duration-200 cursor-pointer ${activeSection === 'sec-pengaturan' ? 'bg-ojk-red text-white shadow-sm shadow-red-500/10 font-bold' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-850'}`}
+                            >
+                                <div className="flex items-center gap-3.5">
+                                    <Settings className="w-5 h-5" />
+                                    <span>Pengaturan</span>
+                                </div>
+                            </button>
+                        </React.Fragment>
+                    ) : (
+                        filteredMenu.map((item, index) => {
                             const isActive = location.pathname === item.path && !location.search;
                             if (item.hasSub) {
                                 const isSubActive = location.pathname.startsWith('/reservations');
@@ -365,12 +472,12 @@ export const Layout: React.FC = () => {
                                     ) : null}
                                 </Link>
                             );
-                        })}
-                    </nav>
-                </div>
+                        })
+                    )}
+                </nav>
 
                 {/* Sidebar Bottom Banner Card */}
-                <div className="p-6">
+                <div className="p-4 shrink-0 border-t border-slate-100 dark:border-slate-800/60">
                     <div className="p-4 bg-slate-50 dark:bg-slate-850/50 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col space-y-3 relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-24 h-24 bg-red-500/5 rounded-full blur-xl -mr-6 -mt-6"></div>
                         <div className="flex flex-col space-y-1">

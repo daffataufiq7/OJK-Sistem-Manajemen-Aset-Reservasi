@@ -45,7 +45,7 @@ export const Login: React.FC = () => {
         },
         {
             title: "Digitalisasi Tata Kelola Facility Office",
-            subtitle: "Kemudahan pengajuan ruang rapat, kendaraan dinas, dan inventaris operasional."
+            subtitle: "Kemudahan pengajuan ruang rapat dan kendaraan dinas."
         },
         {
             title: "Layanan Efisien, Transparan & Terintegrasi",
