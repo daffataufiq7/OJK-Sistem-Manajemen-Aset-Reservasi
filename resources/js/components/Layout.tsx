@@ -58,56 +58,37 @@ export const Layout: React.FC = () => {
 
     const isClickScrollingRef = useRef(false);
 
-    // Scroll Spy: Real-time viewport center section detector
+    // Native IntersectionObserver for bidirectional Scroll Spy Navigation
     useEffect(() => {
         const sectionIds = ['sec-dashboard', 'sec-kendaraan', 'sec-ruangan', 'sec-kalender', 'sec-riwayat', 'sec-pengaturan'];
+        const container = document.getElementById('snap-scroll-container');
 
-        const updateActiveSection = () => {
+        const observer = new IntersectionObserver((entries) => {
             if (isClickScrollingRef.current) return;
-
-            const container = document.getElementById('snap-scroll-container');
-            if (!container) return;
-            const containerRect = container.getBoundingClientRect();
-            const viewportCenter = containerRect.top + containerRect.height * 0.35;
-
-            let closestId = 'sec-dashboard';
-            let minDistance = Infinity;
-
-            for (const id of sectionIds) {
-                const el = document.getElementById(id);
-                if (el) {
-                    const rect = el.getBoundingClientRect();
-                    if (rect.top <= viewportCenter && rect.bottom >= viewportCenter) {
-                        closestId = id;
-                        break;
-                    }
-                    const distance = Math.abs(rect.top - viewportCenter);
-                    if (distance < minDistance) {
-                        minDistance = distance;
-                        closestId = id;
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const id = entry.target.id;
+                    setActiveSection(id);
+                    if (['sec-kendaraan', 'sec-ruangan'].includes(id)) {
+                        setReservationsSubOpen(true);
                     }
                 }
-            }
+            });
+        }, {
+            root: container || null,
+            rootMargin: '-15% 0px -45% 0px',
+            threshold: 0
+        });
 
-            setActiveSection(closestId);
-            if (['sec-kendaraan', 'sec-ruangan'].includes(closestId)) {
-                setReservationsSubOpen(true);
-            }
-        };
-
-        const container = document.getElementById('snap-scroll-container');
-        if (container) {
-            container.addEventListener('scroll', updateActiveSection, { passive: true });
-        }
-        window.addEventListener('scroll', updateActiveSection, { passive: true });
-
-        updateActiveSection();
+        sectionIds.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) observer.observe(el);
+        });
 
         return () => {
-            if (container) container.removeEventListener('scroll', updateActiveSection);
-            window.removeEventListener('scroll', updateActiveSection);
+            observer.disconnect();
         };
-    }, []);
+    }, [location.pathname]);
 
     const scrollToSection = (secId: string) => {
         setSidebarOpen(false);
