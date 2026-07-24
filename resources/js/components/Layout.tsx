@@ -56,29 +56,41 @@ export const Layout: React.FC = () => {
 
     const [activeSection, setActiveSection] = useState<string>('sec-dashboard');
 
-    // Precision Scroll Spy using BoundingClientRect for One Page Enterprise Dashboard
+    const isClickScrollingRef = useRef(false);
+
+    // Scroll Spy: Real-time viewport center section detector
     useEffect(() => {
         const sectionIds = ['sec-dashboard', 'sec-kendaraan', 'sec-ruangan', 'sec-kalender', 'sec-riwayat', 'sec-pengaturan'];
 
         const updateActiveSection = () => {
+            if (isClickScrollingRef.current) return;
+
             const container = document.getElementById('snap-scroll-container');
             if (!container) return;
             const containerRect = container.getBoundingClientRect();
+            const viewportCenter = containerRect.top + containerRect.height * 0.35;
 
-            let currentActive = 'sec-dashboard';
+            let closestId = 'sec-dashboard';
+            let minDistance = Infinity;
+
             for (const id of sectionIds) {
                 const el = document.getElementById(id);
                 if (el) {
                     const rect = el.getBoundingClientRect();
-                    // If the section top is near the upper half of the container view
-                    if (rect.top - containerRect.top <= containerRect.height * 0.45) {
-                        currentActive = id;
+                    if (rect.top <= viewportCenter && rect.bottom >= viewportCenter) {
+                        closestId = id;
+                        break;
+                    }
+                    const distance = Math.abs(rect.top - viewportCenter);
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        closestId = id;
                     }
                 }
             }
 
-            setActiveSection(currentActive);
-            if (['sec-kendaraan', 'sec-ruangan'].includes(currentActive)) {
+            setActiveSection(closestId);
+            if (['sec-kendaraan', 'sec-ruangan'].includes(closestId)) {
                 setReservationsSubOpen(true);
             }
         };
@@ -89,13 +101,11 @@ export const Layout: React.FC = () => {
         }
         window.addEventListener('scroll', updateActiveSection, { passive: true });
 
-        const timer = setInterval(updateActiveSection, 200);
         updateActiveSection();
 
         return () => {
             if (container) container.removeEventListener('scroll', updateActiveSection);
             window.removeEventListener('scroll', updateActiveSection);
-            clearInterval(timer);
         };
     }, []);
 
@@ -105,6 +115,8 @@ export const Layout: React.FC = () => {
         if (['sec-kendaraan', 'sec-ruangan'].includes(secId)) {
             setReservationsSubOpen(true);
         }
+
+        isClickScrollingRef.current = true;
 
         const navigateAndScroll = () => {
             const container = document.getElementById('snap-scroll-container');
@@ -120,11 +132,15 @@ export const Layout: React.FC = () => {
             } else if (el) {
                 el.scrollIntoView({ behavior: 'smooth' });
             }
+
+            setTimeout(() => {
+                isClickScrollingRef.current = false;
+            }, 800);
         };
 
         if (location.pathname !== '/dashboard') {
             navigate('/dashboard');
-            setTimeout(navigateAndScroll, 200);
+            setTimeout(navigateAndScroll, 150);
         } else {
             navigateAndScroll();
         }
