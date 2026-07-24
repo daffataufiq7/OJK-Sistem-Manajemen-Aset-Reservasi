@@ -58,35 +58,49 @@ export const Layout: React.FC = () => {
 
     const isClickScrollingRef = useRef(false);
 
-    // Native IntersectionObserver for bidirectional Scroll Spy Navigation
+    // Direct Container scrollTop Scroll Spy Listener for 100% Guaranteed Sidebar Active Highlight Updates
     useEffect(() => {
         const sectionIds = ['sec-dashboard', 'sec-kendaraan', 'sec-ruangan', 'sec-kalender', 'sec-riwayat', 'sec-pengaturan'];
-        const container = document.getElementById('snap-scroll-container');
 
-        const observer = new IntersectionObserver((entries) => {
+        const updateActiveSection = () => {
             if (isClickScrollingRef.current) return;
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    const id = entry.target.id;
-                    setActiveSection(id);
-                    if (['sec-kendaraan', 'sec-ruangan'].includes(id)) {
-                        setReservationsSubOpen(true);
+
+            const container = document.getElementById('snap-scroll-container');
+            const scrollPos = container ? container.scrollTop : window.scrollY;
+
+            let currentSection = 'sec-dashboard';
+            for (let i = sectionIds.length - 1; i >= 0; i--) {
+                const el = document.getElementById(sectionIds[i]);
+                if (el) {
+                    const elTop = el.offsetTop;
+                    if (scrollPos + 220 >= elTop) {
+                        currentSection = sectionIds[i];
+                        break;
                     }
                 }
-            });
-        }, {
-            root: container || null,
-            rootMargin: '-15% 0px -45% 0px',
-            threshold: 0
-        });
+            }
 
-        sectionIds.forEach(id => {
-            const el = document.getElementById(id);
-            if (el) observer.observe(el);
-        });
+            setActiveSection(currentSection);
+            if (['sec-kendaraan', 'sec-ruangan'].includes(currentSection)) {
+                setReservationsSubOpen(true);
+            }
+        };
+
+        const container = document.getElementById('snap-scroll-container');
+        if (container) {
+            container.addEventListener('scroll', updateActiveSection, { passive: true });
+        }
+        window.addEventListener('scroll', updateActiveSection, { passive: true });
+
+        updateActiveSection();
+        const timer = setTimeout(updateActiveSection, 300);
 
         return () => {
-            observer.disconnect();
+            if (container) {
+                container.removeEventListener('scroll', updateActiveSection);
+            }
+            window.removeEventListener('scroll', updateActiveSection);
+            clearTimeout(timer);
         };
     }, [location.pathname]);
 
