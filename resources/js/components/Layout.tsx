@@ -58,7 +58,7 @@ export const Layout: React.FC = () => {
 
     const isClickScrollingRef = useRef(false);
 
-    // 100% Accurate Visual Scroll Spy Listener using relativeTop containerHeight * 0.65 threshold
+    // Flawless 1-to-1 Range-Matching Scroll Spy Listener
     useEffect(() => {
         const sectionIds = ['sec-dashboard', 'sec-kendaraan', 'sec-ruangan', 'sec-kalender', 'sec-riwayat', 'sec-pengaturan'];
 
@@ -68,16 +68,16 @@ export const Layout: React.FC = () => {
             const container = document.getElementById('snap-scroll-container');
             if (!container) return;
             const containerRect = container.getBoundingClientRect();
-            const triggerThreshold = containerRect.height * 0.65; // 65% threshold down the viewport
+            // Line at 150px below top of container
+            const targetPoint = containerRect.top + 150;
 
             let currentActive = 'sec-dashboard';
-            for (let i = sectionIds.length - 1; i >= 0; i--) {
-                const el = document.getElementById(sectionIds[i]);
+            for (const id of sectionIds) {
+                const el = document.getElementById(id);
                 if (el) {
-                    const elRect = el.getBoundingClientRect();
-                    const relativeTop = elRect.top - containerRect.top;
-                    if (relativeTop <= triggerThreshold) {
-                        currentActive = sectionIds[i];
+                    const rect = el.getBoundingClientRect();
+                    if (rect.top <= targetPoint && rect.bottom > targetPoint) {
+                        currentActive = id;
                         break;
                     }
                 }
@@ -96,14 +96,12 @@ export const Layout: React.FC = () => {
         window.addEventListener('scroll', updateActiveSection, { passive: true });
 
         updateActiveSection();
-        const timer = setTimeout(updateActiveSection, 300);
 
         return () => {
             if (container) {
                 container.removeEventListener('scroll', updateActiveSection);
             }
             window.removeEventListener('scroll', updateActiveSection);
-            clearTimeout(timer);
         };
     }, [location.pathname]);
 
