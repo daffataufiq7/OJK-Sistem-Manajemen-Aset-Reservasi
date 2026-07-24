@@ -151,24 +151,28 @@ export const Dashboard: React.FC = () => {
 
     const allCatalogAssets = [...vehicleAssets, ...roomAssets];
 
-    // Scroll Spy IntersectionObserver setup
+    // Scroll Spy: Real-time window scroll position listener for instant sidebar highlight
     useEffect(() => {
         const sectionIds = ['sec-dashboard', 'sec-kendaraan', 'sec-ruangan', 'sec-kalender', 'sec-riwayat', 'sec-pengaturan'];
         
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    window.dispatchEvent(new CustomEvent('ojk-active-section', { detail: entry.target.id }));
+        const handleScroll = () => {
+            const scrollPos = window.scrollY + 180; // Offset for sticky header
+            for (let i = sectionIds.length - 1; i >= 0; i--) {
+                const el = document.getElementById(sectionIds[i]);
+                if (el) {
+                    const top = el.offsetTop;
+                    if (scrollPos >= top) {
+                        window.dispatchEvent(new CustomEvent('ojk-active-section', { detail: sectionIds[i] }));
+                        break;
+                    }
                 }
-            });
-        }, { threshold: 0.25 });
+            }
+        };
 
-        sectionIds.forEach(id => {
-            const el = document.getElementById(id);
-            if (el) observer.observe(el);
-        });
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        handleScroll(); // Trigger once on mount
 
-        return () => observer.disconnect();
+        return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
     const toggleFavorite = (id: number) => {
