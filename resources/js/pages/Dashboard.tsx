@@ -548,18 +548,18 @@ export const Dashboard: React.FC = () => {
                     </section>
 
                     {/* ==========================================
-                        SECTION 2: KENDARAAN DINAS (100VH SNAP)
+                        SECTION 2: KENDARAAN DINAS (SINGLE PAGE SPA SECTION)
                         ========================================== */}
                     <section 
                         id="sec-kendaraan" 
-                        className="snap-start snap-always h-[calc(100vh-73px)] min-h-[calc(100vh-73px)] max-h-[calc(100vh-73px)] flex flex-col justify-between p-6 md:p-8 space-y-4 shrink-0 transition-all duration-500 ease-in-out"
+                        className="snap-start min-h-[calc(100vh-73px)] p-6 md:p-8 space-y-6 transition-all duration-500 ease-in-out"
                     >
                         {/* Section Header Banner & Search Controls */}
-                        <div className="space-y-3 shrink-0">
-                            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                        <div className="space-y-4">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4 gap-3">
                                 <div className="space-y-0.5">
                                     <div className="flex items-center gap-2">
-                                        <div className="w-7 h-7 rounded-xl bg-red-500/10 flex items-center justify-center text-ojk-red">
+                                        <div className="w-8 h-8 rounded-xl bg-red-500/10 flex items-center justify-center text-ojk-red">
                                             <Car className="w-4 h-4" />
                                         </div>
                                         <h3 className="text-xl font-black text-slate-850 dark:text-white tracking-tight">
@@ -573,7 +573,7 @@ export const Dashboard: React.FC = () => {
 
                                 <Button 
                                     onClick={() => handleOpenReservationModal()} 
-                                    className="rounded-xl font-bold flex items-center gap-1.5 text-xs bg-ojk-red text-white py-2 px-4 shadow-sm"
+                                    className="rounded-xl font-bold flex items-center gap-1.5 text-xs bg-ojk-red text-white py-2.5 px-5 shadow-sm self-start sm:self-auto cursor-pointer"
                                 >
                                     <PlusCircle className="w-4 h-4" />
                                     Ajukan Reservasi
@@ -581,7 +581,7 @@ export const Dashboard: React.FC = () => {
                             </div>
 
                             {/* Filter Bar */}
-                            <Card className="p-3 rounded-[16px] border border-slate-100 dark:border-slate-800">
+                            <Card className="p-3 rounded-[16px] border border-slate-100 dark:border-slate-800 shadow-xs">
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                     <div className="relative">
                                         <Input
@@ -617,11 +617,11 @@ export const Dashboard: React.FC = () => {
                             </Card>
                         </div>
 
-                        {/* Marketplace Card Grid (Auto-scrollable within section with generous bottom padding) */}
-                        <div className="flex-1 overflow-y-auto pr-1 pb-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 custom-scrollbar">
+                        {/* Marketplace Card Grid (Spacious natural layout within SPA scroll) */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {filteredVehicles.map(vehicle => (
-                                <Card key={vehicle.id} className="rounded-[18px] overflow-hidden hover:-translate-y-1 hover:shadow-xl transition-all duration-300 flex flex-col justify-between group border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
-                                    <div className="relative h-36 sm:h-40 min-h-[144px] w-full shrink-0 overflow-hidden bg-slate-900 rounded-t-[18px]">
+                                <Card key={vehicle.id} className="rounded-[20px] overflow-hidden hover:-translate-y-1 hover:shadow-xl transition-all duration-300 flex flex-col justify-between group border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+                                    <div className="relative h-48 sm:h-52 w-full overflow-hidden bg-slate-900 rounded-t-[20px]">
                                         <img 
                                             src={vehicle.image} 
                                             alt={vehicle.name} 
@@ -701,17 +701,17 @@ export const Dashboard: React.FC = () => {
                     </section>
 
                     {/* ==========================================
-                        SECTION 3: RUANG RAPAT & AULA (100VH SNAP)
+                        SECTION 3: RUANG RAPAT & AULA (SINGLE PAGE SPA SECTION)
                         ========================================== */}
                     <section 
                         id="sec-ruangan" 
-                        className="snap-start snap-always h-[calc(100vh-73px)] min-h-[calc(100vh-73px)] max-h-[calc(100vh-73px)] flex flex-col justify-between p-6 md:p-8 space-y-4 shrink-0 transition-all duration-500 ease-in-out"
+                        className="snap-start min-h-[calc(100vh-73px)] p-6 md:p-8 space-y-6 transition-all duration-500 ease-in-out"
                     >
-                        <div className="space-y-3 shrink-0">
-                            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                        <div className="space-y-4">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4 gap-3">
                                 <div className="space-y-0.5">
                                     <div className="flex items-center gap-2">
-                                        <div className="w-7 h-7 rounded-xl bg-red-500/10 flex items-center justify-center text-ojk-red">
+                                        <div className="w-8 h-8 rounded-xl bg-red-500/10 flex items-center justify-center text-ojk-red">
                                             <HomeIcon className="w-4 h-4" />
                                         </div>
                                         <h3 className="text-xl font-black text-slate-850 dark:text-white tracking-tight">
@@ -725,7 +725,7 @@ export const Dashboard: React.FC = () => {
 
                                 <Button 
                                     onClick={() => handleOpenReservationModal(roomAssets[0])} 
-                                    className="rounded-xl font-bold flex items-center gap-1.5 text-xs bg-ojk-red text-white py-2 px-4 shadow-sm"
+                                    className="rounded-xl font-bold flex items-center gap-1.5 text-xs bg-ojk-red text-white py-2.5 px-5 shadow-sm self-start sm:self-auto cursor-pointer"
                                 >
                                     <PlusCircle className="w-4 h-4" />
                                     Ajukan Ruangan
@@ -733,8 +733,8 @@ export const Dashboard: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Large Cards Grid (Auto-scrollable within section with generous bottom padding) */}
-                        <div className="flex-1 overflow-y-auto pr-1 pb-12 grid grid-cols-1 md:grid-cols-2 gap-5 custom-scrollbar">
+                        {/* Large Cards Grid (Spacious natural layout within SPA scroll) */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {filteredRooms.map(room => (
                                 <Card key={room.id} className="rounded-[18px] overflow-hidden hover:-translate-y-1 hover:shadow-xl transition-all duration-300 flex flex-col md:flex-row justify-between group border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
                                     <div className="relative h-48 md:h-auto md:w-1/2 overflow-hidden bg-slate-100 dark:bg-slate-800 shrink-0">
