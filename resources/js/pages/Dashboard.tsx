@@ -621,7 +621,7 @@ export const Dashboard: React.FC = () => {
                         <div className="flex-1 overflow-y-auto pr-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 custom-scrollbar">
                             {filteredVehicles.map(vehicle => (
                                 <Card key={vehicle.id} className="rounded-[18px] overflow-hidden hover:-translate-y-1 hover:shadow-xl transition-all duration-300 flex flex-col justify-between group border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
-                                    <div className="relative h-48 sm:h-52 w-full overflow-hidden bg-slate-900 rounded-t-[18px]">
+                                    <div className="relative h-48 sm:h-52 min-h-[192px] w-full shrink-0 overflow-hidden bg-slate-900 rounded-t-[18px]">
                                         <img 
                                             src={vehicle.image} 
                                             alt={vehicle.name} 
