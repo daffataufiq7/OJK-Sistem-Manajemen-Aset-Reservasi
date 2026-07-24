@@ -660,9 +660,9 @@ export const Layout: React.FC = () => {
                 </header>
 
                 {/* ==========================================
-                    PAGE CONTENT BODY
+                    PAGE CONTENT BODY (Full Screen Snap Container)
                     ========================================== */}
-                <main className="flex-1 p-6 md:p-8 max-w-7xl w-full mx-auto animate-fade-in duration-200">
+                <main id="snap-scroll-container" className="flex-1 w-full mx-auto animate-fade-in duration-200 overflow-y-auto snap-y snap-mandatory scroll-smooth custom-scrollbar h-[calc(100vh-73px)]">
                     <Outlet />
                 </main>
 

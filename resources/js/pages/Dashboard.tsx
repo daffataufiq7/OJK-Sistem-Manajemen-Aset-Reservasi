@@ -1,58 +1,34 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
-import { 
-    ResponsiveContainer, 
-    AreaChart, 
-    Area, 
-    XAxis, 
-    YAxis, 
-    Tooltip, 
-    PieChart, 
-    Pie, 
-    Cell, 
-    Legend
-} from 'recharts';
 import { 
     Briefcase, 
     CheckCircle2, 
     Clock, 
     Wrench, 
-    Users, 
     Hourglass, 
     XCircle, 
-    TrendingUp, 
     Calendar,
-    ArrowRight,
     PlusCircle,
-    Info,
-    CalendarCheck,
     MapPin,
-    ArrowUpRight,
     History as HistoryIcon,
     Search,
-    Filter,
     Heart,
     Car,
     Home as HomeIcon,
-    Laptop,
-    Box,
-    Sparkles,
     ChevronRight,
     SlidersHorizontal,
-    HelpCircle,
     Check,
     ChevronLeft,
-    Shield,
     Key,
     User as UserIcon,
-    Sun,
-    Moon,
-    FileText,
-    CheckSquare
+    Play,
+    Eye,
+    Building2,
+    Shield
 } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardContent, Button, Badge, toast, Dialog, TextArea, Input, Select } from '../components/UI';
-import { useNavigate, Link } from 'react-router-dom';
+import { Card, CardContent, Button, Badge, toast, Dialog, TextArea, Input, Select } from '../components/UI';
+import { useNavigate } from 'react-router-dom';
 import { DRIVER_LIST } from '../constants/drivers';
 
 interface CatalogAsset {
@@ -69,7 +45,7 @@ interface CatalogAsset {
 }
 
 export const Dashboard: React.FC = () => {
-    const { user, logout } = useAuth();
+    const { user } = useAuth();
     const navigate = useNavigate();
 
     const getGreeting = () => {
@@ -84,7 +60,7 @@ export const Dashboard: React.FC = () => {
     const [dashData, setDashData] = useState<any>(null);
     const [allReservations, setAllReservations] = useState<any[]>([]);
 
-    // Filter States for Overview Section
+    // Filter States
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('all');
     const [selectedLocationFilter, setSelectedLocationFilter] = useState('all');
@@ -116,12 +92,6 @@ export const Dashboard: React.FC = () => {
     const [resNotes, setResNotes] = useState('');
     const [resSubmitting, setResSubmitting] = useState(false);
 
-    // Rejection Modal State for Validator
-    const [selectedRequest, setSelectedRequest] = useState<any>(null);
-    const [rejectionReason, setRejectionReason] = useState('');
-    const [rejectionOpen, setRejectionOpen] = useState(false);
-    const [submitting, setSubmitting] = useState(false);
-
     // Official Vehicle Catalog Assets (15 Units)
     const vehicleAssets: CatalogAsset[] = [
         { id: 1, name: 'Toyota Fortuner', plate: 'D 1882 E', category: 'Kendaraan', status: 'Tersedia', location: 'Basement Lt. 1', image: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=800&q=80', specs: ['7 Kursi', 'SUV Premium'] },
@@ -149,30 +119,28 @@ export const Dashboard: React.FC = () => {
         { id: 19, name: 'Ruang Rapat Sadewa', category: 'Ruangan', status: 'Tersedia', location: 'Lantai 2', image: 'https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=800&q=80', capacity: '12 Orang', facilities: ['LED Display', 'Executive Desk', 'AC', 'Wi-Fi'], specs: ['Kapasitas 12 Orang', 'Lantai 2'] }
     ];
 
-    const allCatalogAssets = [...vehicleAssets, ...roomAssets];
-
-    // Scroll Spy: Real-time window scroll position listener for instant sidebar highlight
+    // IntersectionObserver for Snap Scroll Container
     useEffect(() => {
         const sectionIds = ['sec-dashboard', 'sec-kendaraan', 'sec-ruangan', 'sec-kalender', 'sec-riwayat', 'sec-pengaturan'];
-        
-        const handleScroll = () => {
-            const scrollPos = window.scrollY + 180; // Offset for sticky header
-            for (let i = sectionIds.length - 1; i >= 0; i--) {
-                const el = document.getElementById(sectionIds[i]);
-                if (el) {
-                    const top = el.offsetTop;
-                    if (scrollPos >= top) {
-                        window.dispatchEvent(new CustomEvent('ojk-active-section', { detail: sectionIds[i] }));
-                        break;
-                    }
+        const container = document.getElementById('snap-scroll-container');
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    window.dispatchEvent(new CustomEvent('ojk-active-section', { detail: entry.target.id }));
                 }
-            }
-        };
+            });
+        }, { 
+            root: container,
+            threshold: 0.45 
+        });
 
-        window.addEventListener('scroll', handleScroll, { passive: true });
-        handleScroll(); // Trigger once on mount
+        sectionIds.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) observer.observe(el);
+        });
 
-        return () => window.removeEventListener('scroll', handleScroll);
+        return () => observer.disconnect();
     }, []);
 
     const toggleFavorite = (id: number) => {
@@ -204,6 +172,11 @@ export const Dashboard: React.FC = () => {
     useEffect(() => {
         fetchDashboardData();
     }, [user]);
+
+    const scrollToSection = (secId: string) => {
+        const el = document.getElementById(secId);
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+    };
 
     const handleOpenReservationModal = (asset?: CatalogAsset) => {
         if (asset) {
@@ -262,42 +235,6 @@ export const Dashboard: React.FC = () => {
         }
     };
 
-    const handleApprove = async (id: number) => {
-        try {
-            setSubmitting(true);
-            await axios.post(`/reservations/${id}/approve`);
-            toast.success('Peminjaman aset berhasil disetujui.');
-            fetchDashboardData();
-        } catch (error: any) {
-            toast.error(error.response?.data?.message || 'Gagal menyetujui peminjaman.');
-        } finally {
-            setSubmitting(false);
-        }
-    };
-
-    const handleRejectSubmit = async () => {
-        if (!rejectionReason.trim() || rejectionReason.length < 5) {
-            toast.warning('Silakan isi alasan penolakan (minimal 5 karakter).');
-            return;
-        }
-
-        try {
-            setSubmitting(true);
-            await axios.post(`/reservations/${selectedRequest.id}/reject`, {
-                rejection_reason: rejectionReason
-            });
-            toast.success('Peminjaman aset berhasil ditolak.');
-            setRejectionOpen(false);
-            setRejectionReason('');
-            setSelectedRequest(null);
-            fetchDashboardData();
-        } catch (error: any) {
-            toast.error(error.response?.data?.message || 'Gagal menolak peminjaman.');
-        } finally {
-            setSubmitting(false);
-        }
-    };
-
     const handlePasswordChange = async (e: React.FormEvent) => {
         e.preventDefault();
         if (newPassword !== confirmPassword) {
@@ -325,7 +262,7 @@ export const Dashboard: React.FC = () => {
         }
     };
 
-    // Filter Assets for Search & Dropdowns
+    // Filter Assets
     const filteredVehicles = vehicleAssets.filter(item => {
         const matchesQuery = item.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                              (item.plate && item.plate.toLowerCase().includes(searchQuery.toLowerCase())) ||
@@ -381,13 +318,13 @@ export const Dashboard: React.FC = () => {
     }
 
     return (
-        <div className="space-y-16 font-sans pb-24">
+        <div className="font-sans">
 
             {/* ==========================================
                 NON-PEGAWAI VIEWS (ADMIN / VALIDATOR)
                 ========================================== */}
             {!isPegawai && (
-                <div className="space-y-8">
+                <div className="p-8 space-y-8">
                     {/* Header Greeting */}
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                         <div className="space-y-1">
@@ -446,190 +383,218 @@ export const Dashboard: React.FC = () => {
                             </div>
                         </div>
                     )}
-
-                    {isValidator && (
-                        <div className="space-y-6">
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 lg:gap-6">
-                                <Card className="border-l-4 border-l-amber-500">
-                                    <CardContent className="p-5 flex items-center justify-between">
-                                        <div>
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Menunggu Approval</span>
-                                            <h4 className="text-2xl font-extrabold text-amber-600">{dashData?.stats?.pending_request ?? 0}</h4>
-                                        </div>
-                                        <Hourglass className="w-6 h-6 text-amber-500" />
-                                    </CardContent>
-                                </Card>
-
-                                <Card className="border-l-4 border-l-emerald-600">
-                                    <CardContent className="p-5 flex items-center justify-between">
-                                        <div>
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Disetujui Hari Ini</span>
-                                            <h4 className="text-2xl font-extrabold text-emerald-600">{dashData?.stats?.approved_today ?? 0}</h4>
-                                        </div>
-                                        <CheckCircle2 className="w-6 h-6 text-emerald-600" />
-                                    </CardContent>
-                                </Card>
-
-                                <Card className="border-l-4 border-l-red-600">
-                                    <CardContent className="p-5 flex items-center justify-between">
-                                        <div>
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Ditolak Hari Ini</span>
-                                            <h4 className="text-2xl font-extrabold text-red-600">{dashData?.stats?.rejected_today ?? 0}</h4>
-                                        </div>
-                                        <XCircle className="w-6 h-6 text-red-600" />
-                                    </CardContent>
-                                </Card>
-
-                                <Card className="border-l-4 border-l-blue-600">
-                                    <CardContent className="p-5 flex items-center justify-between">
-                                        <div>
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Aset Dipinjam</span>
-                                            <h4 className="text-2xl font-extrabold text-blue-600">{dashData?.stats?.in_use ?? 0}</h4>
-                                        </div>
-                                        <Clock className="w-6 h-6 text-blue-600" />
-                                    </CardContent>
-                                </Card>
-                            </div>
-                        </div>
-                    )}
                 </div>
             )}
 
             {/* ==========================================
-                PEGAWAI ONE PAGE ENTERPRISE DASHBOARD (SPA)
+                PEGAWAI FULL SCREEN ONE PAGE ENTERPRISE DASHBOARD (SPA)
                 ========================================== */}
             {isPegawai && (
-                <React.Fragment>
+                <div className="w-full">
 
                     {/* ==========================================
-                        SECTION 1: DASHBOARD OVERVIEW & CARDS
+                        SECTION 1: DASHBOARD HERO + STATS (100VH SNAP)
                         ========================================== */}
-                    <section id="sec-dashboard" className="scroll-mt-24 space-y-8 animate-fade-in duration-300">
-                        
-                        {/* Header Greeting */}
-                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                            <div className="space-y-1">
-                                <h2 className="text-3xl font-black text-slate-850 dark:text-white tracking-tight">
-                                    {getGreeting()}, {user?.name || 'Pegawai'}! 👋
-                                </h2>
-                                <p className="text-xs text-slate-450 dark:text-slate-400 font-medium">
-                                    Selamat datang di Sistem Reservasi Aset Kantor Regional 2 Jawa Barat.
-                                </p>
-                            </div>
-                            <Button 
-                                onClick={() => handleOpenReservationModal()} 
-                                className="rounded-xl font-bold flex items-center gap-2 shadow-md text-xs bg-ojk-red text-white py-3 px-5 hover:scale-102 active:scale-98 transition-all cursor-pointer"
+                    <section 
+                        id="sec-dashboard" 
+                        className="snap-start snap-always h-[calc(100vh-73px)] min-h-[calc(100vh-73px)] max-h-[calc(100vh-73px)] flex flex-col justify-between p-6 md:p-8 space-y-4 shrink-0 transition-all duration-500 ease-in-out"
+                    >
+                        {/* Hero Video Banner Container (~65% height) */}
+                        <div className="relative rounded-[24px] overflow-hidden flex-1 shadow-2xl border border-slate-100 dark:border-slate-800 flex flex-col lg:flex-row items-center justify-between p-8 group">
+                            
+                            {/* Fullscreen Video Background */}
+                            <video 
+                                autoPlay 
+                                loop 
+                                muted 
+                                playsInline 
+                                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000 opacity-80"
                             >
-                                <PlusCircle className="w-4.5 h-4.5" />
-                                Ajukan Reservasi Baru
-                            </Button>
-                        </div>
+                                <source src="/vidio ojk.mp4" type="video/mp4" />
+                            </video>
 
-                        {/* Enterprise Stat Cards Grid */}
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
-                            <Card className="hover:scale-[1.015] transition-all duration-300 border-l-4 border-l-red-600 rounded-[18px] soft-shadow bg-white dark:bg-slate-900 p-5">
-                                <div className="flex items-center justify-between">
-                                    <div className="space-y-1">
-                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Asset</span>
-                                        <h4 className="text-3xl font-black text-slate-850 dark:text-white tracking-tight">19</h4>
-                                        <span className="text-[10px] font-semibold text-slate-400">Kendaraan & Ruangan</span>
-                                    </div>
-                                    <div className="w-12 h-12 rounded-2xl bg-red-500/10 flex items-center justify-center shrink-0">
-                                        <Briefcase className="w-6 h-6 text-ojk-red" />
-                                    </div>
-                                </div>
-                            </Card>
+                            {/* Dark Gradient Overlay for Maximum Legibility */}
+                            <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/75 to-black/40 backdrop-blur-[1px]"></div>
 
-                            <Card className="hover:scale-[1.015] transition-all duration-300 border-l-4 border-l-emerald-600 rounded-[18px] soft-shadow bg-white dark:bg-slate-900 p-5">
-                                <div className="flex items-center justify-between">
-                                    <div className="space-y-1">
-                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Asset Tersedia</span>
-                                        <h4 className="text-3xl font-black text-slate-850 dark:text-white tracking-tight">{dashData?.stats?.available ?? 17}</h4>
-                                        <span className="text-[10px] font-semibold text-emerald-600 font-bold">Siap Dipinjam</span>
-                                    </div>
-                                    <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center shrink-0">
-                                        <CheckCircle2 className="w-6 h-6 text-emerald-600" />
-                                    </div>
-                                </div>
-                            </Card>
-
-                            <Card className="hover:scale-[1.015] transition-all duration-300 border-l-4 border-l-amber-600 rounded-[18px] soft-shadow bg-white dark:bg-slate-900 p-5">
-                                <div className="flex items-center justify-between">
-                                    <div className="space-y-1">
-                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Sedang Dipakai</span>
-                                        <h4 className="text-3xl font-black text-slate-850 dark:text-white tracking-tight">{dashData?.stats?.in_use ?? 0}</h4>
-                                        <span className="text-[10px] font-semibold text-amber-600 font-bold">Aktif Digunakan</span>
-                                    </div>
-                                    <div className="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center shrink-0">
-                                        <Clock className="w-6 h-6 text-amber-600" />
-                                    </div>
-                                </div>
-                            </Card>
-
-                            <Card className="hover:scale-[1.015] transition-all duration-300 border-l-4 border-l-purple-600 rounded-[18px] soft-shadow bg-white dark:bg-slate-900 p-5">
-                                <div className="flex items-center justify-between">
-                                    <div className="space-y-1">
-                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Maintenance</span>
-                                        <h4 className="text-3xl font-black text-slate-850 dark:text-white tracking-tight">{dashData?.stats?.maintenance ?? 0}</h4>
-                                        <span className="text-[10px] font-semibold text-purple-600 font-bold">Perawatan Rutin</span>
-                                    </div>
-                                    <div className="w-12 h-12 rounded-2xl bg-purple-500/10 flex items-center justify-center shrink-0">
-                                        <Wrench className="w-6 h-6 text-purple-600" />
-                                    </div>
-                                </div>
-                            </Card>
-                        </div>
-
-                        {/* Search & Multi-Filter Control Bar */}
-                        <Card className="p-5 rounded-[18px] shadow-sm border border-slate-100 dark:border-slate-800">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 items-center">
-                                
-                                {/* Search Input */}
-                                <div className="relative lg:col-span-4">
-                                    <Input
-                                        placeholder="Cari kendaraan, plat nomor, atau ruang rapat..."
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="pl-10 text-xs py-3 rounded-xl"
-                                    />
-                                    <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+                            {/* Left Side: Brand Text & CTAs */}
+                            <div className="relative z-10 space-y-4 max-w-xl text-white">
+                                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md border border-white/20 text-[10px] font-extrabold uppercase tracking-widest text-red-300">
+                                    <Building2 className="w-3.5 h-3.5 text-ojk-red" />
+                                    <span>Otoritas Jasa Keuangan &bull; KR 2 Jawa Barat</span>
                                 </div>
 
-                                {/* Category Dropdown */}
-                                <div className="lg:col-span-2">
-                                    <Select
-                                        value={selectedCategoryFilter}
-                                        onChange={(e) => setSelectedCategoryFilter(e.target.value)}
-                                        className="text-xs py-3 rounded-xl"
+                                <h2 className="text-3xl lg:text-4xl font-black tracking-tight leading-tight drop-shadow-md">
+                                    Layanan Reservasi Aset Kantor
+                                </h2>
+
+                                <p className="text-xs text-slate-200 font-medium leading-relaxed max-w-md opacity-90">
+                                    Kemudahan pengajuan fasilitas kendaraan dinas operasional dan ruang rapat terintegrasi untuk mendukung kegiatan kedinasan OJK Jawa Barat.
+                                </p>
+
+                                <div className="flex flex-wrap items-center gap-3 pt-2">
+                                    <Button 
+                                        onClick={() => handleOpenReservationModal()} 
+                                        className="rounded-xl font-black flex items-center gap-2 shadow-lg text-xs bg-ojk-red text-white py-3 px-6 hover:bg-red-700 hover:scale-102 active:scale-98 transition-all cursor-pointer"
                                     >
-                                        <option value="all">Semua Kategori</option>
-                                        <option value="kendaraan">Kendaraan Dinas</option>
-                                        <option value="ruangan">Ruang Rapat & Aula</option>
-                                    </Select>
+                                        <PlusCircle className="w-4 h-4" />
+                                        Ajukan Reservasi Sekarang
+                                    </Button>
+
+                                    <Button 
+                                        onClick={() => scrollToSection('sec-kendaraan')} 
+                                        className="rounded-xl font-bold flex items-center gap-2 text-xs bg-white/15 hover:bg-white/25 backdrop-blur-md text-white border border-white/25 py-3 px-5 hover:scale-102 transition-all cursor-pointer"
+                                    >
+                                        <Eye className="w-4 h-4" />
+                                        Lihat Katalog Asset
+                                    </Button>
+                                </div>
+                            </div>
+
+                            {/* Right Side: Glassmorphism Modern Quick Calendar */}
+                            <div className="relative z-10 hidden lg:block w-80 shrink-0">
+                                <div className="p-5 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 shadow-2xl text-white space-y-3">
+                                    <div className="flex items-center justify-between border-b border-white/15 pb-2.5">
+                                        <div className="flex items-center gap-2">
+                                            <Calendar className="w-4 h-4 text-red-400" />
+                                            <span className="text-xs font-black">Agenda Hari Ini</span>
+                                        </div>
+                                        <span className="text-[10px] font-bold bg-white/20 px-2 py-0.5 rounded-md">
+                                            {new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short' })}
+                                        </span>
+                                    </div>
+
+                                    <div className="space-y-2 max-h-36 overflow-y-auto pr-1">
+                                        <div className="p-2.5 bg-white/10 rounded-xl border border-white/10 space-y-1">
+                                            <span className="text-[9.5px] font-extrabold text-red-300 block uppercase">Ruang Rapat Bale Astama</span>
+                                            <p className="text-[11px] font-bold truncate">Rapat Koordinasi Pengawasan Lembaga Jasa Keuangan</p>
+                                            <span className="text-[9px] text-slate-300 block">09:00 - 12:00 WIB</span>
+                                        </div>
+                                        <div className="p-2.5 bg-white/10 rounded-xl border border-white/10 space-y-1">
+                                            <span className="text-[9.5px] font-extrabold text-emerald-300 block uppercase">Toyota Fortuner (D 1882 E)</span>
+                                            <p className="text-[11px] font-bold truncate">Perjalanan Dinas Kunjungan Kerja Bandung</p>
+                                            <span className="text-[9px] text-slate-300 block">13:30 - 17:00 WIB</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Bottom 4 Enterprise Stat Cards ONLY (~35% height) */}
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 shrink-0">
+                            <Card className="hover:scale-[1.015] transition-all duration-300 border-l-4 border-l-red-600 rounded-[18px] soft-shadow bg-white dark:bg-slate-900 p-4">
+                                <div className="flex items-center justify-between">
+                                    <div className="space-y-0.5">
+                                        <span className="text-[9.5px] font-bold text-slate-400 uppercase tracking-wider block">Total Asset</span>
+                                        <h4 className="text-2xl font-black text-slate-850 dark:text-white tracking-tight">19</h4>
+                                        <span className="text-[9.5px] font-semibold text-slate-400">Kendaraan & Ruangan</span>
+                                    </div>
+                                    <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center shrink-0">
+                                        <Briefcase className="w-5 h-5 text-ojk-red" />
+                                    </div>
+                                </div>
+                            </Card>
+
+                            <Card className="hover:scale-[1.015] transition-all duration-300 border-l-4 border-l-emerald-600 rounded-[18px] soft-shadow bg-white dark:bg-slate-900 p-4">
+                                <div className="flex items-center justify-between">
+                                    <div className="space-y-0.5">
+                                        <span className="text-[9.5px] font-bold text-slate-400 uppercase tracking-wider block">Asset Tersedia</span>
+                                        <h4 className="text-2xl font-black text-slate-850 dark:text-white tracking-tight">{dashData?.stats?.available ?? 17}</h4>
+                                        <span className="text-[9.5px] font-semibold text-emerald-600 font-bold">Siap Dipinjam</span>
+                                    </div>
+                                    <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center shrink-0">
+                                        <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                                    </div>
+                                </div>
+                            </Card>
+
+                            <Card className="hover:scale-[1.015] transition-all duration-300 border-l-4 border-l-amber-600 rounded-[18px] soft-shadow bg-white dark:bg-slate-900 p-4">
+                                <div className="flex items-center justify-between">
+                                    <div className="space-y-0.5">
+                                        <span className="text-[9.5px] font-bold text-slate-400 uppercase tracking-wider block">Sedang Dipakai</span>
+                                        <h4 className="text-2xl font-black text-slate-850 dark:text-white tracking-tight">{dashData?.stats?.in_use ?? 0}</h4>
+                                        <span className="text-[9.5px] font-semibold text-amber-600 font-bold">Aktif Digunakan</span>
+                                    </div>
+                                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center shrink-0">
+                                        <Clock className="w-5 h-5 text-amber-600" />
+                                    </div>
+                                </div>
+                            </Card>
+
+                            <Card className="hover:scale-[1.015] transition-all duration-300 border-l-4 border-l-purple-600 rounded-[18px] soft-shadow bg-white dark:bg-slate-900 p-4">
+                                <div className="flex items-center justify-between">
+                                    <div className="space-y-0.5">
+                                        <span className="text-[9.5px] font-bold text-slate-400 uppercase tracking-wider block">Maintenance</span>
+                                        <h4 className="text-2xl font-black text-slate-850 dark:text-white tracking-tight">{dashData?.stats?.maintenance ?? 0}</h4>
+                                        <span className="text-[9.5px] font-semibold text-purple-600 font-bold">Perawatan Rutin</span>
+                                    </div>
+                                    <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center shrink-0">
+                                        <Wrench className="w-5 h-5 text-purple-600" />
+                                    </div>
+                                </div>
+                            </Card>
+                        </div>
+                    </section>
+
+                    {/* ==========================================
+                        SECTION 2: KENDARAAN DINAS (100VH SNAP)
+                        ========================================== */}
+                    <section 
+                        id="sec-kendaraan" 
+                        className="snap-start snap-always h-[calc(100vh-73px)] min-h-[calc(100vh-73px)] max-h-[calc(100vh-73px)] flex flex-col justify-between p-6 md:p-8 space-y-4 shrink-0 transition-all duration-500 ease-in-out"
+                    >
+                        {/* Section Header Banner & Search Controls */}
+                        <div className="space-y-3 shrink-0">
+                            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                                <div className="space-y-0.5">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-7 h-7 rounded-xl bg-red-500/10 flex items-center justify-center text-ojk-red">
+                                            <Car className="w-4 h-4" />
+                                        </div>
+                                        <h3 className="text-xl font-black text-slate-850 dark:text-white tracking-tight">
+                                            Kendaraan Dinas (15 Unit)
+                                        </h3>
+                                    </div>
+                                    <p className="text-xs text-slate-400 font-medium">
+                                        Pilih kendaraan dinas operasional yang tersedia untuk perjalanan dinas.
+                                    </p>
                                 </div>
 
-                                {/* Location Dropdown */}
-                                <div className="lg:col-span-2">
+                                <Button 
+                                    onClick={() => handleOpenReservationModal()} 
+                                    className="rounded-xl font-bold flex items-center gap-1.5 text-xs bg-ojk-red text-white py-2 px-4 shadow-sm"
+                                >
+                                    <PlusCircle className="w-4 h-4" />
+                                    Ajukan Reservasi
+                                </Button>
+                            </div>
+
+                            {/* Filter Bar */}
+                            <Card className="p-3 rounded-[16px] border border-slate-100 dark:border-slate-800">
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                    <div className="relative">
+                                        <Input
+                                            placeholder="Cari kendaraan atau plat nomor..."
+                                            value={searchQuery}
+                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                            className="pl-9 text-xs py-2 rounded-xl"
+                                        />
+                                        <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-3" />
+                                    </div>
+
                                     <Select
                                         value={selectedLocationFilter}
                                         onChange={(e) => setSelectedLocationFilter(e.target.value)}
-                                        className="text-xs py-3 rounded-xl"
+                                        className="text-xs py-2 rounded-xl"
                                     >
-                                        <option value="all">Semua Lokasi</option>
+                                        <option value="all">Semua Lokasi Parkir</option>
                                         <option value="basement">Basement Lt. 1</option>
-                                        <option value="lantai 1">Lantai 1</option>
-                                        <option value="lantai 2">Lantai 2</option>
-                                        <option value="lantai 3">Lantai 3</option>
-                                        <option value="parkiran">Parkiran Logistik</option>
+                                        <option value="parkiran">Parkiran Logistik / Motor</option>
                                     </Select>
-                                </div>
 
-                                {/* Status Dropdown */}
-                                <div className="lg:col-span-2">
                                     <Select
                                         value={selectedStatusFilter}
                                         onChange={(e) => setSelectedStatusFilter(e.target.value)}
-                                        className="text-xs py-3 rounded-xl"
+                                        className="text-xs py-2 rounded-xl"
                                     >
                                         <option value="all">Semua Status</option>
                                         <option value="available">Tersedia</option>
@@ -637,319 +602,264 @@ export const Dashboard: React.FC = () => {
                                         <option value="reserved">Reserved</option>
                                     </Select>
                                 </div>
+                            </Card>
+                        </div>
 
-                                {/* Action Button */}
-                                <div className="lg:col-span-2">
-                                    <Button 
-                                        variant="primary" 
-                                        className="w-full text-xs font-bold py-3 rounded-xl bg-ojk-red text-white flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
-                                        onClick={() => handleOpenReservationModal()}
-                                    >
-                                        <PlusCircle className="w-4 h-4" />
-                                        <span>Ajukan Reservasi</span>
-                                    </Button>
-                                </div>
+                        {/* Marketplace Card Grid (Auto-scrollable within section) */}
+                        <div className="flex-1 overflow-y-auto pr-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 custom-scrollbar">
+                            {filteredVehicles.map(vehicle => (
+                                <Card key={vehicle.id} className="rounded-[18px] overflow-hidden hover:-translate-y-1 hover:shadow-xl transition-all duration-300 flex flex-col justify-between group border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
+                                    <div className="relative h-44 w-full overflow-hidden bg-slate-100 dark:bg-slate-800">
+                                        <img 
+                                            src={vehicle.image} 
+                                            alt={vehicle.name} 
+                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                                        />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
 
-                            </div>
-                        </Card>
+                                        <div className="absolute top-2.5 left-2.5">
+                                            {vehicle.status === 'Tersedia' && (
+                                                <span className="bg-emerald-500/90 backdrop-blur-md text-white text-[9.5px] font-black px-2.5 py-0.5 rounded-full shadow-md">
+                                                    Tersedia
+                                                </span>
+                                            )}
+                                            {vehicle.status === 'Sedang Dipakai' && (
+                                                <span className="bg-amber-500/90 backdrop-blur-md text-white text-[9.5px] font-black px-2.5 py-0.5 rounded-full shadow-md">
+                                                    Sedang Dipakai
+                                                </span>
+                                            )}
+                                            {vehicle.status === 'Reserved' && (
+                                                <span className="bg-blue-500/90 backdrop-blur-md text-white text-[9.5px] font-black px-2.5 py-0.5 rounded-full shadow-md">
+                                                    Reserved
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        <div className="absolute top-2.5 right-2.5">
+                                            <span className="bg-black/80 backdrop-blur-md text-white border border-white/20 text-[9.5px] font-mono font-black px-2 py-0.5 rounded-md">
+                                                {vehicle.plate}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
+                                        <div className="space-y-1.5">
+                                            <h4 className="text-sm font-extrabold text-slate-850 dark:text-white leading-snug group-hover:text-ojk-red transition-colors">
+                                                {vehicle.name}
+                                            </h4>
+
+                                            <p className="text-[10.5px] text-slate-400 font-medium flex items-center gap-1">
+                                                <MapPin className="w-3 h-3 text-red-500 shrink-0" />
+                                                <span>{vehicle.location}</span>
+                                            </p>
+
+                                            <div className="flex flex-wrap gap-1.5 text-[9.5px] text-slate-600 dark:text-slate-400 font-semibold pt-0.5">
+                                                {vehicle.specs.map((spec, i) => (
+                                                    <span key={i} className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
+                                                        {spec}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                                            <Button 
+                                                variant="secondary" 
+                                                className="w-full text-[11px] font-bold py-2 rounded-xl cursor-pointer"
+                                                onClick={() => { setSelectedAssetDetail(vehicle); setAssetDetailOpen(true); }}
+                                            >
+                                                Detail
+                                            </Button>
+                                            
+                                            <Button 
+                                                variant="primary" 
+                                                className="w-full text-[11px] font-bold py-2 rounded-xl bg-ojk-red hover:bg-red-700 text-white cursor-pointer shadow-sm"
+                                                onClick={() => handleOpenReservationModal(vehicle)}
+                                            >
+                                                Reservasi
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </Card>
+                            ))}
+                        </div>
                     </section>
 
                     {/* ==========================================
-                        SECTION 2: KENDARAAN DINAS CATALOG
+                        SECTION 3: RUANG RAPAT & AULA (100VH SNAP)
                         ========================================== */}
-                    <section id="sec-kendaraan" className="scroll-mt-24 min-h-screen py-12 border-t border-slate-100 dark:border-slate-800/60 space-y-8 animate-fade-in duration-300">
-                        
-                        <div className="space-y-1 border-b border-slate-100 dark:border-slate-800 pb-4">
-                            <div className="flex items-center gap-2.5">
-                                <div className="w-8 h-8 rounded-xl bg-red-500/10 flex items-center justify-center text-ojk-red">
-                                    <Car className="w-5 h-5" />
+                    <section 
+                        id="sec-ruangan" 
+                        className="snap-start snap-always h-[calc(100vh-73px)] min-h-[calc(100vh-73px)] max-h-[calc(100vh-73px)] flex flex-col justify-between p-6 md:p-8 space-y-4 shrink-0 transition-all duration-500 ease-in-out"
+                    >
+                        <div className="space-y-3 shrink-0">
+                            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                                <div className="space-y-0.5">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-7 h-7 rounded-xl bg-red-500/10 flex items-center justify-center text-ojk-red">
+                                            <HomeIcon className="w-4 h-4" />
+                                        </div>
+                                        <h3 className="text-xl font-black text-slate-850 dark:text-white tracking-tight">
+                                            Ruang Rapat & Aula (4 Ruang)
+                                        </h3>
+                                    </div>
+                                    <p className="text-xs text-slate-400 font-medium">
+                                        Pilih ruangan sesuai kapasitas dan kebutuhan agenda rapat Anda.
+                                    </p>
                                 </div>
-                                <h3 className="text-2xl font-black text-slate-850 dark:text-white tracking-tight">
-                                    Kendaraan Dinas
-                                </h3>
+
+                                <Button 
+                                    onClick={() => handleOpenReservationModal(roomAssets[0])} 
+                                    className="rounded-xl font-bold flex items-center gap-1.5 text-xs bg-ojk-red text-white py-2 px-4 shadow-sm"
+                                >
+                                    <PlusCircle className="w-4 h-4" />
+                                    Ajukan Ruangan
+                                </Button>
                             </div>
-                            <p className="text-xs text-slate-450 dark:text-slate-400 font-medium">
-                                Pilih kendaraan dinas yang tersedia untuk reservasi perjalanan dinas & operasional kantor.
-                            </p>
                         </div>
 
-                        {/* Marketplace / Netflix-Style Large Card Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {filteredVehicles.length > 0 ? (
-                                filteredVehicles.map(vehicle => (
-                                    <Card key={vehicle.id} className="rounded-[18px] overflow-hidden hover:-translate-y-1.5 hover:shadow-2xl transition-all duration-300 flex flex-col justify-between group border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
-                                        <div className="relative h-56 w-full overflow-hidden bg-slate-100 dark:bg-slate-800">
-                                            <img 
-                                                src={vehicle.image} 
-                                                alt={vehicle.name} 
-                                                className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-700" 
-                                            />
-                                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20"></div>
-
-                                            {/* Status Badge */}
-                                            <div className="absolute top-3 left-3">
-                                                {vehicle.status === 'Tersedia' && (
-                                                    <span className="bg-emerald-500/90 backdrop-blur-md text-white text-[10px] font-black px-3 py-1 rounded-full shadow-md">
-                                                        Tersedia
-                                                    </span>
-                                                )}
-                                                {vehicle.status === 'Sedang Dipakai' && (
-                                                    <span className="bg-amber-500/90 backdrop-blur-md text-white text-[10px] font-black px-3 py-1 rounded-full shadow-md">
-                                                        Sedang Dipakai
-                                                    </span>
-                                                )}
-                                                {vehicle.status === 'Reserved' && (
-                                                    <span className="bg-blue-500/90 backdrop-blur-md text-white text-[10px] font-black px-3 py-1 rounded-full shadow-md">
-                                                        Reserved
-                                                    </span>
-                                                )}
-                                            </div>
-
-                                            {/* Plate Number */}
-                                            <div className="absolute top-3 right-3">
-                                                <span className="bg-black/75 backdrop-blur-md text-white border border-white/20 text-[10px] font-mono font-black px-2.5 py-1 rounded-lg tracking-wider shadow-md">
-                                                    {vehicle.plate}
-                                                </span>
-                                            </div>
-
-                                            <button 
-                                                onClick={() => toggleFavorite(vehicle.id)}
-                                                className="absolute bottom-3 right-3 w-9 h-9 rounded-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-md flex items-center justify-center text-slate-700 dark:text-slate-200 hover:text-red-600 transition-colors shadow-md cursor-pointer"
-                                                title="Simpan Favorit"
-                                            >
-                                                <Heart className={`w-4 h-4 ${favorites.includes(vehicle.id) ? 'fill-red-600 text-red-600' : ''}`} />
-                                            </button>
+                        {/* Large Cards Grid (Auto-scrollable within section) */}
+                        <div className="flex-1 overflow-y-auto pr-1 grid grid-cols-1 md:grid-cols-2 gap-5 custom-scrollbar">
+                            {filteredRooms.map(room => (
+                                <Card key={room.id} className="rounded-[18px] overflow-hidden hover:-translate-y-1 hover:shadow-xl transition-all duration-300 flex flex-col md:flex-row justify-between group border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
+                                    <div className="relative h-48 md:h-auto md:w-1/2 overflow-hidden bg-slate-100 dark:bg-slate-800 shrink-0">
+                                        <img 
+                                            src={room.image} 
+                                            alt={room.name} 
+                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                                        />
+                                        <div className="absolute top-2.5 left-2.5">
+                                            <span className="bg-emerald-500/90 backdrop-blur-md text-white text-[9.5px] font-black px-2.5 py-0.5 rounded-full shadow-md">
+                                                {room.status}
+                                            </span>
                                         </div>
+                                        <div className="absolute bottom-2.5 left-2.5">
+                                            <span className="bg-black/70 backdrop-blur-md text-white text-[9.5px] font-bold px-2 py-0.5 rounded-md">
+                                                {room.capacity}
+                                            </span>
+                                        </div>
+                                    </div>
 
-                                        <div className="p-5 space-y-4 flex-1 flex flex-col justify-between">
-                                            <div className="space-y-2">
-                                                <h4 className="text-base font-black text-slate-850 dark:text-white leading-snug group-hover:text-ojk-red transition-colors">
-                                                    {vehicle.name}
-                                                </h4>
+                                    <div className="p-5 md:w-1/2 flex flex-col justify-between space-y-3">
+                                        <div className="space-y-2">
+                                            <h4 className="text-base font-extrabold text-slate-850 dark:text-white leading-snug group-hover:text-ojk-red transition-colors">
+                                                {room.name}
+                                            </h4>
 
-                                                <p className="text-[11px] text-slate-500 font-medium flex items-center gap-1.5">
-                                                    <MapPin className="w-3.5 h-3.5 text-red-500 shrink-0" />
-                                                    <span>{vehicle.location}</span>
-                                                </p>
+                                            <p className="text-[11px] text-slate-400 font-medium flex items-center gap-1">
+                                                <MapPin className="w-3.5 h-3.5 text-red-500 shrink-0" />
+                                                <span>Lokasi: {room.location}</span>
+                                            </p>
 
-                                                <div className="flex flex-wrap gap-2 text-[10.5px] text-slate-600 font-semibold pt-1">
-                                                    {vehicle.specs.map((spec, i) => (
-                                                        <span key={i} className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg">
-                                                            <Check className="w-3 h-3 text-emerald-500 shrink-0" />
-                                                            {spec}
+                                            <div className="space-y-1">
+                                                <span className="text-[10px] font-bold text-slate-400 block uppercase">Fasilitas Ruangan:</span>
+                                                <div className="flex flex-wrap gap-1">
+                                                    {room.facilities?.map((fac, i) => (
+                                                        <span key={i} className="text-[9.5px] font-semibold bg-red-50 text-ojk-red dark:bg-red-950/40 dark:text-red-300 px-2 py-0.5 rounded-md">
+                                                            {fac}
                                                         </span>
                                                     ))}
                                                 </div>
                                             </div>
-
-                                            <div className="grid grid-cols-2 gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
-                                                <Button 
-                                                    variant="secondary" 
-                                                    className="w-full text-xs font-bold py-2.5 rounded-xl cursor-pointer"
-                                                    onClick={() => { setSelectedAssetDetail(vehicle); setAssetDetailOpen(true); }}
-                                                >
-                                                    Detail
-                                                </Button>
-                                                
-                                                <Button 
-                                                    variant="primary" 
-                                                    className="w-full text-xs font-bold py-2.5 rounded-xl bg-ojk-red hover:bg-red-700 text-white cursor-pointer shadow-sm"
-                                                    onClick={() => handleOpenReservationModal(vehicle)}
-                                                >
-                                                    Reservasi
-                                                </Button>
-                                            </div>
                                         </div>
-                                    </Card>
-                                ))
-                            ) : (
-                                <div className="col-span-full py-16 text-center text-slate-400 font-semibold space-y-2">
-                                    <Car className="w-12 h-12 text-slate-300 mx-auto" />
-                                    <p>Tidak ada kendaraan dinas yang cocok dengan pencarian.</p>
-                                </div>
-                            )}
+
+                                        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                                            <Button 
+                                                variant="secondary" 
+                                                className="w-full text-[11px] font-bold py-2 rounded-xl cursor-pointer"
+                                                onClick={() => { setSelectedAssetDetail(room); setAssetDetailOpen(true); }}
+                                            >
+                                                Detail
+                                            </Button>
+                                            
+                                            <Button 
+                                                variant="primary" 
+                                                className="w-full text-[11px] font-bold py-2 rounded-xl bg-ojk-red hover:bg-red-700 text-white cursor-pointer shadow-sm"
+                                                onClick={() => handleOpenReservationModal(room)}
+                                            >
+                                                Reservasi
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </Card>
+                            ))}
                         </div>
                     </section>
 
                     {/* ==========================================
-                        SECTION 3: RUANG RAPAT & AULA CATALOG
+                        SECTION 4: KALENDER RESERVASI (100VH SNAP)
                         ========================================== */}
-                    <section id="sec-ruangan" className="scroll-mt-24 min-h-screen py-12 border-t border-slate-100 dark:border-slate-800/60 space-y-8 animate-fade-in duration-300">
-                        
-                        <div className="space-y-1 border-b border-slate-100 dark:border-slate-800 pb-4">
-                            <div className="flex items-center gap-2.5">
-                                <div className="w-8 h-8 rounded-xl bg-red-500/10 flex items-center justify-center text-ojk-red">
-                                    <HomeIcon className="w-5 h-5" />
+                    <section 
+                        id="sec-kalender" 
+                        className="snap-start snap-always h-[calc(100vh-73px)] min-h-[calc(100vh-73px)] max-h-[calc(100vh-73px)] flex flex-col justify-between p-6 md:p-8 space-y-4 shrink-0 transition-all duration-500 ease-in-out"
+                    >
+                        <div className="space-y-1 shrink-0 border-b border-slate-100 dark:border-slate-800 pb-2">
+                            <div className="flex items-center gap-2">
+                                <div className="w-7 h-7 rounded-xl bg-red-500/10 flex items-center justify-center text-ojk-red">
+                                    <Calendar className="w-4 h-4" />
                                 </div>
-                                <h3 className="text-2xl font-black text-slate-850 dark:text-white tracking-tight">
-                                    Ruang Rapat & Aula
-                                </h3>
-                            </div>
-                            <p className="text-xs text-slate-450 dark:text-slate-400 font-medium">
-                                Pilih ruangan sesuai kebutuhan rapat, aula kegiatan, atau pertemuan koordinasi.
-                            </p>
-                        </div>
-
-                        {/* Large Cards Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {filteredRooms.length > 0 ? (
-                                filteredRooms.map(room => (
-                                    <Card key={room.id} className="rounded-[18px] overflow-hidden hover:-translate-y-1.5 hover:shadow-2xl transition-all duration-300 flex flex-col md:flex-row justify-between group border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
-                                        <div className="relative h-60 md:h-auto md:w-1/2 overflow-hidden bg-slate-100 dark:bg-slate-800 shrink-0">
-                                            <img 
-                                                src={room.image} 
-                                                alt={room.name} 
-                                                className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-700" 
-                                            />
-                                            <div className="absolute top-3 left-3">
-                                                <span className="bg-emerald-500/90 backdrop-blur-md text-white text-[10px] font-black px-3 py-1 rounded-full shadow-md">
-                                                    {room.status}
-                                                </span>
-                                            </div>
-                                            <div className="absolute bottom-3 left-3">
-                                                <span className="bg-black/70 backdrop-blur-md text-white text-[10px] font-bold px-2.5 py-1 rounded-lg">
-                                                    {room.capacity}
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        <div className="p-6 md:w-1/2 flex flex-col justify-between space-y-4">
-                                            <div className="space-y-3">
-                                                <h4 className="text-lg font-black text-slate-850 dark:text-white leading-snug group-hover:text-ojk-red transition-colors">
-                                                    {room.name}
-                                                </h4>
-
-                                                <p className="text-xs text-slate-500 font-medium flex items-center gap-1.5">
-                                                    <MapPin className="w-3.5 h-3.5 text-red-500 shrink-0" />
-                                                    <span>Lokasi: {room.location}</span>
-                                                </p>
-
-                                                <div className="space-y-1.5">
-                                                    <span className="text-[11px] font-bold text-slate-400 block uppercase tracking-wider">Fasilitas Ruangan:</span>
-                                                    <div className="flex flex-wrap gap-1.5">
-                                                        {room.facilities?.map((fac, i) => (
-                                                            <span key={i} className="text-[10px] font-semibold bg-red-50 text-ojk-red dark:bg-red-950/40 dark:text-red-300 px-2.5 py-1 rounded-md">
-                                                                {fac}
-                                                            </span>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div className="grid grid-cols-2 gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
-                                                <Button 
-                                                    variant="secondary" 
-                                                    className="w-full text-xs font-bold py-2.5 rounded-xl cursor-pointer"
-                                                    onClick={() => { setSelectedAssetDetail(room); setAssetDetailOpen(true); }}
-                                                >
-                                                    Detail
-                                                </Button>
-                                                
-                                                <Button 
-                                                    variant="primary" 
-                                                    className="w-full text-xs font-bold py-2.5 rounded-xl bg-ojk-red hover:bg-red-700 text-white cursor-pointer shadow-sm"
-                                                    onClick={() => handleOpenReservationModal(room)}
-                                                >
-                                                    Reservasi
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    </Card>
-                                ))
-                            ) : (
-                                <div className="col-span-full py-16 text-center text-slate-400 font-semibold space-y-2">
-                                    <HomeIcon className="w-12 h-12 text-slate-300 mx-auto" />
-                                    <p>Tidak ada ruang rapat yang cocok dengan pencarian.</p>
-                                </div>
-                            )}
-                        </div>
-                    </section>
-
-                    {/* ==========================================
-                        SECTION 4: KALENDER
-                        ========================================== */}
-                    <section id="sec-kalender" className="scroll-mt-24 min-h-screen py-12 border-t border-slate-100 dark:border-slate-800/60 space-y-8 animate-fade-in duration-300">
-                        
-                        <div className="space-y-1 border-b border-slate-100 dark:border-slate-800 pb-4">
-                            <div className="flex items-center gap-2.5">
-                                <div className="w-8 h-8 rounded-xl bg-red-500/10 flex items-center justify-center text-ojk-red">
-                                    <Calendar className="w-5 h-5" />
-                                </div>
-                                <h3 className="text-2xl font-black text-slate-850 dark:text-white tracking-tight">
+                                <h3 className="text-xl font-black text-slate-850 dark:text-white tracking-tight">
                                     Kalender Schedule & Agenda
                                 </h3>
                             </div>
-                            <p className="text-xs text-slate-450 dark:text-slate-400 font-medium">
-                                Pantau seluruh jadwal reservasi dan kegiatan penggunaan aset kantor secara real-time.
+                            <p className="text-xs text-slate-400 font-medium">
+                                Pantau jadwal penggunaan aset dan kegiatan kantor secara real-time.
                             </p>
                         </div>
 
-                        {/* Interactive Full Calendar Widget */}
-                        <Card className="p-6 rounded-[18px] shadow-sm border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-6">
+                        {/* Calendar Widget Container */}
+                        <Card className="p-5 rounded-[20px] shadow-sm border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 flex-1 flex flex-col justify-between overflow-hidden">
                             
-                            {/* Calendar Header Controls */}
-                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                                <div className="flex items-center space-x-3">
-                                    <h4 className="text-xl font-extrabold text-slate-850 dark:text-white">
+                            {/* Controls */}
+                            <div className="flex justify-between items-center shrink-0 mb-3">
+                                <div className="flex items-center space-x-2">
+                                    <h4 className="text-lg font-extrabold text-slate-850 dark:text-white">
                                         {monthNames[calMonth]} {calYear}
                                     </h4>
-                                    <span className="bg-red-50 text-ojk-red dark:bg-red-950/40 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full">
+                                    <span className="bg-red-50 text-ojk-red dark:bg-red-950/40 text-[10px] font-extrabold px-2 py-0.5 rounded-full">
                                         Realtime Agenda
                                     </span>
                                 </div>
 
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-1.5">
                                     <Button variant="outline" size="sm" onClick={handlePrevMonth} className="rounded-xl">
-                                        <ChevronLeft className="w-4 h-4" />
+                                        <ChevronLeft className="w-3.5 h-3.5" />
                                     </Button>
-                                    <Button variant="outline" size="sm" onClick={() => setCurrentMonthDate(new Date())} className="rounded-xl text-xs font-bold">
+                                    <Button variant="outline" size="sm" onClick={() => setCurrentMonthDate(new Date())} className="rounded-xl text-[11px] font-bold">
                                         Bulan Ini
                                     </Button>
                                     <Button variant="outline" size="sm" onClick={handleNextMonth} className="rounded-xl">
-                                        <ChevronRight className="w-4 h-4" />
+                                        <ChevronRight className="w-3.5 h-3.5" />
                                     </Button>
                                 </div>
                             </div>
 
-                            {/* Grid Calendar Header Days */}
-                            <div className="grid grid-cols-7 gap-2 text-center text-xs font-black text-slate-400 uppercase tracking-wider py-2 border-b border-slate-100 dark:border-slate-800">
-                                <div>Minggu</div>
-                                <div>Senin</div>
-                                <div>Selasa</div>
-                                <div>Rabu</div>
-                                <div>Kamis</div>
-                                <div>Jumat</div>
-                                <div>Sabtu</div>
+                            {/* Header Days */}
+                            <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-black text-slate-400 uppercase tracking-wider py-1 border-b border-slate-100 dark:border-slate-800 shrink-0">
+                                <div>Min</div><div>Sen</div><div>Sel</div><div>Rab</div><div>Kam</div><div>Jum</div><div>Sab</div>
                             </div>
 
-                            {/* Calendar Days Cells */}
-                            <div className="grid grid-cols-7 gap-2">
-                                {/* Empty offset cells */}
+                            {/* Days Cells (Fits inside remaining height) */}
+                            <div className="grid grid-cols-7 gap-1.5 flex-1 py-2 overflow-y-auto custom-scrollbar">
                                 {Array.from({ length: firstDay }).map((_, i) => (
-                                    <div key={`empty-${i}`} className="h-24 bg-slate-50/40 dark:bg-slate-950/30 rounded-xl"></div>
+                                    <div key={`empty-${i}`} className="bg-slate-50/40 dark:bg-slate-950/30 rounded-xl min-h-[50px]"></div>
                                 ))}
 
-                                {/* Actual Days */}
                                 {Array.from({ length: daysInMonth }).map((_, i) => {
                                     const dayNum = i + 1;
                                     const dayDateStr = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
-                                    
-                                    // Find reservations matching this day
-                                    const dayReservations = allReservations.filter(res => {
-                                        const resStart = res.start_date ? res.start_date.split('T')[0] : '';
-                                        return resStart === dayDateStr;
-                                    });
+                                    const dayReservations = allReservations.filter(res => (res.start_date ? res.start_date.split('T')[0] : '') === dayDateStr);
 
                                     return (
-                                        <div key={dayNum} className="h-24 p-2 bg-slate-50/70 dark:bg-slate-850/40 rounded-xl border border-slate-100/80 dark:border-slate-800/60 flex flex-col justify-between hover:border-red-200 transition-colors">
-                                            <span className="text-xs font-extrabold text-slate-700 dark:text-slate-300">{dayNum}</span>
+                                        <div key={dayNum} className="p-1.5 bg-slate-50/80 dark:bg-slate-850/40 rounded-xl border border-slate-100/80 dark:border-slate-800/60 flex flex-col justify-between hover:border-red-200 transition-colors min-h-[50px]">
+                                            <span className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300">{dayNum}</span>
                                             
-                                            <div className="space-y-1 overflow-y-auto max-h-14">
+                                            <div className="space-y-0.5 overflow-y-auto max-h-10">
                                                 {dayReservations.map((r: any, idx: number) => (
                                                     <div 
                                                         key={idx} 
-                                                        onClick={() => toast.info(`Reservasi #${r.id}: ${r.asset?.name || 'Aset'} oleh ${r.user?.name || 'User'}`)}
-                                                        className="text-[9px] font-bold p-1 rounded-md bg-ojk-red text-white truncate cursor-pointer hover:bg-red-700"
+                                                        onClick={() => toast.info(`Reservasi #${r.id}: ${r.asset?.name || 'Aset'}`)}
+                                                        className="text-[8.5px] font-bold p-0.5 rounded bg-ojk-red text-white truncate cursor-pointer"
                                                     >
                                                         {r.asset?.name || 'Aset'}
                                                     </div>
@@ -964,62 +874,58 @@ export const Dashboard: React.FC = () => {
                     </section>
 
                     {/* ==========================================
-                        SECTION 5: RIWAYAT
+                        SECTION 5: RIWAYAT RESERVASI (100VH SNAP)
                         ========================================== */}
-                    <section id="sec-riwayat" className="scroll-mt-24 min-h-screen py-12 border-t border-slate-100 dark:border-slate-800/60 space-y-8 animate-fade-in duration-300">
-                        
-                        <div className="space-y-1 border-b border-slate-100 dark:border-slate-800 pb-4">
-                            <div className="flex items-center gap-2.5">
-                                <div className="w-8 h-8 rounded-xl bg-red-500/10 flex items-center justify-center text-ojk-red">
-                                    <HistoryIcon className="w-5 h-5" />
+                    <section 
+                        id="sec-riwayat" 
+                        className="snap-start snap-always h-[calc(100vh-73px)] min-h-[calc(100vh-73px)] max-h-[calc(100vh-73px)] flex flex-col justify-between p-6 md:p-8 space-y-4 shrink-0 transition-all duration-500 ease-in-out"
+                    >
+                        <div className="space-y-1 shrink-0 border-b border-slate-100 dark:border-slate-800 pb-2">
+                            <div className="flex items-center gap-2">
+                                <div className="w-7 h-7 rounded-xl bg-red-500/10 flex items-center justify-center text-ojk-red">
+                                    <HistoryIcon className="w-4 h-4" />
                                 </div>
-                                <h3 className="text-2xl font-black text-slate-850 dark:text-white tracking-tight">
+                                <h3 className="text-xl font-black text-slate-850 dark:text-white tracking-tight">
                                     Riwayat Reservasi Saya
                                 </h3>
                             </div>
-                            <p className="text-xs text-slate-450 dark:text-slate-400 font-medium">
-                                Daftar riwayat dan timeline status pengajuan peminjaman aset yang telah Anda ajukan.
+                            <p className="text-xs text-slate-400 font-medium">
+                                Daftar riwayat dan timeline status pengajuan reservasi yang Anda ajukan.
                             </p>
                         </div>
 
-                        {/* History Timeline Cards */}
-                        <div className="space-y-4">
+                        {/* History Cards Container */}
+                        <div className="flex-1 overflow-y-auto pr-1 space-y-3 custom-scrollbar">
                             {allReservations.length > 0 ? (
                                 allReservations.map((res: any) => (
-                                    <Card key={res.id} className="p-5 rounded-[18px] border border-slate-100 dark:border-slate-800 hover:shadow-md transition-all">
-                                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                                            <div className="space-y-2">
+                                    <Card key={res.id} className="p-4 rounded-[16px] border border-slate-100 dark:border-slate-800 hover:shadow-md transition-all">
+                                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                                            <div className="space-y-1.5">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="text-xs font-bold text-slate-400">#RSV-{res.id}</span>
+                                                    <span className="text-[11px] font-bold text-slate-400">#RSV-{res.id}</span>
                                                     <Badge status={res.status} />
                                                 </div>
 
-                                                <h4 className="text-base font-extrabold text-slate-850 dark:text-white">
+                                                <h4 className="text-sm font-extrabold text-slate-850 dark:text-white">
                                                     {res.asset?.name || 'Aset Kantor'}
                                                 </h4>
 
-                                                <div className="flex flex-wrap gap-4 text-xs text-slate-500 font-medium">
+                                                <div className="flex flex-wrap gap-3 text-[11px] text-slate-400 font-medium">
                                                     <span className="flex items-center gap-1">
-                                                        <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                                                        <Calendar className="w-3 h-3 text-slate-400" />
                                                         {res.start_date ? new Date(res.start_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}
                                                     </span>
                                                     <span className="flex items-center gap-1">
-                                                        <Clock className="w-3.5 h-3.5 text-slate-400" />
+                                                        <Clock className="w-3 h-3 text-slate-400" />
                                                         {res.purpose || 'Keperluan Dinas'}
                                                     </span>
                                                     {res.driver_name && (
                                                         <span className="flex items-center gap-1 text-ojk-red font-bold">
-                                                            <UserIcon className="w-3.5 h-3.5" />
+                                                            <UserIcon className="w-3 h-3" />
                                                             Driver: {res.driver_name}
                                                         </span>
                                                     )}
                                                 </div>
-
-                                                {res.rejection_reason && (
-                                                    <p className="text-xs text-red-500 font-medium bg-red-50 dark:bg-red-950/30 p-2.5 rounded-xl border border-red-100 dark:border-red-900/30">
-                                                        Alasan Ditolak: {res.rejection_reason}
-                                                    </p>
-                                                )}
                                             </div>
 
                                             {res.status === 'pending' && (
@@ -1037,73 +943,72 @@ export const Dashboard: React.FC = () => {
                                 ))
                             ) : (
                                 <Card className="p-12 text-center text-slate-400 font-semibold space-y-2 rounded-[18px]">
-                                    <HistoryIcon className="w-12 h-12 text-slate-300 mx-auto" />
-                                    <p>Belum ada riwayat reservasi yang diajukan.</p>
+                                    <HistoryIcon className="w-10 h-10 text-slate-300 mx-auto" />
+                                    <p className="text-xs">Belum ada riwayat reservasi yang diajukan.</p>
                                 </Card>
                             )}
                         </div>
                     </section>
 
                     {/* ==========================================
-                        SECTION 6: PENGATURAN
+                        SECTION 6: PENGATURAN (100VH SNAP)
                         ========================================== */}
-                    <section id="sec-pengaturan" className="scroll-mt-24 min-h-screen py-12 border-t border-slate-100 dark:border-slate-800/60 space-y-8 animate-fade-in duration-300">
-                        
-                        <div className="space-y-1 border-b border-slate-100 dark:border-slate-800 pb-4">
-                            <div className="flex items-center gap-2.5">
-                                <div className="w-8 h-8 rounded-xl bg-red-500/10 flex items-center justify-center text-ojk-red">
-                                    <SlidersHorizontal className="w-5 h-5" />
+                    <section 
+                        id="sec-pengaturan" 
+                        className="snap-start snap-always h-[calc(100vh-73px)] min-h-[calc(100vh-73px)] max-h-[calc(100vh-73px)] flex flex-col justify-between p-6 md:p-8 space-y-4 shrink-0 transition-all duration-500 ease-in-out"
+                    >
+                        <div className="space-y-1 shrink-0 border-b border-slate-100 dark:border-slate-800 pb-2">
+                            <div className="flex items-center gap-2">
+                                <div className="w-7 h-7 rounded-xl bg-red-500/10 flex items-center justify-center text-ojk-red">
+                                    <SlidersHorizontal className="w-4 h-4" />
                                 </div>
-                                <h3 className="text-2xl font-black text-slate-850 dark:text-white tracking-tight">
-                                    Pengaturan
+                                <h3 className="text-xl font-black text-slate-850 dark:text-white tracking-tight">
+                                    Pengaturan Akun & Profil
                                 </h3>
                             </div>
                             <p className="text-xs text-slate-450 dark:text-slate-400 font-medium">
-                                Informasi profil pengguna, ubah kata sandi, dan preferensi akun Anda.
+                                Kelola informasi profil dan ubah kata sandi akun Anda.
                             </p>
                         </div>
 
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            
-                            {/* Profile Info Card */}
-                            <Card className="p-6 rounded-[18px] border border-slate-100 dark:border-slate-800 space-y-5">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-14 h-14 rounded-2xl bg-ojk-red text-white font-black text-xl flex items-center justify-center shadow-md">
+                        <div className="flex-1 overflow-y-auto grid grid-cols-1 lg:grid-cols-2 gap-5 custom-scrollbar">
+                            <Card className="p-5 rounded-[18px] border border-slate-100 dark:border-slate-800 space-y-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-12 h-12 rounded-xl bg-ojk-red text-white font-black text-lg flex items-center justify-center shadow-md">
                                         {user?.name ? user.name.substring(0, 2).toUpperCase() : 'OK'}
                                     </div>
                                     <div className="space-y-0.5">
-                                        <h4 className="text-lg font-extrabold text-slate-850 dark:text-white">{user?.name || 'User'}</h4>
-                                        <span className="text-xs text-slate-400 font-medium">{user?.nip || 'NIP Pegawai'} &bull; {user?.division?.name || 'Kantor Regional 2 Jawa Barat'}</span>
+                                        <h4 className="text-base font-extrabold text-slate-850 dark:text-white">{user?.name || 'User'}</h4>
+                                        <span className="text-xs text-slate-400 font-medium">{user?.nip || 'NIP Pegawai'} &bull; {user?.division?.name || 'Regional 2 Jawa Barat'}</span>
                                     </div>
                                 </div>
 
-                                <div className="space-y-3 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs">
-                                    <div className="flex justify-between py-2 border-b border-slate-50 dark:border-slate-850">
+                                <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
+                                    <div className="flex justify-between py-1.5 border-b border-slate-50 dark:border-slate-850">
                                         <span className="font-semibold text-slate-400">Email Resmi</span>
                                         <span className="font-bold text-slate-700 dark:text-slate-200">{user?.email}</span>
                                     </div>
-                                    <div className="flex justify-between py-2 border-b border-slate-50 dark:border-slate-850">
+                                    <div className="flex justify-between py-1.5 border-b border-slate-50 dark:border-slate-850">
                                         <span className="font-semibold text-slate-400">Peran / Role</span>
                                         <span className="font-extrabold text-ojk-red uppercase tracking-wider">{user?.role}</span>
                                     </div>
-                                    <div className="flex justify-between py-2">
+                                    <div className="flex justify-between py-1.5">
                                         <span className="font-semibold text-slate-400">Kantor Unit</span>
                                         <span className="font-bold text-slate-700 dark:text-slate-200">Regional 2 Jawa Barat</span>
                                     </div>
                                 </div>
                             </Card>
 
-                            {/* Password Form Card */}
-                            <Card className="p-6 rounded-[18px] border border-slate-100 dark:border-slate-800 space-y-4">
-                                <div className="space-y-1">
-                                    <h4 className="text-sm font-extrabold text-slate-850 dark:text-white flex items-center gap-2">
-                                        <Key className="w-4 h-4 text-ojk-red" />
+                            <Card className="p-5 rounded-[18px] border border-slate-100 dark:border-slate-800 space-y-3">
+                                <div className="space-y-0.5">
+                                    <h4 className="text-xs font-extrabold text-slate-850 dark:text-white flex items-center gap-1.5">
+                                        <Key className="w-3.5 h-3.5 text-ojk-red" />
                                         Ubah Kata Sandi
                                     </h4>
-                                    <p className="text-xs text-slate-400">Perbarui kata sandi akun Anda secara berkala.</p>
+                                    <p className="text-[10px] text-slate-400">Perbarui kata sandi akun Anda secara berkala.</p>
                                 </div>
 
-                                <form onSubmit={handlePasswordChange} className="space-y-3">
+                                <form onSubmit={handlePasswordChange} className="space-y-2.5">
                                     <Input
                                         type="password"
                                         label="Kata Sandi Lama"
@@ -1111,7 +1016,7 @@ export const Dashboard: React.FC = () => {
                                         value={oldPassword}
                                         onChange={(e) => setOldPassword(e.target.value)}
                                         required
-                                        className="text-xs py-2.5 rounded-xl"
+                                        className="text-xs py-2 rounded-xl"
                                     />
                                     <Input
                                         type="password"
@@ -1120,7 +1025,7 @@ export const Dashboard: React.FC = () => {
                                         value={newPassword}
                                         onChange={(e) => setNewPassword(e.target.value)}
                                         required
-                                        className="text-xs py-2.5 rounded-xl"
+                                        className="text-xs py-2 rounded-xl"
                                     />
                                     <Input
                                         type="password"
@@ -1129,23 +1034,22 @@ export const Dashboard: React.FC = () => {
                                         value={confirmPassword}
                                         onChange={(e) => setConfirmPassword(e.target.value)}
                                         required
-                                        className="text-xs py-2.5 rounded-xl"
+                                        className="text-xs py-2 rounded-xl"
                                     />
                                     <Button
                                         type="submit"
                                         variant="primary"
                                         disabled={passwordSubmitting}
-                                        className="w-full text-xs font-bold py-2.5 rounded-xl bg-ojk-red text-white cursor-pointer"
+                                        className="w-full text-xs font-bold py-2 rounded-xl bg-ojk-red text-white cursor-pointer"
                                     >
                                         {passwordSubmitting ? 'Memperbarui...' : 'Simpan Kata Sandi Baru'}
                                     </Button>
                                 </form>
                             </Card>
-
                         </div>
                     </section>
 
-                </React.Fragment>
+                </div>
             )}
 
             {/* ==========================================
