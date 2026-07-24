@@ -92,22 +92,22 @@ export const Dashboard: React.FC = () => {
     const [resNotes, setResNotes] = useState('');
     const [resSubmitting, setResSubmitting] = useState(false);
 
-    // Official Vehicle Catalog Assets (15 Units)
+    // Official Vehicle Catalog Assets (15 Units with distinct HD photos)
     const vehicleAssets: CatalogAsset[] = [
         { id: 1, name: 'Toyota Fortuner', plate: 'D 1882 E', category: 'Kendaraan', status: 'Tersedia', location: 'Basement Lt. 1', image: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=800&q=80', specs: ['7 Kursi', 'SUV Premium'] },
         { id: 2, name: 'Toyota Alphard', plate: 'B 1707 NZU', category: 'Kendaraan', status: 'Tersedia', location: 'Basement Lt. 1 / VIP', image: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=800&q=80', specs: ['7 Kursi', 'VIP Luxury'] },
-        { id: 3, name: 'Toyota Kijang Innova', plate: 'D 1872 E', category: 'Kendaraan', status: 'Sedang Dipakai', location: 'Basement Lt. 1', image: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=800&q=80', specs: ['7 Kursi', 'MPV Operasional'] },
-        { id: 4, name: 'Toyota Kijang Innova', plate: 'D 1870 E', category: 'Kendaraan', status: 'Tersedia', location: 'Basement Lt. 1', image: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=800&q=80', specs: ['7 Kursi', 'MPV Operasional'] },
-        { id: 5, name: 'Toyota Kijang Innova', plate: 'D 1869 E', category: 'Kendaraan', status: 'Tersedia', location: 'Basement Lt. 1', image: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=800&q=80', specs: ['7 Kursi', 'MPV Operasional'] },
-        { id: 6, name: 'Toyota Hilux', plate: 'D 8069 D', category: 'Kendaraan', status: 'Tersedia', location: 'Basement Lt. 1', image: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=800&q=80', specs: ['Double Cab', '4x4 Double Cab'] },
-        { id: 7, name: 'Nissan X Trail', plate: 'D 1868 E', category: 'Kendaraan', status: 'Tersedia', location: 'Basement Lt. 1', image: 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=800&q=80', specs: ['5 Kursi', 'SUV Medium'] },
-        { id: 8, name: 'Toyota Camry 2.5 HV', plate: 'D 13', category: 'Kendaraan', status: 'Tersedia', location: 'Basement Lt. 1 / Pimpinan', image: 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=800&q=80', specs: ['Sedan Hybrid', 'Mobil Dinas Pimpinan'] },
-        { id: 9, name: 'Toyota Zenix 2.0 Q HV', plate: 'D 1041 C', category: 'Kendaraan', status: 'Tersedia', location: 'Basement Lt. 1', image: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=800&q=80', specs: ['Hybrid EV', 'Captain Seat'] },
-        { id: 10, name: 'Toyota Zenix 2.0 G CVT', plate: 'D 1162 F', category: 'Kendaraan', status: 'Tersedia', location: 'Basement Lt. 1', image: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=800&q=80', specs: ['CVT Automatic', '7 Kursi'] },
-        { id: 11, name: 'Toyota Zenix 2.0 G CVT', plate: 'D 1056 F', category: 'Kendaraan', status: 'Tersedia', location: 'Basement Lt. 1', image: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=800&q=80', specs: ['CVT Automatic', '7 Kursi'] },
+        { id: 3, name: 'Toyota Kijang Innova', plate: 'D 1872 E', category: 'Kendaraan', status: 'Sedang Dipakai', location: 'Basement Lt. 1', image: 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=800&q=80', specs: ['7 Kursi', 'MPV Operasional'] },
+        { id: 4, name: 'Toyota Kijang Innova', plate: 'D 1870 E', category: 'Kendaraan', status: 'Tersedia', location: 'Basement Lt. 1', image: 'https://images.unsplash.com/photo-1583121274602-3e2820c69888?auto=format&fit=crop&w=800&q=80', specs: ['7 Kursi', 'MPV Operasional'] },
+        { id: 5, name: 'Toyota Kijang Innova', plate: 'D 1869 E', category: 'Kendaraan', status: 'Tersedia', location: 'Basement Lt. 1', image: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=800&q=80', specs: ['7 Kursi', 'MPV Operasional'] },
+        { id: 6, name: 'Toyota Hilux', plate: 'D 8069 D', category: 'Kendaraan', status: 'Tersedia', location: 'Basement Lt. 1', image: 'https://images.unsplash.com/photo-1559416523-140ddc3d238c?auto=format&fit=crop&w=800&q=80', specs: ['Double Cab', '4x4 Double Cab'] },
+        { id: 7, name: 'Nissan X Trail', plate: 'D 1868 E', category: 'Kendaraan', status: 'Tersedia', location: 'Basement Lt. 1', image: 'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?auto=format&fit=crop&w=800&q=80', specs: ['5 Kursi', 'SUV Medium'] },
+        { id: 8, name: 'Toyota Camry 2.5 HV', plate: 'D 13', category: 'Kendaraan', status: 'Tersedia', location: 'Basement Lt. 1 / Pimpinan', image: 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=800&q=80', specs: ['Sedan Hybrid', 'Mobil Dinas Pimpinan'] },
+        { id: 9, name: 'Toyota Zenix 2.0 Q HV', plate: 'D 1041 C', category: 'Kendaraan', status: 'Tersedia', location: 'Basement Lt. 1', image: 'https://images.unsplash.com/photo-1542282088-72c9c27ed0cd?auto=format&fit=crop&w=800&q=80', specs: ['Hybrid EV', 'Captain Seat'] },
+        { id: 10, name: 'Toyota Zenix 2.0 G CVT', plate: 'D 1162 F', category: 'Kendaraan', status: 'Tersedia', location: 'Basement Lt. 1', image: 'https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=800&q=80', specs: ['CVT Automatic', '7 Kursi'] },
+        { id: 11, name: 'Toyota Zenix 2.0 G CVT', plate: 'D 1056 F', category: 'Kendaraan', status: 'Tersedia', location: 'Basement Lt. 1', image: 'https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?auto=format&fit=crop&w=800&q=80', specs: ['CVT Automatic', '7 Kursi'] },
         { id: 12, name: 'Isuzu Traga Box', plate: 'B 9455 PQW', category: 'Kendaraan', status: 'Tersedia', location: 'Parkiran Logistik', image: 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=800&q=80', specs: ['Angkutan Barang', 'Box Logistik'] },
-        { id: 13, name: 'Isuzu Traga Box', plate: 'B 9545 PQW', category: 'Kendaraan', status: 'Tersedia', location: 'Parkiran Logistik', image: 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=800&q=80', specs: ['Angkutan Barang', 'Box Logistik'] },
-        { id: 14, name: 'Isuzu Traga Box', plate: 'B 9543 PQW', category: 'Kendaraan', status: 'Tersedia', location: 'Parkiran Logistik', image: 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=800&q=80', specs: ['Angkutan Barang', 'Box Logistik'] },
+        { id: 13, name: 'Isuzu Traga Box', plate: 'B 9545 PQW', category: 'Kendaraan', status: 'Tersedia', location: 'Parkiran Logistik', image: 'https://images.unsplash.com/photo-1586191582056-a36c64639d6b?auto=format&fit=crop&w=800&q=80', specs: ['Angkutan Barang', 'Box Logistik'] },
+        { id: 14, name: 'Isuzu Traga Box', plate: 'B 9543 PQW', category: 'Kendaraan', status: 'Tersedia', location: 'Parkiran Logistik', image: 'https://images.unsplash.com/photo-1517524008697-84bbe3c3fd98?auto=format&fit=crop&w=800&q=80', specs: ['Angkutan Barang', 'Box Logistik'] },
         { id: 15, name: 'Honda CB 150 R', plate: 'D 3044 F', category: 'Kendaraan', status: 'Tersedia', location: 'Parkiran Motor', image: 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=800&q=80', specs: ['Sepeda Motor', 'Kurir / Operasional'] }
     ];
 
@@ -119,28 +119,40 @@ export const Dashboard: React.FC = () => {
         { id: 19, name: 'Ruang Rapat Sadewa', category: 'Ruangan', status: 'Tersedia', location: 'Lantai 2', image: 'https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=800&q=80', capacity: '12 Orang', facilities: ['LED Display', 'Executive Desk', 'AC', 'Wi-Fi'], specs: ['Kapasitas 12 Orang', 'Lantai 2'] }
     ];
 
-    // IntersectionObserver for Snap Scroll Container
+    // Scroll Spy: Real-time Listener on scroll container & window for instant sidebar active highlight
     useEffect(() => {
         const sectionIds = ['sec-dashboard', 'sec-kendaraan', 'sec-ruangan', 'sec-kalender', 'sec-riwayat', 'sec-pengaturan'];
-        const container = document.getElementById('snap-scroll-container');
+        
+        const updateActiveSection = () => {
+            const container = document.getElementById('snap-scroll-container');
+            const scrollPos = container ? container.scrollTop + 180 : window.scrollY + 180;
 
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    window.dispatchEvent(new CustomEvent('ojk-active-section', { detail: entry.target.id }));
+            for (let i = sectionIds.length - 1; i >= 0; i--) {
+                const el = document.getElementById(sectionIds[i]);
+                if (el) {
+                    const top = el.offsetTop;
+                    if (scrollPos >= top) {
+                        window.dispatchEvent(new CustomEvent('ojk-active-section', { detail: sectionIds[i] }));
+                        break;
+                    }
                 }
-            });
-        }, { 
-            root: container,
-            threshold: 0.45 
-        });
+            }
+        };
 
-        sectionIds.forEach(id => {
-            const el = document.getElementById(id);
-            if (el) observer.observe(el);
-        });
+        const container = document.getElementById('snap-scroll-container');
+        if (container) {
+            container.addEventListener('scroll', updateActiveSection, { passive: true });
+        }
+        window.addEventListener('scroll', updateActiveSection, { passive: true });
+        
+        updateActiveSection();
+        const timer = setTimeout(updateActiveSection, 300);
 
-        return () => observer.disconnect();
+        return () => {
+            if (container) container.removeEventListener('scroll', updateActiveSection);
+            window.removeEventListener('scroll', updateActiveSection);
+            clearTimeout(timer);
+        };
     }, []);
 
     const toggleFavorite = (id: number) => {

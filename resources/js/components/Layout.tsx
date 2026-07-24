@@ -76,15 +76,15 @@ export const Layout: React.FC = () => {
         if (['sec-kendaraan', 'sec-ruangan'].includes(secId)) {
             setReservationsSubOpen(true);
         }
-        if (location.pathname !== '/dashboard') {
-            navigate('/dashboard');
-            setTimeout(() => {
-                const el = document.getElementById(secId);
-                if (el) el.scrollIntoView({ behavior: 'smooth' });
-            }, 150);
-        } else {
-            const el = document.getElementById(secId);
-            if (el) el.scrollIntoView({ behavior: 'smooth' });
+        const container = document.getElementById('snap-scroll-container');
+        const el = document.getElementById(secId);
+        if (container && el) {
+            container.scrollTo({
+                top: el.offsetTop,
+                behavior: 'smooth'
+            });
+        } else if (el) {
+            el.scrollIntoView({ behavior: 'smooth' });
         }
     };
 
