@@ -382,7 +382,7 @@ export const Layout: React.FC = () => {
 
                 {/* Navigation Items - Fully Scrollable with Scroll Spy */}
                 <nav className="p-4 space-y-1.5 overflow-y-auto flex-1 min-h-0 custom-scrollbar">
-                    {user?.role === 'pegawai' || location.pathname === '/dashboard' ? (
+                    {user?.role === 'pegawai' ? (
                         <React.Fragment>
                             {/* Dashboard */}
                             <button
