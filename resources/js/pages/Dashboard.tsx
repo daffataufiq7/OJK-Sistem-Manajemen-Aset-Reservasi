@@ -101,7 +101,7 @@ export const Dashboard: React.FC = () => {
         }
     };
 
-    const [dashData, setDashData] = useState<any>(defaultSuperAdminData);
+    const [dashData, setDashData] = useState<any>(null);
 
     // Catalog Filter States for Employee
     const [searchQuery, setSearchQuery] = useState('');
@@ -325,7 +325,7 @@ export const Dashboard: React.FC = () => {
                             <CardContent className="p-5 flex items-center justify-between">
                                 <div className="space-y-1">
                                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Aset</span>
-                                    <h4 className="text-2xl font-extrabold text-slate-800 dark:text-white tracking-tight">{dashData?.stats?.total_assets || 50}</h4>
+                                    <h4 className="text-2xl font-extrabold text-slate-800 dark:text-white tracking-tight">{dashData?.stats?.total_assets ?? 0}</h4>
                                     <p className="text-[9px] text-emerald-600 font-bold flex items-center gap-0.5">
                                         <TrendingUp className="w-3 h-3" /> +12% vs bulan lalu
                                     </p>
@@ -340,7 +340,7 @@ export const Dashboard: React.FC = () => {
                             <CardContent className="p-5 flex items-center justify-between">
                                 <div className="space-y-1">
                                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Aset Tersedia</span>
-                                    <h4 className="text-2xl font-extrabold text-slate-800 dark:text-white tracking-tight">{dashData?.stats?.available || 28}</h4>
+                                    <h4 className="text-2xl font-extrabold text-slate-800 dark:text-white tracking-tight">{dashData?.stats?.available ?? 0}</h4>
                                     <p className="text-[9px] text-emerald-600 font-bold flex items-center gap-0.5">
                                         <TrendingUp className="w-3 h-3" /> +18% vs bulan lalu
                                     </p>
@@ -355,7 +355,7 @@ export const Dashboard: React.FC = () => {
                             <CardContent className="p-5 flex items-center justify-between">
                                 <div className="space-y-1">
                                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Sedang Dipakai</span>
-                                    <h4 className="text-2xl font-extrabold text-slate-800 dark:text-white tracking-tight">{dashData?.stats?.in_use || 16}</h4>
+                                    <h4 className="text-2xl font-extrabold text-slate-800 dark:text-white tracking-tight">{dashData?.stats?.in_use ?? 0}</h4>
                                     <p className="text-[9px] text-emerald-600 font-bold flex items-center gap-0.5">
                                         <TrendingUp className="w-3 h-3" /> +5% vs bulan lalu
                                     </p>
@@ -370,7 +370,7 @@ export const Dashboard: React.FC = () => {
                             <CardContent className="p-5 flex items-center justify-between">
                                 <div className="space-y-1">
                                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Maintenance</span>
-                                    <h4 className="text-2xl font-extrabold text-slate-800 dark:text-white tracking-tight">{dashData?.stats?.maintenance || 6}</h4>
+                                    <h4 className="text-2xl font-extrabold text-slate-800 dark:text-white tracking-tight">{dashData?.stats?.maintenance ?? 0}</h4>
                                     <p className="text-[9px] text-red-500 font-bold flex items-center gap-0.5">
                                         <TrendingUp className="w-3 h-3" /> +3% vs bulan lalu
                                     </p>
@@ -449,7 +449,7 @@ export const Dashboard: React.FC = () => {
                             <CardContent className="p-5 flex items-center justify-between">
                                 <div>
                                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Menunggu Approval</span>
-                                    <h4 className="text-2xl font-extrabold text-amber-600">{dashData?.stats?.pending_request || 3}</h4>
+                                    <h4 className="text-2xl font-extrabold text-amber-600">{dashData?.stats?.pending_request ?? 0}</h4>
                                 </div>
                                 <Hourglass className="w-6 h-6 text-amber-500" />
                             </CardContent>
@@ -459,17 +459,17 @@ export const Dashboard: React.FC = () => {
                             <CardContent className="p-5 flex items-center justify-between">
                                 <div>
                                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Disetujui Hari Ini</span>
-                                    <h4 className="text-2xl font-extrabold text-emerald-600">{dashData?.stats?.approved_today || 8}</h4>
+                                    <h4 className="text-2xl font-extrabold text-emerald-600">{dashData?.stats?.approved_today ?? 0}</h4>
                                 </div>
                                 <CheckCircle2 className="w-6 h-6 text-emerald-600" />
                             </CardContent>
                         </Card>
 
-                        <Card className="hover:scale-[1.01] transition-transform duration-250 border-l-4 border-l-red-600">
+ widespread                        <Card className="hover:scale-[1.01] transition-transform duration-250 border-l-4 border-l-red-600">
                             <CardContent className="p-5 flex items-center justify-between">
                                 <div>
                                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Ditolak Hari Ini</span>
-                                    <h4 className="text-2xl font-extrabold text-red-600">{dashData?.stats?.rejected_today || 1}</h4>
+                                    <h4 className="text-2xl font-extrabold text-red-600">{dashData?.stats?.rejected_today ?? 0}</h4>
                                 </div>
                                 <XCircle className="w-6 h-6 text-red-600" />
                             </CardContent>
@@ -479,7 +479,7 @@ export const Dashboard: React.FC = () => {
                             <CardContent className="p-5 flex items-center justify-between">
                                 <div>
                                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Aset Dipinjam Hari Ini</span>
-                                    <h4 className="text-2xl font-extrabold text-blue-600">{dashData?.stats?.in_use || 16}</h4>
+                                    <h4 className="text-2xl font-extrabold text-blue-600">{dashData?.stats?.in_use ?? 0}</h4>
                                 </div>
                                 <Clock className="w-6 h-6 text-blue-600" />
                             </CardContent>
@@ -547,7 +547,7 @@ export const Dashboard: React.FC = () => {
                             <CardContent className="p-5 flex items-center justify-between">
                                 <div className="space-y-1">
                                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Aset</span>
-                                    <h4 className="text-2xl font-extrabold text-slate-800 dark:text-white tracking-tight">50</h4>
+                                    <h4 className="text-2xl font-extrabold text-slate-800 dark:text-white tracking-tight">{dashData?.stats?.total_assets ?? 0}</h4>
                                     <p className="text-[9px] text-emerald-600 font-bold flex items-center gap-0.5">
                                         <TrendingUp className="w-3 h-3" /> +12% vs bulan lalu
                                     </p>
@@ -562,7 +562,7 @@ export const Dashboard: React.FC = () => {
                             <CardContent className="p-5 flex items-center justify-between">
                                 <div className="space-y-1">
                                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Aset Tersedia</span>
-                                    <h4 className="text-2xl font-extrabold text-slate-800 dark:text-white tracking-tight">28</h4>
+                                    <h4 className="text-2xl font-extrabold text-slate-800 dark:text-white tracking-tight">{dashData?.stats?.available ?? 0}</h4>
                                     <p className="text-[9px] text-emerald-600 font-bold flex items-center gap-0.5">
                                         <TrendingUp className="w-3 h-3" /> +18% vs bulan lalu
                                     </p>
@@ -577,7 +577,7 @@ export const Dashboard: React.FC = () => {
                             <CardContent className="p-5 flex items-center justify-between">
                                 <div className="space-y-1">
                                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Sedang Dipakai</span>
-                                    <h4 className="text-2xl font-extrabold text-slate-800 dark:text-white tracking-tight">16</h4>
+                                    <h4 className="text-2xl font-extrabold text-slate-800 dark:text-white tracking-tight">{dashData?.stats?.in_use ?? 0}</h4>
                                     <p className="text-[9px] text-emerald-600 font-bold flex items-center gap-0.5">
                                         <TrendingUp className="w-3 h-3" /> +5% vs bulan lalu
                                     </p>
@@ -592,7 +592,7 @@ export const Dashboard: React.FC = () => {
                             <CardContent className="p-5 flex items-center justify-between">
                                 <div className="space-y-1">
                                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Maintenance</span>
-                                    <h4 className="text-2xl font-extrabold text-slate-800 dark:text-white tracking-tight">6</h4>
+                                    <h4 className="text-2xl font-extrabold text-slate-800 dark:text-white tracking-tight">{dashData?.stats?.maintenance ?? 0}</h4>
                                     <p className="text-[9px] text-red-500 font-bold flex items-center gap-0.5">
                                         <TrendingUp className="w-3 h-3" /> +3% vs bulan lalu
                                     </p>

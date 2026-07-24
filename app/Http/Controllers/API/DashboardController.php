@@ -19,6 +19,17 @@ class DashboardController extends Controller
         $user = $request->user();
         $role = $user->role;
 
+        // Auto-sync asset status if no active reservation exists for it
+        Asset::whereIn('status', ['in_use', 'reserved'])->get()->each(function ($asset) {
+            $hasActive = Reservation::where('asset_id', $asset->id)
+                ->whereIn('status', ['approved', 'reserved', 'in_use'])
+                ->exists();
+            if (!$hasActive) {
+                $asset->status = 'available';
+                $asset->save();
+            }
+        });
+
         // Base statistics
         $totalAssets = Asset::count();
         $availableAssets = Asset::where('status', 'available')->count();
@@ -299,6 +310,10 @@ class DashboardController extends Controller
             return response()->json([
                 'role' => $role,
                 'stats' => [
+                    'total_assets' => $totalAssets,
+                    'available' => $availableAssets,
+                    'in_use' => $inUseAssets,
+                    'maintenance' => $maintenanceAssets,
                     'active_reservations' => $activeReservations,
                     'waiting_approval' => $waitingApproval,
                     'approved_reservations' => $approvedCount,
