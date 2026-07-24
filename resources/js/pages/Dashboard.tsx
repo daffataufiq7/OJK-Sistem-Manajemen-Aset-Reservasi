@@ -617,11 +617,11 @@ export const Dashboard: React.FC = () => {
                             </Card>
                         </div>
 
-                        {/* Marketplace Card Grid (Auto-scrollable within section) */}
-                        <div className="flex-1 overflow-y-auto pr-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 custom-scrollbar">
+                        {/* Marketplace Card Grid (Auto-scrollable within section with generous bottom padding) */}
+                        <div className="flex-1 overflow-y-auto pr-1 pb-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 custom-scrollbar">
                             {filteredVehicles.map(vehicle => (
-                                <Card key={vehicle.id} className="rounded-[18px] overflow-hidden hover:-translate-y-1 hover:shadow-xl transition-all duration-300 flex flex-col justify-between group border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
-                                    <div className="relative h-48 sm:h-52 min-h-[192px] w-full shrink-0 overflow-hidden bg-slate-900 rounded-t-[18px]">
+                                <Card key={vehicle.id} className="rounded-[18px] overflow-hidden hover:-translate-y-1 hover:shadow-xl transition-all duration-300 flex flex-col justify-between group border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+                                    <div className="relative h-36 sm:h-40 min-h-[144px] w-full shrink-0 overflow-hidden bg-slate-900 rounded-t-[18px]">
                                         <img 
                                             src={vehicle.image} 
                                             alt={vehicle.name} 
@@ -733,8 +733,8 @@ export const Dashboard: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Large Cards Grid (Auto-scrollable within section) */}
-                        <div className="flex-1 overflow-y-auto pr-1 grid grid-cols-1 md:grid-cols-2 gap-5 custom-scrollbar">
+                        {/* Large Cards Grid (Auto-scrollable within section with generous bottom padding) */}
+                        <div className="flex-1 overflow-y-auto pr-1 pb-12 grid grid-cols-1 md:grid-cols-2 gap-5 custom-scrollbar">
                             {filteredRooms.map(room => (
                                 <Card key={room.id} className="rounded-[18px] overflow-hidden hover:-translate-y-1 hover:shadow-xl transition-all duration-300 flex flex-col md:flex-row justify-between group border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
                                     <div className="relative h-48 md:h-auto md:w-1/2 overflow-hidden bg-slate-100 dark:bg-slate-800 shrink-0">
