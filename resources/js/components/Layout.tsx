@@ -56,26 +56,30 @@ export const Layout: React.FC = () => {
 
     const [activeSection, setActiveSection] = useState<string>('sec-dashboard');
 
-    // Direct scroll position listener in Layout.tsx for instant sidebar scroll spy highlight
+    // Precision Scroll Spy using BoundingClientRect for One Page Enterprise Dashboard
     useEffect(() => {
         const sectionIds = ['sec-dashboard', 'sec-kendaraan', 'sec-ruangan', 'sec-kalender', 'sec-riwayat', 'sec-pengaturan'];
 
         const updateActiveSection = () => {
             const container = document.getElementById('snap-scroll-container');
-            const scrollPos = container ? container.scrollTop + 200 : window.scrollY + 200;
+            if (!container) return;
+            const containerRect = container.getBoundingClientRect();
 
-            for (let i = sectionIds.length - 1; i >= 0; i--) {
-                const el = document.getElementById(sectionIds[i]);
+            let currentActive = 'sec-dashboard';
+            for (const id of sectionIds) {
+                const el = document.getElementById(id);
                 if (el) {
-                    const top = el.offsetTop;
-                    if (scrollPos >= top) {
-                        setActiveSection(sectionIds[i]);
-                        if (['sec-kendaraan', 'sec-ruangan'].includes(sectionIds[i])) {
-                            setReservationsSubOpen(true);
-                        }
-                        break;
+                    const rect = el.getBoundingClientRect();
+                    // If the section top is near the upper half of the container view
+                    if (rect.top - containerRect.top <= containerRect.height * 0.45) {
+                        currentActive = id;
                     }
                 }
+            }
+
+            setActiveSection(currentActive);
+            if (['sec-kendaraan', 'sec-ruangan'].includes(currentActive)) {
+                setReservationsSubOpen(true);
             }
         };
 
@@ -85,7 +89,8 @@ export const Layout: React.FC = () => {
         }
         window.addEventListener('scroll', updateActiveSection, { passive: true });
 
-        const timer = setInterval(updateActiveSection, 250);
+        const timer = setInterval(updateActiveSection, 200);
+        updateActiveSection();
 
         return () => {
             if (container) container.removeEventListener('scroll', updateActiveSection);
@@ -100,15 +105,28 @@ export const Layout: React.FC = () => {
         if (['sec-kendaraan', 'sec-ruangan'].includes(secId)) {
             setReservationsSubOpen(true);
         }
-        const container = document.getElementById('snap-scroll-container');
-        const el = document.getElementById(secId);
-        if (container && el) {
-            container.scrollTo({
-                top: el.offsetTop,
-                behavior: 'smooth'
-            });
-        } else if (el) {
-            el.scrollIntoView({ behavior: 'smooth' });
+
+        const navigateAndScroll = () => {
+            const container = document.getElementById('snap-scroll-container');
+            const el = document.getElementById(secId);
+            if (container && el) {
+                const containerRect = container.getBoundingClientRect();
+                const elRect = el.getBoundingClientRect();
+                const targetScrollTop = container.scrollTop + (elRect.top - containerRect.top);
+                container.scrollTo({
+                    top: targetScrollTop,
+                    behavior: 'smooth'
+                });
+            } else if (el) {
+                el.scrollIntoView({ behavior: 'smooth' });
+            }
+        };
+
+        if (location.pathname !== '/dashboard') {
+            navigate('/dashboard');
+            setTimeout(navigateAndScroll, 200);
+        } else {
+            navigateAndScroll();
         }
     };
 
