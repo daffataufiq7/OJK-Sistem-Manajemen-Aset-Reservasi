@@ -58,25 +58,29 @@ export const Layout: React.FC = () => {
 
     const isClickScrollingRef = useRef(false);
 
-    // Flawless 1-to-1 Range-Matching Scroll Spy Listener
+    // DEFINITIVE FIX: Fixed TRIGGER_Y (computed once at setup, never moves during scroll)
+    // Root cause of all previous bugs: using containerRect.top inside the scroll handler
+    // means targetPoint shifts every scroll tick => algorithm always falls back to sec-dashboard.
+    // Solution: capture container top ONCE at effect setup as a constant.
     useEffect(() => {
         const sectionIds = ['sec-dashboard', 'sec-kendaraan', 'sec-ruangan', 'sec-kalender', 'sec-riwayat', 'sec-pengaturan'];
 
+        // Compute ONCE — this is the y-coordinate of the top of the scrollable content area.
+        // We add a tiny buffer (+5) so the trigger fires right as a section enters the viewport.
+        const container = document.getElementById('snap-scroll-container');
+        const TRIGGER_Y = (container?.getBoundingClientRect().top ?? 73) + 5;
+
         const updateActiveSection = () => {
             if (isClickScrollingRef.current) return;
-
-            const container = document.getElementById('snap-scroll-container');
-            if (!container) return;
-            const containerRect = container.getBoundingClientRect();
-            // Line at 150px below top of container
-            const targetPoint = containerRect.top + 150;
 
             let currentActive = 'sec-dashboard';
             for (const id of sectionIds) {
                 const el = document.getElementById(id);
                 if (el) {
+                    // getBoundingClientRect() is viewport-relative — works for BOTH
+                    // inner-container scroll AND window scroll with no calculation drift.
                     const rect = el.getBoundingClientRect();
-                    if (rect.top <= targetPoint && rect.bottom > targetPoint) {
+                    if (rect.top <= TRIGGER_Y && rect.bottom > TRIGGER_Y) {
                         currentActive = id;
                         break;
                     }
@@ -89,7 +93,6 @@ export const Layout: React.FC = () => {
             }
         };
 
-        const container = document.getElementById('snap-scroll-container');
         if (container) {
             container.addEventListener('scroll', updateActiveSection, { passive: true });
         }
@@ -119,9 +122,10 @@ export const Layout: React.FC = () => {
             if (el) {
                 el.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
+            // 1500ms covers even the longest smooth scroll (e.g., Dashboard → Pengaturan)
             setTimeout(() => {
                 isClickScrollingRef.current = false;
-            }, 800);
+            }, 1500);
         };
 
         if (location.pathname !== '/dashboard') {
