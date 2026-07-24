@@ -58,7 +58,7 @@ export const Layout: React.FC = () => {
 
     const isClickScrollingRef = useRef(false);
 
-    // Rock-Solid Container Scroll Spy Listener (Scroll UP & DOWN)
+    // 100% Accurate Visual Scroll Spy Listener using relativeTop containerHeight * 0.65 threshold
     useEffect(() => {
         const sectionIds = ['sec-dashboard', 'sec-kendaraan', 'sec-ruangan', 'sec-kalender', 'sec-riwayat', 'sec-pengaturan'];
 
@@ -67,13 +67,16 @@ export const Layout: React.FC = () => {
 
             const container = document.getElementById('snap-scroll-container');
             if (!container) return;
-            const scrollPos = container.scrollTop;
+            const containerRect = container.getBoundingClientRect();
+            const triggerThreshold = containerRect.height * 0.65; // 65% threshold down the viewport
 
             let currentActive = 'sec-dashboard';
             for (let i = sectionIds.length - 1; i >= 0; i--) {
                 const el = document.getElementById(sectionIds[i]);
                 if (el) {
-                    if (scrollPos >= el.offsetTop - 180) {
+                    const elRect = el.getBoundingClientRect();
+                    const relativeTop = elRect.top - containerRect.top;
+                    if (relativeTop <= triggerThreshold) {
                         currentActive = sectionIds[i];
                         break;
                     }
@@ -93,12 +96,14 @@ export const Layout: React.FC = () => {
         window.addEventListener('scroll', updateActiveSection, { passive: true });
 
         updateActiveSection();
+        const timer = setTimeout(updateActiveSection, 300);
 
         return () => {
             if (container) {
                 container.removeEventListener('scroll', updateActiveSection);
             }
             window.removeEventListener('scroll', updateActiveSection);
+            clearTimeout(timer);
         };
     }, [location.pathname]);
 
