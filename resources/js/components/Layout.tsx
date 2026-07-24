@@ -58,7 +58,7 @@ export const Layout: React.FC = () => {
 
     const isClickScrollingRef = useRef(false);
 
-    // Bulletproof Relative BoundingClientRect Scroll Spy Listener
+    // Flawless Bidirectional Scroll Spy Listener (Scroll UP & DOWN)
     useEffect(() => {
         const sectionIds = ['sec-dashboard', 'sec-kendaraan', 'sec-ruangan', 'sec-kalender', 'sec-riwayat', 'sec-pengaturan'];
 
@@ -68,22 +68,26 @@ export const Layout: React.FC = () => {
             const container = document.getElementById('snap-scroll-container');
             if (!container) return;
             const containerTop = container.getBoundingClientRect().top;
-            const containerHeight = container.getBoundingClientRect().height;
+            const triggerPoint = 200; // 200px threshold from top of view
 
-            let currentSection = 'sec-dashboard';
-            for (let i = sectionIds.length - 1; i >= 0; i--) {
+            let activeId = 'sec-dashboard';
+
+            for (let i = 0; i < sectionIds.length; i++) {
                 const el = document.getElementById(sectionIds[i]);
                 if (el) {
-                    const relativeTop = el.getBoundingClientRect().top - containerTop;
-                    if (relativeTop <= containerHeight * 0.45) {
-                        currentSection = sectionIds[i];
-                        break;
+                    const rect = el.getBoundingClientRect();
+                    const top = rect.top - containerTop;
+                    const bottom = rect.bottom - containerTop;
+
+                    // Active if section top has passed the trigger point AND section bottom is still visible
+                    if (top <= triggerPoint && bottom > 0) {
+                        activeId = sectionIds[i];
                     }
                 }
             }
 
-            setActiveSection(currentSection);
-            if (['sec-kendaraan', 'sec-ruangan'].includes(currentSection)) {
+            setActiveSection(activeId);
+            if (['sec-kendaraan', 'sec-ruangan'].includes(activeId)) {
                 setReservationsSubOpen(true);
             }
         };
