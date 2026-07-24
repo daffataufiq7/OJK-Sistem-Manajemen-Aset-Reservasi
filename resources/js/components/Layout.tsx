@@ -58,7 +58,7 @@ export const Layout: React.FC = () => {
 
     const isClickScrollingRef = useRef(false);
 
-    // Flawless Bidirectional Scroll Spy Listener (Scroll UP & DOWN)
+    // Rock-Solid Container Scroll Spy Listener (Scroll UP & DOWN)
     useEffect(() => {
         const sectionIds = ['sec-dashboard', 'sec-kendaraan', 'sec-ruangan', 'sec-kalender', 'sec-riwayat', 'sec-pengaturan'];
 
@@ -67,27 +67,21 @@ export const Layout: React.FC = () => {
 
             const container = document.getElementById('snap-scroll-container');
             if (!container) return;
-            const containerTop = container.getBoundingClientRect().top;
-            const triggerPoint = 200; // 200px threshold from top of view
+            const scrollPos = container.scrollTop;
 
-            let activeId = 'sec-dashboard';
-
-            for (let i = 0; i < sectionIds.length; i++) {
+            let currentActive = 'sec-dashboard';
+            for (let i = sectionIds.length - 1; i >= 0; i--) {
                 const el = document.getElementById(sectionIds[i]);
                 if (el) {
-                    const rect = el.getBoundingClientRect();
-                    const top = rect.top - containerTop;
-                    const bottom = rect.bottom - containerTop;
-
-                    // Active if section top has passed the trigger point AND section bottom is still visible
-                    if (top <= triggerPoint && bottom > 0) {
-                        activeId = sectionIds[i];
+                    if (scrollPos >= el.offsetTop - 180) {
+                        currentActive = sectionIds[i];
+                        break;
                     }
                 }
             }
 
-            setActiveSection(activeId);
-            if (['sec-kendaraan', 'sec-ruangan'].includes(activeId)) {
+            setActiveSection(currentActive);
+            if (['sec-kendaraan', 'sec-ruangan'].includes(currentActive)) {
                 setReservationsSubOpen(true);
             }
         };
@@ -99,14 +93,12 @@ export const Layout: React.FC = () => {
         window.addEventListener('scroll', updateActiveSection, { passive: true });
 
         updateActiveSection();
-        const timer = setTimeout(updateActiveSection, 300);
 
         return () => {
             if (container) {
                 container.removeEventListener('scroll', updateActiveSection);
             }
             window.removeEventListener('scroll', updateActiveSection);
-            clearTimeout(timer);
         };
     }, [location.pathname]);
 
@@ -711,7 +703,7 @@ export const Layout: React.FC = () => {
                 {/* ==========================================
                     PAGE CONTENT BODY (Full Screen Snap Container)
                     ========================================== */}
-                <main id="snap-scroll-container" className="flex-1 w-full mx-auto animate-fade-in duration-200 overflow-y-auto snap-y snap-mandatory scroll-smooth custom-scrollbar h-[calc(100vh-73px)]">
+                <main id="snap-scroll-container" className="relative flex-1 w-full mx-auto animate-fade-in duration-200 overflow-y-auto scroll-smooth custom-scrollbar h-[calc(100vh-73px)]">
                     <Outlet />
                 </main>
 
