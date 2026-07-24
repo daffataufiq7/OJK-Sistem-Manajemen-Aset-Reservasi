@@ -56,8 +56,33 @@ export const Layout: React.FC = () => {
 
     const [activeSection, setActiveSection] = useState<string>('sec-dashboard');
 
-    // Scroll Spy event listener for single-page vertical scroll
+    // Real-time IntersectionObserver directly inside Layout.tsx for scroll spy
     useEffect(() => {
+        const sectionIds = ['sec-dashboard', 'sec-kendaraan', 'sec-ruangan', 'sec-kalender', 'sec-riwayat', 'sec-pengaturan'];
+        const container = document.getElementById('snap-scroll-container');
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const id = entry.target.id;
+                    setActiveSection(id);
+                    if (['sec-kendaraan', 'sec-ruangan'].includes(id)) {
+                        setReservationsSubOpen(true);
+                    }
+                }
+            });
+        }, {
+            root: container || null,
+            threshold: 0.3
+        });
+
+        const timer = setInterval(() => {
+            sectionIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) observer.observe(el);
+            });
+        }, 300);
+
         const handleSectionChange = (e: CustomEvent<string>) => {
             if (e.detail) {
                 setActiveSection(e.detail);
@@ -67,8 +92,13 @@ export const Layout: React.FC = () => {
             }
         };
         window.addEventListener('ojk-active-section', handleSectionChange as EventListener);
-        return () => window.removeEventListener('ojk-active-section', handleSectionChange as EventListener);
-    }, []);
+
+        return () => {
+            clearInterval(timer);
+            observer.disconnect();
+            window.removeEventListener('ojk-active-section', handleSectionChange as EventListener);
+        };
+    }, [location.pathname]);
 
     const scrollToSection = (secId: string) => {
         setSidebarOpen(false);
