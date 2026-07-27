@@ -42,6 +42,7 @@ $sourceDb = $projectRoot . '/database/database.sqlite';
 
 if (!file_exists($tmpDb) && file_exists($sourceDb)) {
     @copy($sourceDb, $tmpDb);
+    @chmod($tmpDb, 0666);
 }
 
 if (file_exists($tmpDb)) {
