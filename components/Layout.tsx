@@ -1,0 +1,687 @@
+'use client';
+
+import React, { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
+import { 
+    LayoutDashboard, 
+    Layers, 
+    Calendar, 
+    CheckSquare, 
+    History, 
+    FileBarChart2, 
+    Bell, 
+    Settings, 
+    Users, 
+    Activity,
+    LogOut,
+    Menu,
+    X,
+    Sun,
+    Moon,
+    Clock,
+    PlusCircle,
+    ChevronDown,
+    User as UserIcon,
+    Car,
+    Home as HomeIcon,
+    Building2,
+} from 'lucide-react';
+import { toast, ToastContainer, Button } from './UI';
+
+export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const { user, logout } = useAuth();
+    const router = useRouter();
+    const pathname = usePathname();
+    
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [reservationsSubOpen, setReservationsSubOpen] = useState(true);
+    const [theme, setTheme] = useState<'light' | 'dark'>('light');
+    const [currentTime, setCurrentTime] = useState(new Date());
+    
+    const [notifications, setNotifications] = useState<any[]>([]);
+    const [pendingApprovalCount, setPendingApprovalCount] = useState(0);
+    const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
+    const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+    
+    const notifRef = useRef<HTMLDivElement>(null);
+    const profileRef = useRef<HTMLDivElement>(null);
+    const loadedNotifIdsRef = useRef<Set<number>>(new Set());
+
+    const [activeSection, setActiveSection] = useState<string>('sec-dashboard');
+    const isClickScrollingRef = useRef(false);
+
+    useEffect(() => {
+        const storedTheme = localStorage.getItem('ojk_theme') as 'light' | 'dark' | null;
+        if (storedTheme) {
+            setTheme(storedTheme);
+        }
+    }, []);
+
+    useEffect(() => {
+        const sectionIds = ['sec-dashboard', 'sec-kendaraan', 'sec-ruangan', 'sec-kalender', 'sec-riwayat', 'sec-pengaturan'];
+        const container = document.getElementById('snap-scroll-container');
+        const TRIGGER_Y = (container?.getBoundingClientRect().top ?? 73) + 5;
+
+        const updateActiveSection = () => {
+            if (isClickScrollingRef.current) return;
+
+            let currentActive = 'sec-dashboard';
+            for (const id of sectionIds) {
+                const el = document.getElementById(id);
+                if (el) {
+                    const rect = el.getBoundingClientRect();
+                    if (rect.top <= TRIGGER_Y && rect.bottom > TRIGGER_Y) {
+                        currentActive = id;
+                        break;
+                    }
+                }
+            }
+
+            setActiveSection(currentActive);
+            if (['sec-kendaraan', 'sec-ruangan'].includes(currentActive)) {
+                setReservationsSubOpen(true);
+            }
+        };
+
+        if (container) {
+            container.addEventListener('scroll', updateActiveSection, { passive: true });
+        }
+        window.addEventListener('scroll', updateActiveSection, { passive: true });
+
+        updateActiveSection();
+
+        return () => {
+            if (container) {
+                container.removeEventListener('scroll', updateActiveSection);
+            }
+            window.removeEventListener('scroll', updateActiveSection);
+        };
+    }, [pathname]);
+
+    const scrollToSection = (secId: string) => {
+        setSidebarOpen(false);
+        setActiveSection(secId);
+        if (['sec-kendaraan', 'sec-ruangan'].includes(secId)) {
+            setReservationsSubOpen(true);
+        }
+
+        isClickScrollingRef.current = true;
+
+        const performScroll = () => {
+            const el = document.getElementById(secId);
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+            setTimeout(() => {
+                isClickScrollingRef.current = false;
+            }, 1500);
+        };
+
+        if (pathname !== '/dashboard') {
+            router.push('/dashboard');
+            setTimeout(performScroll, 200);
+        } else {
+            performScroll();
+        }
+    };
+
+    useEffect(() => {
+        const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+        return () => clearInterval(timer);
+    }, []);
+
+    useEffect(() => {
+        if (theme === 'dark') {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+        localStorage.setItem('ojk_theme', theme);
+    }, [theme]);
+
+    const fetchData = async () => {
+        try {
+            const notifResponse = await fetch('/api/notifications');
+            if (notifResponse.ok) {
+                const data = await notifResponse.json();
+                if (loadedNotifIdsRef.current.size === 0) {
+                    data.forEach((n: any) => loadedNotifIdsRef.current.add(n.id));
+                } else {
+                    data.forEach((n: any) => {
+                        if (!loadedNotifIdsRef.current.has(n.id)) {
+                            loadedNotifIdsRef.current.add(n.id);
+                            if (!n.is_read && !n.isRead) {
+                                toast.info(`${n.title}: ${n.message}`);
+                            }
+                        }
+                    });
+                }
+                setNotifications(data);
+            }
+
+            if (user && ['super_admin', 'validator'].includes(user.role)) {
+                const approvalResponse = await fetch('/api/reservations?status=pending');
+                if (approvalResponse.ok) {
+                    const approvals = await approvalResponse.json();
+                    setPendingApprovalCount(approvals.length);
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching layout data', error);
+        }
+    };
+
+    useEffect(() => {
+        let poll: any;
+        if (user) {
+            fetchData();
+            poll = setInterval(fetchData, 10000);
+        }
+        return () => {
+            if (poll) clearInterval(poll);
+        };
+    }, [user]);
+
+    useEffect(() => {
+        const clickOutside = (e: MouseEvent) => {
+            if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+                setNotifDropdownOpen(false);
+            }
+            if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+                setProfileDropdownOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', clickOutside);
+        return () => document.removeEventListener('mousedown', clickOutside);
+    }, []);
+
+    const toggleTheme = () => {
+        setTheme(prev => prev === 'light' ? 'dark' : 'light');
+    };
+
+    const handleLogout = async () => {
+        try {
+            await logout();
+            toast.success('Berhasil logout dari sistem.');
+        } catch (error) {
+            toast.error('Gagal logout.');
+        }
+    };
+
+    const markNotificationRead = async (id: number) => {
+        try {
+            await fetch(`/api/notifications/${id}/read`, { method: 'POST' });
+            setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true, isRead: true } : n));
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const markAllNotificationsRead = async () => {
+        try {
+            await fetch('/api/notifications/read-all', { method: 'POST' });
+            setNotifications(prev => prev.map(n => ({ ...n, is_read: true, isRead: true })));
+            toast.success('Semua notifikasi ditandai telah dibaca.');
+            setNotifDropdownOpen(false);
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const unreadCount = notifications.filter(n => !n.is_read && !n.isRead).length;
+
+    const menuItems = [
+        {
+            label: 'Dashboard',
+            path: '/dashboard',
+            icon: <LayoutDashboard className="w-5 h-5" />,
+            roles: ['super_admin', 'validator', 'pegawai']
+        },
+        {
+            label: 'Master Aset',
+            path: '/assets',
+            icon: <Layers className="w-5 h-5" />,
+            roles: ['super_admin']
+        },
+        {
+            label: 'Reservasi Aset',
+            path: '/reservations',
+            icon: <PlusCircle className="w-5 h-5" />,
+            roles: ['super_admin', 'validator', 'pegawai'],
+            hasSub: true,
+            subItems: [
+                { label: 'Semua Reservasi', path: '/reservations', icon: <PlusCircle className="w-3.5 h-3.5" /> },
+                { label: 'Mobil Dinas', path: '/reservations?category=Kendaraan', icon: <Car className="w-3.5 h-3.5" /> },
+                { label: 'Ruang Rapat & Aula', path: '/reservations?category=Ruangan', icon: <HomeIcon className="w-3.5 h-3.5" /> }
+            ]
+        },
+        {
+            label: 'Partnership',
+            path: '/partnership',
+            icon: <Building2 className="w-5 h-5 text-amber-500" />,
+            roles: ['super_admin', 'validator', 'pegawai']
+        },
+        {
+            label: 'Kalender',
+            path: '/calendar',
+            icon: <Calendar className="w-5 h-5" />,
+            roles: ['super_admin', 'validator', 'pegawai']
+        },
+        {
+            label: 'Approval',
+            path: '/approvals',
+            icon: <CheckSquare className="w-5 h-5" />,
+            roles: ['super_admin', 'validator'],
+            badge: user?.role !== 'pegawai' ? pendingApprovalCount : 0
+        },
+        {
+            label: 'Riwayat',
+            path: '/history',
+            icon: <History className="w-5 h-5" />,
+            roles: ['super_admin', 'validator', 'pegawai']
+        },
+        {
+            label: 'Laporan',
+            path: '/reports',
+            icon: <FileBarChart2 className="w-5 h-5" />,
+            roles: ['super_admin', 'validator']
+        },
+        {
+            label: 'Audit Log',
+            path: '/audit-logs',
+            icon: <Activity className="w-5 h-5" />,
+            roles: ['super_admin']
+        },
+        {
+            label: 'User Management',
+            path: '/users',
+            icon: <Users className="w-5 h-5" />,
+            roles: ['super_admin']
+        },
+        {
+            label: 'Pengaturan',
+            path: '/settings',
+            icon: <Settings className="w-5 h-5" />,
+            roles: ['super_admin', 'validator', 'pegawai']
+        }
+    ];
+
+    const currentRole = user?.role || 'pegawai';
+    const filteredMenu = menuItems.filter(item => item.roles.includes(currentRole));
+
+    const roleLabels = {
+        super_admin: 'Super Admin',
+        validator: 'Admin / Validator',
+        pegawai: 'Pegawai'
+    };
+
+    const formatDate = (date: Date) => {
+        return date.toLocaleDateString('id-ID', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    };
+
+    const formatTime = (date: Date) => {
+        const hrs = String(date.getHours()).padStart(2, '0');
+        const mins = String(date.getMinutes()).padStart(2, '0');
+        const secs = String(date.getSeconds()).padStart(2, '0');
+        const dateStr = date.toLocaleDateString('id-ID', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric'
+        });
+        return `${dateStr}, ${hrs}:${mins}:${secs} WIB`;
+    };
+
+    return (
+        <div className="flex min-h-screen bg-slate-50 dark:bg-[#090D16] text-slate-800 dark:text-slate-100 transition-colors duration-250">
+            <aside className={`fixed inset-y-0 left-0 z-40 w-72 bg-white dark:bg-slate-900 border-r border-slate-100 dark:border-slate-800 flex flex-col justify-between transform transition-transform duration-300 xl:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+                <div className="p-6 pb-3 border-b border-slate-100 dark:border-slate-800/60 flex items-center justify-between shrink-0">
+                    <Link href="/" className="flex flex-col items-start gap-1.5">
+                        <img src="/logo ojk.png" alt="Logo OJK" className="h-16 w-auto max-w-[200px] object-contain" />
+                        <span className="text-[9.5px] font-bold text-slate-450 dark:text-slate-500 uppercase tracking-widest leading-none pl-1">
+                            Kantor Regional 2 Jawa Barat
+                        </span>
+                    </Link>
+                    
+                    <button className="xl:hidden p-1.5 rounded-lg text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer" onClick={() => setSidebarOpen(false)}>
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
+
+                <nav className="p-4 space-y-1.5 overflow-y-auto flex-1 min-h-0 custom-scrollbar">
+                    {user?.role === 'pegawai' ? (
+                        <React.Fragment>
+                            <button
+                                onClick={() => scrollToSection('sec-dashboard')}
+                                className={`w-full flex items-center justify-between px-4 py-3 text-xs font-semibold rounded-xl transition-all duration-200 cursor-pointer ${activeSection === 'sec-dashboard' ? 'bg-ojk-red text-white shadow-sm shadow-red-500/10 font-bold' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-850'}`}
+                            >
+                                <div className="flex items-center gap-3.5">
+                                    <LayoutDashboard className="w-5 h-5" />
+                                    <span>Dashboard</span>
+                                </div>
+                            </button>
+
+                            <div className="space-y-1">
+                                <button
+                                    onClick={() => setReservationsSubOpen(!reservationsSubOpen)}
+                                    className={`w-full flex items-center justify-between px-4 py-3 text-xs font-semibold rounded-xl transition-all duration-200 cursor-pointer ${['sec-kendaraan', 'sec-ruangan'].includes(activeSection) ? 'bg-red-50 dark:bg-red-950/40 text-ojk-red dark:text-red-400 font-bold' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-850'}`}
+                                >
+                                    <div className="flex items-center gap-3.5">
+                                        <PlusCircle className="w-5 h-5" />
+                                        <span>Reservasi Aset</span>
+                                    </div>
+                                    <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${reservationsSubOpen ? 'transform rotate-180' : ''}`} />
+                                </button>
+
+                                {reservationsSubOpen && (
+                                    <div className="pl-8 pr-1 space-y-1 py-1 border-l-2 border-slate-100 dark:border-slate-800 ml-4">
+                                        <button
+                                            onClick={() => scrollToSection('sec-kendaraan')}
+                                            className={`w-full flex items-center gap-2 px-3 py-2 text-[11px] font-semibold rounded-lg transition-all cursor-pointer ${activeSection === 'sec-kendaraan' ? 'bg-ojk-red text-white font-extrabold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                                        >
+                                            <Car className="w-3.5 h-3.5" />
+                                            <span>Kendaraan Dinas</span>
+                                        </button>
+
+                                        <button
+                                            onClick={() => scrollToSection('sec-ruangan')}
+                                            className={`w-full flex items-center gap-2 px-3 py-2 text-[11px] font-semibold rounded-lg transition-all cursor-pointer ${activeSection === 'sec-ruangan' ? 'bg-ojk-red text-white font-extrabold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                                        >
+                                            <HomeIcon className="w-3.5 h-3.5" />
+                                            <span>Ruang Rapat & Aula</span>
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+
+                            <button
+                                onClick={() => scrollToSection('sec-kalender')}
+                                className={`w-full flex items-center justify-between px-4 py-3 text-xs font-semibold rounded-xl transition-all duration-200 cursor-pointer ${activeSection === 'sec-kalender' ? 'bg-ojk-red text-white shadow-sm shadow-red-500/10 font-bold' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-850'}`}
+                            >
+                                <div className="flex items-center gap-3.5">
+                                    <Calendar className="w-5 h-5" />
+                                    <span>Kalender</span>
+                                </div>
+                            </button>
+
+                            <button
+                                onClick={() => scrollToSection('sec-riwayat')}
+                                className={`w-full flex items-center justify-between px-4 py-3 text-xs font-semibold rounded-xl transition-all duration-200 cursor-pointer ${activeSection === 'sec-riwayat' ? 'bg-ojk-red text-white shadow-sm shadow-red-500/10 font-bold' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-850'}`}
+                            >
+                                <div className="flex items-center gap-3.5">
+                                    <History className="w-5 h-5" />
+                                    <span>Riwayat</span>
+                                </div>
+                            </button>
+
+                            <button
+                                onClick={() => scrollToSection('sec-pengaturan')}
+                                className={`w-full flex items-center justify-between px-4 py-3 text-xs font-semibold rounded-xl transition-all duration-200 cursor-pointer ${activeSection === 'sec-pengaturan' ? 'bg-ojk-red text-white shadow-sm shadow-red-500/10 font-bold' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-850'}`}
+                            >
+                                <div className="flex items-center gap-3.5">
+                                    <Settings className="w-5 h-5" />
+                                    <span>Pengaturan</span>
+                                </div>
+                            </button>
+                        </React.Fragment>
+                    ) : (
+                        filteredMenu.map((item, index) => {
+                            const isActive = pathname === item.path;
+                            if (item.hasSub) {
+                                const isSubActive = pathname?.startsWith('/reservations');
+                                return (
+                                    <div key={index} className="space-y-1">
+                                        <button 
+                                            onClick={() => setReservationsSubOpen(!reservationsSubOpen)}
+                                            className={`w-full flex items-center justify-between px-4 py-3 text-xs font-semibold rounded-xl transition-all duration-200 cursor-pointer ${isSubActive ? 'bg-red-50 dark:bg-red-950/40 text-ojk-red dark:text-red-400 font-bold' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-850'}`}
+                                        >
+                                            <div className="flex items-center gap-3.5">
+                                                {item.icon}
+                                                <span>{item.label}</span>
+                                            </div>
+                                            <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${reservationsSubOpen ? 'transform rotate-180' : ''}`} />
+                                        </button>
+
+                                        {reservationsSubOpen && (
+                                            <div className="pl-8 pr-1 space-y-1 py-1 border-l-2 border-slate-100 dark:border-slate-800 ml-4">
+                                                {item.subItems?.map((sub, sIdx) => {
+                                                    const isSubMatch = pathname === sub.path;
+                                                    return (
+                                                        <Link
+                                                            key={sIdx}
+                                                            href={sub.path}
+                                                            onClick={() => setSidebarOpen(false)}
+                                                            className={`flex items-center gap-2 px-3 py-2 text-[11px] font-semibold rounded-lg transition-all ${isSubMatch ? 'bg-ojk-red text-white font-extrabold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                                                        >
+                                                            {sub.icon}
+                                                            <span>{sub.label}</span>
+                                                        </Link>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            }
+
+                            return (
+                                <Link 
+                                    key={index} 
+                                    href={item.path} 
+                                    onClick={() => setSidebarOpen(false)}
+                                    className={`flex items-center justify-between px-4 py-3 text-xs font-semibold rounded-xl transition-all duration-200 ${isActive ? 'bg-ojk-red text-white shadow-sm shadow-red-500/10' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-850'}`}
+                                >
+                                    <div className="flex items-center gap-3.5">
+                                        {item.icon}
+                                        <span>{item.label}</span>
+                                    </div>
+                                    {item.badge && item.badge > 0 ? (
+                                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${isActive ? 'bg-white text-ojk-red' : 'bg-ojk-red text-white'}`}>
+                                            {item.badge}
+                                        </span>
+                                    ) : null}
+                                </Link>
+                            );
+                        })
+                    )}
+                </nav>
+
+                <div className="p-4 shrink-0 border-t border-slate-100 dark:border-slate-800/60">
+                    <div className="p-4 bg-slate-50 dark:bg-slate-850/50 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col space-y-3 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-24 h-24 bg-red-500/5 rounded-full blur-xl -mr-6 -mt-6"></div>
+                        <div className="flex flex-col space-y-1">
+                            <span className="text-xs font-bold text-slate-800 dark:text-slate-200">Ajukan Reservasi</span>
+                            <span className="text-[10px] font-medium text-slate-400">Pinjam aset kendaraan atau ruang rapat kantor.</span>
+                        </div>
+                        <Button 
+                            variant="primary" 
+                            size="sm" 
+                            className="rounded-xl flex items-center justify-center gap-1.5 w-full text-xs font-bold py-2"
+                            onClick={() => { router.push('/reservations'); setSidebarOpen(false); }}
+                        >
+                            <PlusCircle className="w-4 h-4" />
+                            Reservasi Aset
+                        </Button>
+                    </div>
+                </div>
+            </aside>
+
+            {sidebarOpen && (
+                <div className="fixed inset-0 bg-slate-900/50 dark:bg-black/60 backdrop-blur-xs z-30 xl:hidden" onClick={() => setSidebarOpen(false)} />
+            )}
+
+            <div className="flex-1 flex flex-col xl:pl-72 pb-24 xl:pb-6">
+                <header className="sticky top-0 z-20 bg-slate-50/80 dark:bg-[#090D16]/80 backdrop-blur-md border-b border-slate-100/50 dark:border-slate-800/40 px-8 py-5 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <button className="xl:hidden p-2.5 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer" onClick={() => setSidebarOpen(true)}>
+                            <Menu className="w-5 h-5" />
+                        </button>
+                        
+                        <div className="flex flex-col">
+                            <h1 className="text-sm xl:text-base font-bold text-slate-800 dark:text-slate-100 tracking-tight leading-snug">
+                                Sistem Manajemen Aset & Reservasi
+                            </h1>
+                            <p className="text-[11px] font-bold text-slate-450 dark:text-slate-500 uppercase tracking-wider">
+                                OJK Jawa Barat
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                        <div className="hidden lg:flex items-center gap-3 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl px-5 py-2.5 soft-shadow">
+                            <Clock className="w-4.5 h-4.5 text-ojk-red animate-pulse" />
+                            <div className="flex flex-col leading-tight">
+                                <span className="text-[12.5px] font-extrabold text-slate-700 dark:text-slate-200">{formatTime(currentTime)}</span>
+                                <span className="text-[9.5px] font-bold text-slate-400 dark:text-slate-550 tracking-wide uppercase">{formatDate(currentTime).split(',')[0]}</span>
+                            </div>
+                        </div>
+
+                        <div className="hidden lg:block h-6 w-[1px] bg-slate-200 dark:bg-slate-800/80 mx-1.5"></div>
+
+                        <button 
+                            onClick={toggleTheme}
+                            className="p-3 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl text-slate-500 hover:text-slate-800 dark:hover:text-slate-300 transition-colors soft-shadow cursor-pointer"
+                            title={theme === 'light' ? 'Mode Gelap' : 'Mode Terang'}
+                        >
+                            {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5 text-yellow-400" />}
+                        </button>
+
+                        <div className="h-6 w-[1px] bg-slate-200 dark:bg-slate-800/80 mx-1.5"></div>
+
+                        <div className="relative" ref={notifRef}>
+                            <button 
+                                onClick={() => setNotifDropdownOpen(!notifDropdownOpen)}
+                                className="p-3 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl text-slate-500 hover:text-slate-850 dark:hover:text-slate-300 transition-colors relative soft-shadow cursor-pointer"
+                            >
+                                <Bell className="w-5 h-5" />
+                                {unreadCount > 0 && (
+                                    <span className="absolute top-0 right-0 w-4.5 h-4.5 bg-ojk-red text-white text-[9.5px] font-bold rounded-full flex items-center justify-center transform translate-x-1 -translate-y-1">
+                                        {unreadCount}
+                                    </span>
+                                )}
+                            </button>
+
+                            {notifDropdownOpen && (
+                                <div className="absolute right-0 mt-3 w-80 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-xl z-30 py-2 divide-y divide-slate-50 dark:divide-slate-800/60 transform origin-top-right transition-all">
+                                    <div className="px-4 py-3 flex items-center justify-between">
+                                        <span className="text-xs font-bold text-slate-800 dark:text-slate-200">Notifikasi</span>
+                                        {unreadCount > 0 && (
+                                            <button onClick={markAllNotificationsRead} className="text-[10px] text-ojk-red hover:underline font-semibold cursor-pointer">
+                                                Tandai semua dibaca
+                                            </button>
+                                        )}
+                                    </div>
+                                    <div className="max-h-64 overflow-y-auto divide-y divide-slate-50 dark:divide-slate-800/40">
+                                        {notifications.length > 0 ? (
+                                            notifications.map((n, i) => (
+                                                <div 
+                                                    key={i} 
+                                                    onClick={() => !n.is_read && !n.isRead && markNotificationRead(n.id)}
+                                                    className={`p-3.5 flex flex-col space-y-1 hover:bg-slate-50/70 dark:hover:bg-slate-850/30 transition-colors cursor-pointer ${(!n.is_read && !n.isRead) ? 'bg-red-500/2 dark:bg-red-500/1 border-l-2 border-ojk-red' : ''}`}
+                                                >
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        <span className="text-xs font-bold text-slate-700 dark:text-slate-350">{n.title}</span>
+                                                        <span className="text-[9px] font-medium text-slate-400">{new Date(n.created_at || n.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB</span>
+                                                    </div>
+                                                    <p className="text-[10px] text-slate-550 dark:text-slate-400 leading-normal">{n.message}</p>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <div className="p-8 text-center text-[11px] text-slate-400 font-semibold">
+                                                Tidak ada notifikasi baru
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="h-6 w-[1px] bg-slate-200 dark:bg-slate-800/80 mx-1.5"></div>
+
+                        <div className="relative flex" ref={profileRef}>
+                            <button 
+                                onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                                className="flex items-center gap-3.5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl px-4 py-2 soft-shadow hover:bg-slate-50 dark:hover:bg-slate-850 cursor-pointer"
+                            >
+                                <div className="w-9 h-9 rounded-lg bg-red-500/10 flex items-center justify-center shrink-0">
+                                    <UserIcon className="w-5 h-5 text-ojk-red" />
+                                </div>
+                                <div className="hidden sm:flex flex-col text-left leading-tight">
+                                    <span className="text-sm font-extrabold text-slate-700 dark:text-slate-300">{user?.name}</span>
+                                    <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-0.5">{user?.division?.name || 'Kantor Regional 2 Jabar'}</span>
+                                    <span className="text-[9px] font-extrabold text-slate-400 dark:text-slate-500 tracking-wider uppercase mt-0.5">{roleLabels[currentRole]}</span>
+                                </div>
+                                <ChevronDown className="w-4 h-4 text-slate-400 hidden sm:block" />
+                            </button>
+
+                            {profileDropdownOpen && (
+                                <div className="absolute right-0 mt-12 w-48 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl shadow-lg z-30 py-1.5 divide-y divide-slate-50 dark:divide-slate-800/60 transform origin-top-right transition-all">
+                                    <div className="px-4 py-2 sm:hidden flex flex-col leading-tight">
+                                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{user?.name}</span>
+                                        <span className="text-[9.5px] font-bold text-slate-500 dark:text-slate-400 mt-0.5">{user?.division?.name || 'Kantor Regional 2 Jabar'}</span>
+                                        <span className="text-[8.5px] font-extrabold text-slate-400 dark:text-slate-500 tracking-wider uppercase mt-0.5">{roleLabels[currentRole]}</span>
+                                    </div>
+                                    <div className="py-1">
+                                        <Link 
+                                            href="/settings" 
+                                            onClick={() => setProfileDropdownOpen(false)}
+                                            className="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-50 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-850"
+                                        >
+                                            <Settings className="w-4 h-4" />
+                                            Pengaturan
+                                        </Link>
+                                    </div>
+                                    <div className="py-1">
+                                        <button 
+                                            onClick={() => { setProfileDropdownOpen(false); handleLogout(); }}
+                                            className="flex items-center gap-2.5 w-full text-left px-4 py-2 text-xs font-semibold text-red-650 hover:bg-red-50 hover:text-red-750 dark:text-red-400 dark:hover:bg-red-950/20 cursor-pointer"
+                                        >
+                                            <LogOut className="w-4 h-4" />
+                                            Keluar Sistem
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                    </div>
+                </header>
+
+                <main id="snap-scroll-container" className="relative flex-1 w-full mx-auto animate-fade-in duration-200 overflow-y-auto scroll-smooth custom-scrollbar h-[calc(100vh-73px)]">
+                    {children}
+                </main>
+            </div>
+
+            <nav className="fixed bottom-0 inset-x-0 bg-white/95 dark:bg-slate-900/95 border-t border-slate-100 dark:border-slate-800 backdrop-blur-md flex items-center justify-around py-3.5 z-40 xl:hidden">
+                <Link href="/dashboard" className={`flex flex-col items-center gap-1 text-[9px] font-bold ${pathname === '/dashboard' ? 'text-ojk-red' : 'text-slate-400'}`}>
+                    <HomeIcon className="w-4.5 h-4.5" />
+                    <span>Home</span>
+                </Link>
+                <Link href="/reservations" className={`flex flex-col items-center gap-1 text-[9px] font-bold ${pathname === '/reservations' ? 'text-ojk-red' : 'text-slate-400'}`}>
+                    <PlusCircle className="w-4.5 h-4.5" />
+                    <span>Reservasi</span>
+                </Link>
+                <Link href="/calendar" className={`flex flex-col items-center gap-1 text-[9px] font-bold ${pathname === '/calendar' ? 'text-ojk-red' : 'text-slate-400'}`}>
+                    <Calendar className="w-4.5 h-4.5" />
+                    <span>Kalender</span>
+                </Link>
+                <Link href="/history" className={`flex flex-col items-center gap-1 text-[9px] font-bold ${pathname === '/history' ? 'text-ojk-red' : 'text-slate-400'}`}>
+                    <History className="w-4.5 h-4.5" />
+                    <span>Riwayat</span>
+                </Link>
+                <Link href="/settings" className={`flex flex-col items-center gap-1 text-[9px] font-bold ${pathname === '/settings' ? 'text-ojk-red' : 'text-slate-400'}`}>
+                    <Settings className="w-4.5 h-4.5" />
+                    <span>Pengaturan</span>
+                </Link>
+            </nav>
+
+            <ToastContainer />
+        </div>
+    );
+};

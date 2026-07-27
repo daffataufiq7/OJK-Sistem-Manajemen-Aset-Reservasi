@@ -1,0 +1,111 @@
+// Prisma Schema for SIMA-R OJK (Next.js 15 Full Stack)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Division {
+  id    Int    @id @default(autoincrement())
+  name  String
+
+  users User[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model User {
+  id         Int      @id @default(autoincrement())
+  name       String
+  nip        String   @unique
+  email      String   @unique
+  password   String
+  role       String   @default("pegawai") // super_admin, validator, pegawai
+  divisionId Int?
+  division   Division? @relation(fields: [divisionId], references: [id], onDelete: SetNull)
+
+  reservations  Reservation[]
+  notifications Notification[]
+  auditLogs     AuditLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AssetCategory {
+  id   Int    @id @default(autoincrement())
+  name String
+  slug String @unique
+
+  assets Asset[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Asset {
+  id                  Int           @id @default(autoincrement())
+  code                String        @unique
+  name                String
+  categoryId          Int
+  category            AssetCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  location            String
+  status              String        @default("available") // available, in_use, maintenance
+  condition           String        @default("good")      // good, damaged, maintenance
+  photo               String?
+  qrCode              String?
+  maintenanceSchedule DateTime?
+
+  reservations Reservation[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Reservation {
+  id              Int      @id @default(autoincrement())
+  userId          Int
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assetId         Int
+  asset           Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  startDate       DateTime
+  endDate         DateTime
+  purpose         String
+  destination     String?
+  driverRequired  Boolean  @default(false)
+  driverName      String?
+  status          String   @default("pending") // pending, approved, rejected, in_use, completed, cancelled
+  rejectionReason String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Notification {
+  id      Int     @id @default(autoincrement())
+  userId  Int
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title   String
+  message String
+  type    String  @default("info") // approval, reject, info
+  isRead  Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AuditLog {
+  id          Int      @id @default(autoincrement())
+  userId      Int?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action      String
+  description String
+  ipAddress   String?
+  userAgent   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

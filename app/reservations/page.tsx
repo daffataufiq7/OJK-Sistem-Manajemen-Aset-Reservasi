@@ -1,0 +1,593 @@
+'use client';
+
+import React, { useState, useEffect, Suspense } from 'react';
+import { useAuth } from '@/context/AuthContext';
+import { DataTable } from '@/components/DataTable';
+import { Button, Input, Select, TextArea, Badge, toast, Card } from '@/components/UI';
+import { 
+    AlertTriangle, 
+    CheckCircle2, 
+    CalendarCheck, 
+    HelpCircle
+} from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+
+interface AssetCategory {
+    id: number;
+    name: string;
+    slug: string;
+}
+
+interface Asset {
+    id: number;
+    code: string;
+    name: string;
+    category_id: number;
+    location: string;
+    status: string;
+    condition: string;
+    photo: string | null;
+}
+
+interface Reservation {
+    id: number;
+    user_id: number;
+    asset_id: number;
+    start_date: string;
+    startDate?: string;
+    end_date: string;
+    endDate?: string;
+    purpose: string;
+    destination: string | null;
+    driver_required: boolean;
+    driver_name: string | null;
+    notes: string | null;
+    status: 'pending' | 'approved' | 'rejected' | 'reserved' | 'in_use' | 'completed' | 'cancelled';
+    rejection_reason: string | null;
+    asset?: Asset;
+    created_at: string;
+}
+
+function ReservationsContent() {
+    const { user } = useAuth();
+    const searchParams = useSearchParams();
+
+    const [reservations, setReservations] = useState<Reservation[]>([]);
+    const [categories, setCategories] = useState<AssetCategory[]>([]);
+    const [assets, setAssets] = useState<Asset[]>([]);
+    const [filteredAssets, setFilteredAssets] = useState<Asset[]>([]);
+
+    const [selectedCategory, setSelectedCategory] = useState<string | number>('');
+    const [assetId, setAssetId] = useState<number>(0);
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
+    const [purpose, setPurpose] = useState('');
+    const [destination, setDestination] = useState('');
+    const [driverRequired, setDriverRequired] = useState(false);
+    const [driverName, setDriverName] = useState('');
+    const [notes, setNotes] = useState('');
+
+    const [conflictWarning, setConflictWarning] = useState<string | null>(null);
+    const [checkingConflict, setCheckingConflict] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
+    const [loading, setLoading] = useState(true);
+
+    const fetchData = async () => {
+        try {
+            setLoading(true);
+            const [resResponse, catResponse, assetResponse] = await Promise.all([
+                fetch('/api/reservations'),
+                fetch('/api/categories'),
+                fetch('/api/assets')
+            ]);
+            if (resResponse.ok) setReservations(await resResponse.json());
+            if (catResponse.ok) {
+                const catData = await catResponse.json();
+                setCategories(catData);
+                const catQuery = searchParams.get('category');
+                if (catQuery && catData.length > 0) {
+                    const foundCat = catData.find((c: any) => 
+                        c.name.toLowerCase().includes(catQuery.toLowerCase()) || 
+                        c.slug.toLowerCase().includes(catQuery.toLowerCase())
+                    );
+                    if (foundCat) {
+                        setSelectedCategory(foundCat.id);
+                    }
+                }
+            }
+            if (assetResponse.ok) setAssets(await assetResponse.json());
+        } catch (error) {
+            console.error('Error loading data', error);
+            toast.error('Gagal memuat data peminjaman.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchData();
+    }, [searchParams]);
+
+    useEffect(() => {
+        if (!selectedCategory) {
+            setFilteredAssets([]);
+            setAssetId(0);
+            return;
+        }
+        const matchedCat = categories.find(c => c.id == selectedCategory);
+        if (!matchedCat) return;
+
+        const filtered = assets.filter(a => (a.category_id || (a as any).categoryId) == matchedCat.id);
+        
+        const sorted = [...filtered].sort((a, b) => {
+            if (a.status === 'available' && b.status !== 'available') return -1;
+            if (a.status !== 'available' && b.status === 'available') return 1;
+            return 0;
+        });
+
+        setFilteredAssets(sorted);
+        setAssetId(0);
+        
+        if (matchedCat.slug !== 'kendaraan') {
+            setDriverRequired(false);
+            setDriverName('');
+            setDestination('');
+        }
+    }, [selectedCategory, assets, categories]);
+
+    const verifyConflicts = async () => {
+        if (!assetId || !startDate || !endDate) return;
+        
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        if (start >= end) {
+            setConflictWarning('Waktu selesai harus setelah waktu mulai.');
+            return;
+        }
+
+        try {
+            setCheckingConflict(true);
+            setConflictWarning(null);
+            const response = await fetch(`/api/reservations/check-conflict?asset_id=${assetId}&start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}`);
+            if (response.ok) {
+                const data = await response.json();
+                if (data.conflict) {
+                    const details = data.details[0];
+                    setConflictWarning(
+                        `Aset ini sudah dibooking oleh ${details.user_name} pada waktu tersebut untuk keperluan: "${details.purpose}". Silakan pilih aset lain atau ubah jadwal.`
+                    );
+                } else {
+                    const selected = assets.find(a => a.id === assetId);
+                    if (selected?.status === 'maintenance') {
+                        setConflictWarning('Warning: Aset saat ini sedang dalam jadwal pemeliharaan (Maintenance Schedule).');
+                    } else if (selected?.status === 'inactive') {
+                        setConflictWarning('Warning: Aset berstatus Nonaktif (tidak bisa dipinjam).');
+                    } else {
+                        setConflictWarning(null);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Conflict checking error', error);
+        } finally {
+            setCheckingConflict(false);
+        }
+    };
+
+    useEffect(() => {
+        verifyConflicts();
+    }, [assetId, startDate, endDate]);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!assetId || !startDate || !endDate || !purpose) {
+            toast.warning('Silakan lengkapi semua kolom wajib.');
+            return;
+        }
+
+        if (conflictWarning && !conflictWarning.startsWith('Warning:')) {
+            toast.error('Tidak dapat mengirimkan peminjaman karena bentrok jadwal.');
+            return;
+        }
+
+        const matchedCat = categories.find(c => c.id == selectedCategory);
+        const isVehicle = matchedCat?.slug === 'kendaraan';
+
+        setSubmitting(true);
+        const payload = {
+            asset_id: assetId,
+            start_date: startDate,
+            end_date: endDate,
+            purpose,
+            destination: isVehicle ? destination : null,
+            driver_required: false,
+            driver_name: null,
+            notes: notes || null
+        };
+
+        try {
+            const res = await fetch('/api/reservations', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.message || 'Gagal mengirim pengajuan');
+            }
+
+            toast.success('Pengajuan peminjaman berhasil dikirim. Menunggu persetujuan Validator.');
+            setPurpose('');
+            setDestination('');
+            setDriverRequired(false);
+            setDriverName('');
+            setNotes('');
+            fetchData();
+        } catch (error: any) {
+            toast.error(error.message || 'Gagal mengirim pengajuan peminjaman.');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const handleStartUsage = async (id: number) => {
+        try {
+            const res = await fetch(`/api/reservations/${id}/start-usage`, { method: 'POST' });
+            if (res.ok) {
+                toast.success('Peminjaman diaktifkan (Aset Sedang Digunakan).');
+                fetchData();
+            } else {
+                toast.error('Gagal memulai penggunaan.');
+            }
+        } catch (error: any) {
+            toast.error('Gagal memulai penggunaan.');
+        }
+    };
+
+    const handleCompleteUsage = async (id: number) => {
+        try {
+            const res = await fetch(`/api/reservations/${id}/complete-usage`, { method: 'POST' });
+            if (res.ok) {
+                toast.success('Aset berhasil dikembalikan (Selesai).');
+                fetchData();
+            } else {
+                toast.error('Gagal mengembalikan aset.');
+            }
+        } catch (error: any) {
+            toast.error('Gagal mengembalikan aset.');
+        }
+    };
+
+    const handleCancel = async (id: number) => {
+        if (!window.confirm('Apakah Anda yakin ingin membatalkan pengajuan ini?')) return;
+        try {
+            const res = await fetch(`/api/reservations/${id}/cancel`, { method: 'POST' });
+            if (res.ok) {
+                toast.success('Peminjaman berhasil dibatalkan.');
+                fetchData();
+            } else {
+                toast.error('Gagal membatalkan peminjaman.');
+            }
+        } catch (error: any) {
+            toast.error('Gagal membatalkan peminjaman.');
+        }
+    };
+
+    const columns = [
+        {
+            key: 'id',
+            header: 'ID Peminjaman',
+            render: (res: Reservation) => <span className="font-bold text-slate-450 uppercase">#RSV-{res.id}</span>
+        },
+        {
+            key: 'asset.name',
+            header: 'Aset yang Dipinjam',
+            render: (res: Reservation) => (
+                <div className="flex flex-col">
+                    <span className="font-bold text-slate-800 dark:text-slate-200">{res.asset?.name}</span>
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">{res.asset?.code}</span>
+                </div>
+            )
+        },
+        {
+            key: 'start_date',
+            header: 'Waktu Mulai',
+            render: (res: Reservation) => {
+                const sDate = res.start_date || res.startDate;
+                return (
+                    <span className="font-semibold text-slate-600 dark:text-slate-350">
+                        {sDate ? `${new Date(sDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })} - ${new Date(sDate).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB` : '-'}
+                    </span>
+                );
+            }
+        },
+        {
+            key: 'end_date',
+            header: 'Waktu Selesai',
+            render: (res: Reservation) => {
+                const eDate = res.end_date || res.endDate;
+                return (
+                    <span className="font-semibold text-slate-655 dark:text-slate-350">
+                        {eDate ? `${new Date(eDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })} - ${new Date(eDate).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB` : '-'}
+                    </span>
+                );
+            }
+        },
+        {
+            key: 'purpose',
+            header: 'Keperluan',
+            render: (res: Reservation) => <span className="truncate max-w-[200px] block font-semibold text-xs text-slate-500" title={res.purpose}>{res.purpose}</span>
+        },
+        {
+            key: 'status',
+            header: 'Status',
+            render: (res: Reservation) => (
+                <div className="flex flex-col space-y-1">
+                    <Badge status={res.status} />
+                    {res.status === 'rejected' && res.rejection_reason && (
+                        <span className="text-[9px] text-red-500 font-semibold max-w-[140px] leading-tight block">
+                            Alasan: {res.rejection_reason}
+                        </span>
+                    )}
+                </div>
+            )
+        },
+        {
+            key: 'actions',
+            header: 'Aksi Peminjam',
+            sortable: false,
+            render: (res: Reservation) => {
+                const isMyBooking = (res.user_id || (res as any).userId) === user?.id;
+                
+                return (
+                    <div className="flex gap-2">
+                        {isMyBooking && res.status === 'pending' && (
+                            <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="rounded-lg px-2.5 py-1 text-[10px] font-bold border-red-200 text-red-650 hover:bg-red-50"
+                                onClick={() => handleCancel(res.id)}
+                            >
+                                Batalkan
+                            </Button>
+                        )}
+                        {isMyBooking && res.status === 'approved' && (
+                            <Button 
+                                variant="primary" 
+                                size="sm" 
+                                className="rounded-lg px-2.5 py-1 text-[10px] font-bold bg-amber-500 hover:bg-amber-600 border-none"
+                                onClick={() => handleStartUsage(res.id)}
+                            >
+                                Ambil/Pakai
+                            </Button>
+                        )}
+                        {isMyBooking && res.status === 'in_use' && (
+                            <Button 
+                                variant="primary" 
+                                size="sm" 
+                                className="rounded-lg px-2.5 py-1 text-[10px] font-bold bg-emerald-600 hover:bg-emerald-700 border-none"
+                                onClick={() => handleCompleteUsage(res.id)}
+                            >
+                                Kembalikan
+                            </Button>
+                        )}
+                        {(!isMyBooking || ['rejected', 'completed', 'cancelled'].includes(res.status)) && (
+                            <span className="text-[10px] font-semibold text-slate-400">Selesai</span>
+                        )}
+                    </div>
+                );
+            }
+        }
+    ];
+
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-3">
+                <svg className="animate-spin h-8 w-8 text-ojk-red" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                <span className="text-xs text-slate-500 font-semibold">Memuat formulir reservasi...</span>
+            </div>
+        );
+    }
+
+    return (
+        <div className="p-8 space-y-8 font-sans">
+            <div className="space-y-1">
+                <h2 className="text-xl xl:text-2xl font-extrabold text-slate-800 dark:text-white tracking-tight">
+                    Pengajuan Reservasi & Peminjaman Aset
+                </h2>
+                <p className="text-xs text-slate-450 dark:text-slate-450 font-semibold">
+                    Lakukan peminjaman mobil dinas, ruangan rapat, proyektor, atau laptop di sini.
+                </p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                <div className="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-6 soft-shadow flex flex-col space-y-5">
+                    <h3 className="text-sm font-bold text-slate-800 dark:text-white pb-3 border-b border-slate-50 dark:border-slate-800/40">
+                        Formulir Peminjaman
+                    </h3>
+                    
+                    <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        <Select 
+                            key={`cat-select-${categories.length}`}
+                            label="Kategori Aset (Wajib)"
+                            options={[
+                                { value: '', label: '--- Pilih Kategori Aset ---' },
+                                ...categories.map(c => ({ value: c.id, label: c.name }))
+                            ]}
+                            value={selectedCategory}
+                            onChange={(e) => setSelectedCategory(e.target.value)}
+                            required
+                            autoComplete="off"
+                        />
+
+                        <Select 
+                            key="asset-select"
+                            label="Pilih Aset (Wajib)"
+                            options={[
+                                { 
+                                    value: '', 
+                                    label: selectedCategory 
+                                        ? '--- Silahkan Pilih Aset ---' 
+                                        : '--- Silahkan Pilih Kategori Terlebih Dahulu ---' 
+                                },
+                                ...filteredAssets.map(a => ({ 
+                                    value: a.id, 
+                                    label: `${a.name} (${a.code}) - ${a.status === 'available' ? 'Tersedia' : 'Sibuk'}` 
+                                }))
+                            ]}
+                            value={assetId === 0 ? '' : assetId}
+                            onChange={(e) => setAssetId(Number(e.target.value) || 0)}
+                            required
+                            autoComplete="off"
+                        />
+
+                        <Input 
+                            label="Tanggal & Waktu Mulai (Wajib)"
+                            type="datetime-local"
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                            required
+                        />
+
+                        <Input 
+                            label="Tanggal & Waktu Selesai (Wajib)"
+                            type="datetime-local"
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
+                            required
+                        />
+
+                        {categories.find(c => c.id == selectedCategory)?.slug === 'kendaraan' && (
+                            <Input 
+                                label="Tujuan Perjalanan (Wajib)"
+                                placeholder="Misal: Kantor OJK Pusat, Jakarta"
+                                value={destination}
+                                onChange={(e) => setDestination(e.target.value)}
+                                className="sm:col-span-2"
+                                required
+                            />
+                        )}
+
+                        <TextArea 
+                            label="Keperluan / Tujuan Peminjaman (Wajib)"
+                            placeholder="Jelaskan agenda kerja secara lengkap..."
+                            value={purpose}
+                            onChange={(e) => setPurpose(e.target.value)}
+                            className="sm:col-span-2"
+                            required
+                        />
+
+                        <TextArea 
+                            label="Catatan Tambahan (Opsional)"
+                            placeholder="Catatan pendukung..."
+                            value={notes}
+                            onChange={(e) => setNotes(e.target.value)}
+                            className="sm:col-span-2"
+                        />
+
+                        {checkingConflict && (
+                            <div className="sm:col-span-2 p-3 bg-slate-50 text-slate-500 rounded-xl text-xs font-semibold flex items-center gap-2">
+                                <svg className="animate-spin h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                                </svg>
+                                Memverifikasi ketersediaan jadwal aset...
+                            </div>
+                        )}
+
+                        {conflictWarning && (
+                            <div className={`sm:col-span-2 p-4 rounded-xl text-xs font-semibold flex items-start gap-3 ${conflictWarning.startsWith('Warning:') ? 'bg-amber-50 text-amber-700 border border-amber-100' : 'bg-red-50 text-red-750 border border-red-100'}`}>
+                                <AlertTriangle className="w-5 h-5 shrink-0" />
+                                <div className="space-y-1">
+                                    <p className="font-bold">{conflictWarning.startsWith('Warning:') ? 'Peringatan Pemeliharaan' : 'Jadwal Bentrok!'}</p>
+                                    <p className="leading-relaxed font-semibold">{conflictWarning}</p>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="sm:col-span-2 flex justify-end gap-3 pt-4 border-t border-slate-50 dark:border-slate-800/40">
+                            <Button 
+                                variant="primary" 
+                                type="submit" 
+                                disabled={submitting || (!!conflictWarning && !conflictWarning.startsWith('Warning:'))}
+                                className="px-6 py-2.5 rounded-xl text-xs font-bold"
+                            >
+                                {submitting ? 'Mengirim Pengajuan...' : 'Ajukan Reservasi'}
+                            </Button>
+                        </div>
+                    </form>
+                </div>
+
+                <div className="space-y-6">
+                    <Card className="p-6 bg-gradient-to-tr from-slate-900 to-slate-800 border-none text-white relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-24 h-24 bg-red-650/10 rounded-full blur-xl"></div>
+                        <h4 className="text-sm font-bold flex items-center gap-2 mb-3">
+                            <CheckCircle2 className="w-4.5 h-4.5 text-ojk-red shrink-0" />
+                            Aturan Peminjaman
+                        </h4>
+                        <ul className="space-y-2.5 text-[11px] text-slate-300 font-semibold leading-relaxed">
+                            <li className="flex items-start gap-1.5">
+                                <span className="text-ojk-red font-bold">&bull;</span>
+                                Pengajuan wajib diajukan minimal 1 hari sebelum pemakaian dilakukan.
+                            </li>
+                            <li className="flex items-start gap-1.5">
+                                <span className="text-ojk-red font-bold">&bull;</span>
+                                Pengisian data keperluan harus mendetail untuk memudahkan Validator memberikan izin.
+                            </li>
+                            <li className="flex items-start gap-1.5">
+                                <span className="text-ojk-red font-bold">&bull;</span>
+                                Jika mengajukan pembatalan, harap lakukan sebelum status disetujui (Approved).
+                            </li>
+                        </ul>
+                    </Card>
+
+                    <Card className="p-6 space-y-4">
+                        <h4 className="text-xs font-bold text-slate-800 dark:text-white flex items-center gap-1.5">
+                            <HelpCircle className="w-4 h-4 text-slate-400" /> Alur Approval
+                        </h4>
+                        <div className="relative pl-6 border-l border-slate-200 dark:border-slate-800 space-y-4 text-[10px] font-semibold text-slate-500">
+                            <div className="relative">
+                                <span className="font-bold text-slate-700 dark:text-slate-300 block">1. Kirim Pengajuan</span>
+                                Status otomatis `Pending` menunggu persetujuan validator.
+                            </div>
+                            <div className="relative">
+                                <span className="font-bold text-slate-700 dark:text-slate-300 block">2. Persetujuan</span>
+                                Status berubah `Approved` & Aset `Reserved`.
+                            </div>
+                            <div className="relative">
+                                <span className="font-bold text-slate-700 dark:text-slate-300 block">3. Selesai</span>
+                                Tekan tombol `Kembalikan` setelah pemakaian selesai.
+                            </div>
+                        </div>
+                    </Card>
+                </div>
+            </div>
+
+            <div className="p-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-xs">
+                <h3 className="text-sm font-bold text-slate-800 dark:text-white mb-6 flex items-center gap-2">
+                    <CalendarCheck className="w-5 h-5 text-ojk-red shrink-0" />
+                    Riwayat Pengajuan Peminjaman Saya
+                </h3>
+                <DataTable 
+                    columns={columns}
+                    data={reservations}
+                    searchKey="asset.name"
+                    searchPlaceholder="Cari riwayat berdasarkan nama aset..."
+                    exportName="riwayat_reservasi_saya"
+                />
+            </div>
+        </div>
+    );
+}
+
+export default function ReservationsPage() {
+    return (
+        <Suspense fallback={<div className="p-8 text-xs text-slate-400">Memuat halaman...</div>}>
+            <ReservationsContent />
+        </Suspense>
+    );
+}
