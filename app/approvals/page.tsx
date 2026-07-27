@@ -69,8 +69,8 @@ export default function ApprovalsPage() {
     }, []);
 
     const handleOpenApprove = (res: Reservation) => {
-        const needsDriver = res.driver_required || res.driverRequired;
-        if (needsDriver) {
+        const isVehicle = res.driver_required || res.driverRequired || res.asset?.code?.startsWith('MOB') || (res.asset as any)?.category?.slug === 'kendaraan';
+        if (isVehicle) {
             setSelectedResForApprove(res);
             setSelectedDriverName(res.driver_name || res.driverName || DRIVER_LIST[0].name);
             setApproveModalOpen(true);

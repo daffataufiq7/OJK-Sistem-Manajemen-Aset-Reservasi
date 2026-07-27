@@ -46,7 +46,20 @@ export default function HistoryPage() {
                 return eDate ? new Date(eDate).toLocaleString('id-ID') : '-';
             }
         },
-        { key: 'purpose', header: 'Keperluan', render: (res: any) => <span className="truncate max-w-[200px] block">{res.purpose}</span> },
+        { 
+            key: 'purpose', 
+            header: 'Keperluan & Driver', 
+            render: (res: any) => (
+                <div className="flex flex-col space-y-1">
+                    <span className="truncate max-w-[200px] block font-medium" title={res.purpose}>{res.purpose}</span>
+                    {(res.driver_name || res.driverName) && (
+                        <span className="inline-flex items-center gap-1 text-[9.5px] font-extrabold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-md border border-amber-200/50 dark:border-amber-800/50 self-start">
+                            🚗 Driver: {res.driver_name || res.driverName}
+                        </span>
+                    )}
+                </div>
+            ) 
+        },
         { key: 'status', header: 'Status', render: (res: any) => <Badge status={res.status} /> }
     ];
 

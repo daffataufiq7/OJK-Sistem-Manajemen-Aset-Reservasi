@@ -200,7 +200,7 @@ function ReservationsContent() {
             end_date: endDate,
             purpose,
             destination: isVehicle ? destination : null,
-            driver_required: isVehicle ? driverRequired : false,
+            driver_required: isVehicle,
             driver_name: null,
             notes: notes || null
         };
@@ -316,8 +316,17 @@ function ReservationsContent() {
         },
         {
             key: 'purpose',
-            header: 'Keperluan',
-            render: (res: Reservation) => <span className="truncate max-w-[200px] block font-semibold text-xs text-slate-500" title={res.purpose}>{res.purpose}</span>
+            header: 'Keperluan & Driver',
+            render: (res: Reservation) => (
+                <div className="flex flex-col space-y-1">
+                    <span className="truncate max-w-[200px] block font-semibold text-xs text-slate-500" title={res.purpose}>{res.purpose}</span>
+                    {(res.driver_name || res.driverName) && (
+                        <span className="inline-flex items-center gap-1 text-[9.5px] font-extrabold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-md border border-amber-200/50 dark:border-amber-800/50 self-start">
+                            🚗 Driver: {res.driver_name || res.driverName}
+                        </span>
+                    )}
+                </div>
+            )
         },
         {
             key: 'status',
@@ -462,28 +471,14 @@ function ReservationsContent() {
                         />
 
                         {categories.find(c => c.id == selectedCategory)?.slug === 'kendaraan' && (
-                            <>
-                                <Input 
-                                    label="Tujuan Perjalanan (Wajib)"
-                                    placeholder="Misal: Kantor OJK Pusat, Jakarta"
-                                    value={destination}
-                                    onChange={(e) => setDestination(e.target.value)}
-                                    className="sm:col-span-2"
-                                    required
-                                />
-
-                                <div className="sm:col-span-2 space-y-2 pt-1 border-t border-slate-100 dark:border-slate-800">
-                                    <label className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            checked={driverRequired}
-                                            onChange={(e) => setDriverRequired(e.target.checked)}
-                                            className="rounded border-slate-300 text-ojk-red focus:ring-ojk-red w-4 h-4"
-                                        />
-                                        Membutuhkan Driver / Pengemudi Dinas <span className="text-[10px] text-slate-400 font-normal">(Penugasan driver akan ditentukan oleh Validator)</span>
-                                    </label>
-                                </div>
-                            </>
+                            <Input 
+                                label="Tujuan Perjalanan (Wajib)"
+                                placeholder="Misal: Kantor OJK Pusat, Jakarta"
+                                value={destination}
+                                onChange={(e) => setDestination(e.target.value)}
+                                className="sm:col-span-2"
+                                required
+                            />
                         )}
 
                         <TextArea 

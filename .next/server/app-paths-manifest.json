@@ -1,10 +1,7 @@
 {
   "/api/reservations/route": "app/api/reservations/route.js",
-  "/_not-found/page": "app/_not-found/page.js",
   "/api/notifications/route": "app/api/notifications/route.js",
+  "/_not-found/page": "app/_not-found/page.js",
   "/login/page": "app/login/page.js",
-  "/dashboard/page": "app/dashboard/page.js",
-  "/audit-logs/page": "app/audit-logs/page.js",
-  "/approvals/page": "app/approvals/page.js",
-  "/assets/page": "app/assets/page.js"
+  "/dashboard/page": "app/dashboard/page.js"
 }

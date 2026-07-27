@@ -170,8 +170,8 @@ export default function DashboardPage() {
                     end_date: resEndDate,
                     purpose: resPurpose,
                     destination: resDestination,
-                    driver_required: resDriverRequired,
-                    driver_name: resDriverRequired ? resDriverName : null,
+                    driver_required: selectedAssetForRes.category === 'Kendaraan',
+                    driver_name: null,
                     notes: resNotes
                 })
             });
@@ -1015,19 +1015,7 @@ export default function DashboardPage() {
                         />
                     )}
 
-                    {selectedAssetForRes?.category === 'Kendaraan' && (
-                        <div className="space-y-2 pt-1 border-t border-slate-100 dark:border-slate-800">
-                            <label className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    checked={resDriverRequired}
-                                    onChange={(e) => setResDriverRequired(e.target.checked)}
-                                    className="rounded border-slate-300 text-ojk-red focus:ring-ojk-red w-4 h-4"
-                                />
-                                Membutuhkan Driver / Pengemudi Dinas <span className="text-[10px] text-slate-400 font-normal">(Penugasan driver akan ditentukan oleh Validator)</span>
-                            </label>
-                        </div>
-                    )}
+
 
                     <TextArea
                         label="Catatan Tambahan (Opsional)"
