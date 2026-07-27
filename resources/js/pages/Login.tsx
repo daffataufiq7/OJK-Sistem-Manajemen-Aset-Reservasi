@@ -2,16 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Button, Input, Dialog, toast } from '../components/UI';
-import { 
-    Lock, 
-    User as UserIcon, 
-    Eye, 
-    EyeOff, 
-    Sun, 
-    Moon, 
-    Info, 
-    ArrowRight, 
-    Play, 
+import {
+    Lock,
+    User as UserIcon,
+    Eye,
+    EyeOff,
+    Sun,
+    Moon,
+    Info,
+    ArrowRight,
+    Play,
     X,
     Building,
     CheckCircle2,
@@ -26,11 +26,11 @@ export const Login: React.FC = () => {
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
-    
+
     // Modal states
     const [showAboutModal, setShowAboutModal] = useState(false);
     const [showVideoModal, setShowVideoModal] = useState(false);
-    
+
     // Active slide index for left banner
     const [activeSlide, setActiveSlide] = useState(0);
 
@@ -92,7 +92,7 @@ export const Login: React.FC = () => {
 
     return (
         <div className="min-h-screen w-full bg-[#F4F6F9] dark:bg-[#090D16] transition-colors duration-300 font-sans flex flex-col justify-between items-center p-4 sm:p-6 lg:p-8 relative overflow-x-hidden select-none">
-            
+
             {/* Background Decorative Patterns (Top Right Dots Matrix & Bottom Right Red Curve) */}
             <div className="absolute top-6 right-6 pointer-events-none opacity-20 dark:opacity-10 z-0">
                 <svg width="140" height="140" viewBox="0 0 100 100" fill="none">
@@ -122,7 +122,7 @@ export const Login: React.FC = () => {
                 </div>
 
                 {/* Theme Toggle Button */}
-                <button 
+                <button
                     onClick={() => setTheme(prev => prev === 'light' ? 'dark' : 'light')}
                     className="p-2.5 bg-white/80 dark:bg-slate-900/80 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 rounded-xl transition-all cursor-pointer shadow-xs backdrop-blur-md flex items-center gap-2 text-xs font-semibold"
                     title="Ubah Tema"
@@ -143,10 +143,10 @@ export const Login: React.FC = () => {
 
             {/* Main Login Card Container (Landscape Double Panel) */}
             <div className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-200/80 dark:border-slate-800 shadow-2xl p-4 sm:p-6 lg:p-8 max-w-[1280px] w-full grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center relative z-10 my-auto">
-                
+
                 {/* LEFT PANEL: Landscape Media Video Showcase (7 Columns) */}
                 <div className="lg:col-span-7 flex flex-col space-y-4">
-                    
+
                     {/* Header Website Name Above Video Frame */}
                     <div className="flex flex-col space-y-0.5 px-1">
                         <h1 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white tracking-tight leading-tight flex items-center gap-2">
@@ -160,46 +160,28 @@ export const Login: React.FC = () => {
 
                     {/* Enlarged Video Container (100% Clean Video View, NO text overlay) */}
                     <div className="relative rounded-[26px] overflow-hidden aspect-[16/10] sm:aspect-video w-full min-h-[400px] sm:min-h-[460px] lg:min-h-[500px] shadow-xl border border-slate-200/60 dark:border-slate-800 group select-none">
-                        
+
                         {/* Background Backdrop Video (Autoplay & Looping: vidio ojk.mp4) */}
-                        <video 
-                            autoPlay 
-                            loop 
-                            muted 
-                            playsInline 
-                            poster="/kantor ojk copy.jpeg"
+                        <video
+                            autoPlay
+                            loop
+                            muted
+                            playsInline
+                            poster="/Kantor OJK 2.jpeg"
                             className="absolute inset-0 w-full h-full object-cover object-center transform group-hover:scale-105 transition-transform duration-1000 ease-out"
                         >
                             <source src="/vidio ojk.mp4" type="video/mp4" />
                             <source src="/video-bg.mp4" type="video/mp4" />
-                            <img 
-                                src="/kantor ojk copy.jpeg" 
-                                alt="Kantor Regional OJK Jawa Barat" 
-                                className="w-full h-full object-cover object-center" 
+                            <img
+                                src="/Kantor OJK 2.jpeg"
+                                alt="Kantor Regional OJK Jawa Barat"
+                                className="w-full h-full object-cover object-center"
                             />
                         </video>
 
                     </div>
 
-                    {/* Gambar Kantor OJK Jawa Barat (Feature Strip Below Video) */}
-                    <div className="relative rounded-[20px] overflow-hidden w-full h-36 sm:h-44 shadow-md border border-slate-200/60 dark:border-slate-800 group select-none">
-                        <img
-                            src="/kantor ojk copy.jpeg"
-                            alt="Gedung Kantor OJK Regional 2 Jawa Barat"
-                            className="w-full h-full object-cover object-center transform group-hover:scale-105 transition-transform duration-700 ease-out"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                        <div className="absolute bottom-3 left-4 right-4">
-                            <p className="text-white text-[10.5px] font-black uppercase tracking-widest drop-shadow-md">
-                                Kantor OJK Regional 2 Jawa Barat
-                            </p>
-                            <p className="text-slate-300 text-[9.5px] font-semibold mt-0.5 drop-shadow-sm">
-                                Jl. Ir. H. Juanda No. 152, Bandung
-                            </p>
-                        </div>
-                    </div>
-
-                    {/* Title & Subtitle BELOW Image Strip (Clean & Non-Obstructive) */}
+                    {/* Title & Subtitle BELOW Video Frame (Clean & Non-Obstructive) */}
                     <div className="px-1 space-y-2 pt-1">
                         <div className="space-y-1 transition-all duration-500">
                             <h3 className="text-base sm:text-lg font-black text-slate-850 dark:text-white tracking-tight leading-snug">
@@ -217,11 +199,10 @@ export const Login: React.FC = () => {
                                     key={idx}
                                     type="button"
                                     onClick={() => setActiveSlide(idx)}
-                                    className={`transition-all duration-300 cursor-pointer ${
-                                        activeSlide === idx 
-                                            ? 'w-7 h-2 bg-red-600 rounded-full' 
-                                            : 'w-2 h-2 bg-slate-300 dark:bg-slate-700 hover:bg-slate-400 rounded-full'
-                                    }`}
+                                    className={`transition-all duration-300 cursor-pointer ${activeSlide === idx
+                                        ? 'w-7 h-2 bg-red-600 rounded-full'
+                                        : 'w-2 h-2 bg-slate-300 dark:bg-slate-700 hover:bg-slate-400 rounded-full'
+                                        }`}
                                     aria-label={`Slide ${idx + 1}`}
                                 />
                             ))}
@@ -232,15 +213,15 @@ export const Login: React.FC = () => {
 
                 {/* RIGHT PANEL: System Authentication Form (5 Columns) */}
                 <div className="lg:col-span-5 flex flex-col justify-between py-2 sm:py-4 px-2 sm:px-4 space-y-6">
-                    
+
                     <div className="space-y-6">
-                        
+
                         {/* Red OJK Emblem Logo Header */}
                         <div className="space-y-3">
                             <div className="flex items-center gap-3">
                                 <img src="/logo ojk.png" alt="Logo OJK" className="h-12 sm:h-14 w-auto object-contain" />
                             </div>
-                            
+
                             <div className="space-y-1 pt-2">
                                 <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
                                     Otentikasi Sistem
@@ -253,7 +234,7 @@ export const Login: React.FC = () => {
 
                         {/* Login Form */}
                         <form onSubmit={handleSubmit} className="space-y-4 pt-1">
-                            
+
                             {/* ID Pengguna / NIP */}
                             <div className="relative">
                                 <Input
@@ -292,18 +273,18 @@ export const Login: React.FC = () => {
                             {/* Checkbox Ingat Saya & Lupa Kata Sandi */}
                             <div className="flex items-center justify-between text-xs pt-1">
                                 <label className="flex items-center text-slate-700 dark:text-slate-300 font-semibold cursor-pointer select-none">
-                                    <input 
-                                        type="checkbox" 
-                                        className="mr-2.5 rounded border-slate-300 dark:border-slate-700 text-ojk-red focus:ring-ojk-red w-4 h-4" 
+                                    <input
+                                        type="checkbox"
+                                        className="mr-2.5 rounded border-slate-300 dark:border-slate-700 text-ojk-red focus:ring-ojk-red w-4 h-4"
                                     />
                                     Ingat saya
                                 </label>
-                                <a 
-                                    href="#forgot" 
-                                    className="text-[#C8102E] dark:text-red-400 hover:underline font-bold" 
-                                    onClick={(e) => { 
-                                        e.preventDefault(); 
-                                        toast.info('Silakan hubungi Super Admin Divisi Umum OJK Jawa Barat untuk bantuan reset password.'); 
+                                <a
+                                    href="#forgot"
+                                    className="text-[#C8102E] dark:text-red-400 hover:underline font-bold"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        toast.info('Silakan hubungi Super Admin Divisi Umum OJK Jawa Barat untuk bantuan reset password.');
                                     }}
                                 >
                                     Lupa kata sandi?
@@ -368,18 +349,18 @@ export const Login: React.FC = () => {
             </div>
 
             {/* Video Modal Player Dialog */}
-            <Dialog 
-                isOpen={showVideoModal} 
+            <Dialog
+                isOpen={showVideoModal}
                 onClose={() => setShowVideoModal(false)}
                 title="Profil Gedung Kantor Regional OJK Jawa Barat"
                 size="lg"
             >
                 <div className="space-y-4">
                     <div className="relative rounded-2xl overflow-hidden bg-black aspect-video flex items-center justify-center">
-                        <img 
-                            src="/Kantor OJK.jpeg" 
-                            alt="Kantor OJK Video Preview" 
-                            className="w-full h-full object-cover opacity-80" 
+                        <img
+                            src="/Kantor OJK.jpeg"
+                            alt="Kantor OJK Video Preview"
+                            className="w-full h-full object-cover opacity-80"
                         />
                         <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6 bg-black/40 backdrop-blur-xs space-y-3">
                             <Building className="w-12 h-12 text-white/90" />
@@ -407,7 +388,7 @@ export const Login: React.FC = () => {
                 size="md"
             >
                 <div className="space-y-6">
-                    
+
                     {/* Header Logo */}
                     <div className="flex flex-col items-center justify-center text-center space-y-2 pb-4 border-b border-slate-100 dark:border-slate-800">
                         <img src="/logo ojk.png" alt="Logo OJK" className="h-14 w-auto object-contain" />
@@ -434,7 +415,7 @@ export const Login: React.FC = () => {
                         </h4>
 
                         <div className="grid grid-cols-3 gap-3">
-                            
+
                             {/* UNY */}
                             <div className="flex flex-col items-center text-center bg-slate-50 dark:bg-slate-850 p-3 rounded-2xl border border-slate-100 dark:border-slate-800 justify-between h-full">
                                 <div className="flex flex-col items-center space-y-1.5">

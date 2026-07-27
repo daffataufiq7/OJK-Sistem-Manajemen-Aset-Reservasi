@@ -1,0 +1,33 @@
+{
+  "version": 2,
+  "framework": null,
+  "functions": {
+    "api/index.php": {
+      "runtime": "vercel-php@0.7.2"
+    }
+  },
+  "routes": [
+    {
+      "src": "/build/(.*)",
+      "dest": "/public/build/$1"
+    },
+    {
+      "src": "/(logo ojk\\.png|uny logo\\.png|itb logo\\.png|telkom logo\\.png|favicon\\.ico|robots\\.txt|Kantor OJK.*|kantor ojk.*|vidio ojk\\.mp4)",
+      "dest": "/public/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/api/index.php"
+    }
+  ],
+  "env": {
+    "APP_ENV": "production",
+    "APP_DEBUG": "false",
+    "LOG_LEVEL": "error",
+    "DB_CONNECTION": "pgsql",
+    "CACHE_STORE": "array",
+    "SESSION_DRIVER": "cookie",
+    "QUEUE_CONNECTION": "sync",
+    "FILESYSTEM_DISK": "local"
+  }
+}
