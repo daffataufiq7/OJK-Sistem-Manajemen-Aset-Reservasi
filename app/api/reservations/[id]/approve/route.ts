@@ -25,29 +25,44 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       include: { asset: true, user: true },
     });
 
+    if (reservation.assetId) {
+      await prisma.asset.update({
+        where: { id: reservation.assetId },
+        data: { status: 'reserved' },
+      });
+    }
+
     const driverInfoMsg = driverName ? ` dengan Driver: ${driverName}` : '';
 
-    await prisma.notification.create({
-      data: {
-        userId: reservation.userId,
-        title: 'Pengajuan Disetujui',
-        message: `Pengajuan peminjaman ${reservation.asset.name} Anda telah disetujui oleh ${user.name}${driverInfoMsg}.`,
-        type: 'approval',
-      }
-    });
+    try {
+      await prisma.notification.create({
+        data: {
+          userId: reservation.userId,
+          title: 'Pengajuan Disetujui',
+          message: `Pengajuan peminjaman ${reservation.asset?.name || 'Aset'} Anda telah disetujui oleh ${user.name}${driverInfoMsg}.`,
+          type: 'approval',
+        }
+      });
+    } catch (notifErr) {
+      console.warn('Notification skipped:', notifErr);
+    }
 
-    await prisma.auditLog.create({
-      data: {
-        userId: user.id,
-        action: 'approve_reservation',
-        description: `Menyetujui peminjaman ${reservation.asset.name} oleh ${reservation.user.name}${driverInfoMsg}`,
-        ipAddress: request.headers.get('x-forwarded-for') || '127.0.0.1',
-      }
-    });
+    try {
+      await prisma.auditLog.create({
+        data: {
+          userId: user.id,
+          action: 'approve_reservation',
+          description: `Menyetujui peminjaman ${reservation.asset?.name || 'Aset'} oleh ${reservation.user?.name || 'User'}${driverInfoMsg}`,
+          ipAddress: request.headers.get('x-forwarded-for') || '127.0.0.1',
+        }
+      });
+    } catch (auditErr) {
+      console.warn('Audit log skipped:', auditErr);
+    }
 
     return NextResponse.json(reservation);
   } catch (error: any) {
     console.error('Approve error:', error);
-    return NextResponse.json({ message: 'Failed to approve reservation' }, { status: 500 });
+    return NextResponse.json({ message: error?.message || 'Gagal menyetujui peminjaman.' }, { status: 500 });
   }
 }

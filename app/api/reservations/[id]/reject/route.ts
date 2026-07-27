@@ -12,7 +12,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const { id } = await params;
     const resId = Number(id);
     const body = await request.json().catch(() => ({}));
-    const reason = body.reason || body.rejection_reason || 'Alasan penolakan tidak ditentukan.';
+    const reason = body.reason || body.rejection_reason || body.rejectionReason || 'Alasan penolakan tidak ditentukan.';
 
     const reservation = await prisma.reservation.update({
       where: { id: resId },
@@ -23,27 +23,42 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       include: { asset: true, user: true },
     });
 
-    await prisma.notification.create({
-      data: {
-        userId: reservation.userId,
-        title: 'Pengajuan Ditolak',
-        message: `Pengajuan peminjaman ${reservation.asset.name} ditolak. Alasan: ${reason}`,
-        type: 'reject',
-      }
-    });
+    if (reservation.assetId) {
+      await prisma.asset.update({
+        where: { id: reservation.assetId },
+        data: { status: 'available' },
+      });
+    }
 
-    await prisma.auditLog.create({
-      data: {
-        userId: user.id,
-        action: 'reject_reservation',
-        description: `Menolak peminjaman ${reservation.asset.name} oleh ${reservation.user.name}. Alasan: ${reason}`,
-        ipAddress: request.headers.get('x-forwarded-for') || '127.0.0.1',
-      }
-    });
+    try {
+      await prisma.notification.create({
+        data: {
+          userId: reservation.userId,
+          title: 'Pengajuan Ditolak',
+          message: `Pengajuan peminjaman ${reservation.asset?.name || 'Aset'} ditolak. Alasan: ${reason}`,
+          type: 'reject',
+        }
+      });
+    } catch (notifErr) {
+      console.warn('Notification skipped:', notifErr);
+    }
+
+    try {
+      await prisma.auditLog.create({
+        data: {
+          userId: user.id,
+          action: 'reject_reservation',
+          description: `Menolak peminjaman ${reservation.asset?.name || 'Aset'} oleh ${reservation.user?.name || 'User'}. Alasan: ${reason}`,
+          ipAddress: request.headers.get('x-forwarded-for') || '127.0.0.1',
+        }
+      });
+    } catch (auditErr) {
+      console.warn('Audit log skipped:', auditErr);
+    }
 
     return NextResponse.json(reservation);
   } catch (error: any) {
     console.error('Reject error:', error);
-    return NextResponse.json({ message: 'Failed to reject reservation' }, { status: 500 });
+    return NextResponse.json({ message: error?.message || 'Gagal menolak peminjaman.' }, { status: 500 });
   }
 }

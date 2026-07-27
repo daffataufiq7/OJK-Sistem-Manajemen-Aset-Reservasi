@@ -18,23 +18,29 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       include: { asset: true },
     });
 
-    await prisma.asset.update({
-      where: { id: reservation.assetId },
-      data: { status: 'available' },
-    });
+    if (reservation.assetId) {
+      await prisma.asset.update({
+        where: { id: reservation.assetId },
+        data: { status: 'available' },
+      });
+    }
 
-    await prisma.auditLog.create({
-      data: {
-        userId: user.id,
-        action: 'cancel_reservation',
-        description: `Membatalkan reservasi ${reservation.asset.name}`,
-        ipAddress: request.headers.get('x-forwarded-for') || '127.0.0.1',
-      }
-    });
+    try {
+      await prisma.auditLog.create({
+        data: {
+          userId: user.id,
+          action: 'cancel_reservation',
+          description: `Membatalkan reservasi ${reservation.asset?.name || 'Aset'}`,
+          ipAddress: request.headers.get('x-forwarded-for') || '127.0.0.1',
+        }
+      });
+    } catch (auditErr) {
+      console.warn('Audit log skipped:', auditErr);
+    }
 
     return NextResponse.json(reservation);
   } catch (error: any) {
     console.error('Cancel reservation error:', error);
-    return NextResponse.json({ message: 'Failed to cancel reservation' }, { status: 500 });
+    return NextResponse.json({ message: error?.message || 'Gagal membatalkan reservasi.' }, { status: 500 });
   }
 }
