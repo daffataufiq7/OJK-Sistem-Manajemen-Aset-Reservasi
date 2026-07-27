@@ -167,13 +167,13 @@ export const Login: React.FC = () => {
                             loop 
                             muted 
                             playsInline 
-                            poster="/Kantor OJK 2.jpeg"
+                            poster="/kantor ojk copy.jpeg"
                             className="absolute inset-0 w-full h-full object-cover object-center transform group-hover:scale-105 transition-transform duration-1000 ease-out"
                         >
                             <source src="/vidio ojk.mp4" type="video/mp4" />
                             <source src="/video-bg.mp4" type="video/mp4" />
                             <img 
-                                src="/Kantor OJK 2.jpeg" 
+                                src="/kantor ojk copy.jpeg" 
                                 alt="Kantor Regional OJK Jawa Barat" 
                                 className="w-full h-full object-cover object-center" 
                             />
@@ -181,7 +181,25 @@ export const Login: React.FC = () => {
 
                     </div>
 
-                    {/* Title & Subtitle BELOW Video Frame (Clean & Non-Obstructive) */}
+                    {/* Gambar Kantor OJK Jawa Barat (Feature Strip Below Video) */}
+                    <div className="relative rounded-[20px] overflow-hidden w-full h-36 sm:h-44 shadow-md border border-slate-200/60 dark:border-slate-800 group select-none">
+                        <img
+                            src="/kantor ojk copy.jpeg"
+                            alt="Gedung Kantor OJK Regional 2 Jawa Barat"
+                            className="w-full h-full object-cover object-center transform group-hover:scale-105 transition-transform duration-700 ease-out"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                        <div className="absolute bottom-3 left-4 right-4">
+                            <p className="text-white text-[10.5px] font-black uppercase tracking-widest drop-shadow-md">
+                                Kantor OJK Regional 2 Jawa Barat
+                            </p>
+                            <p className="text-slate-300 text-[9.5px] font-semibold mt-0.5 drop-shadow-sm">
+                                Jl. Ir. H. Juanda No. 152, Bandung
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Title & Subtitle BELOW Image Strip (Clean & Non-Obstructive) */}
                     <div className="px-1 space-y-2 pt-1">
                         <div className="space-y-1 transition-all duration-500">
                             <h3 className="text-base sm:text-lg font-black text-slate-850 dark:text-white tracking-tight leading-snug">
