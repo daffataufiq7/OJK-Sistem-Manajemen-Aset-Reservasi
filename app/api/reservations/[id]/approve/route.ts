@@ -11,18 +11,27 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   try {
     const { id } = await params;
     const resId = Number(id);
+    const body = await request.json().catch(() => ({}));
+    const driverName = body.driver_name || body.driverName || null;
+
+    const updateData: any = { status: 'approved' };
+    if (driverName) {
+      updateData.driverName = driverName;
+    }
 
     const reservation = await prisma.reservation.update({
       where: { id: resId },
-      data: { status: 'approved' },
+      data: updateData,
       include: { asset: true, user: true },
     });
+
+    const driverInfoMsg = driverName ? ` dengan Driver: ${driverName}` : '';
 
     await prisma.notification.create({
       data: {
         userId: reservation.userId,
         title: 'Pengajuan Disetujui',
-        message: `Pengajuan peminjaman ${reservation.asset.name} Anda telah disetujui oleh ${user.name}.`,
+        message: `Pengajuan peminjaman ${reservation.asset.name} Anda telah disetujui oleh ${user.name}${driverInfoMsg}.`,
         type: 'approval',
       }
     });
@@ -31,7 +40,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       data: {
         userId: user.id,
         action: 'approve_reservation',
-        description: `Menyetujui peminjaman ${reservation.asset.name} oleh ${reservation.user.name}`,
+        description: `Menyetujui peminjaman ${reservation.asset.name} oleh ${reservation.user.name}${driverInfoMsg}`,
         ipAddress: request.headers.get('x-forwarded-for') || '127.0.0.1',
       }
     });

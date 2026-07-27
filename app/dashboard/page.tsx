@@ -1024,24 +1024,8 @@ export default function DashboardPage() {
                                     onChange={(e) => setResDriverRequired(e.target.checked)}
                                     className="rounded border-slate-300 text-ojk-red focus:ring-ojk-red w-4 h-4"
                                 />
-                                Membutuhkan Driver / Pengemudi Dinas
+                                Membutuhkan Driver / Pengemudi Dinas <span className="text-[10px] text-slate-400 font-normal">(Penugasan driver akan ditentukan oleh Validator)</span>
                             </label>
-
-                            {resDriverRequired && (
-                                <Select
-                                    label="Pilih Driver Dinas"
-                                    value={resDriverName}
-                                    onChange={(e) => setResDriverName(e.target.value)}
-                                    required={resDriverRequired}
-                                >
-                                    <option value="">-- Pilih Pengemudi --</option>
-                                    {DRIVER_LIST.map((driver) => (
-                                        <option key={driver.id} value={driver.name}>
-                                            {driver.name} ({driver.phone})
-                                        </option>
-                                    ))}
-                                </Select>
-                            )}
                         </div>
                     )}
 

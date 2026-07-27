@@ -200,7 +200,7 @@ function ReservationsContent() {
             end_date: endDate,
             purpose,
             destination: isVehicle ? destination : null,
-            driver_required: false,
+            driver_required: isVehicle ? driverRequired : false,
             driver_name: null,
             notes: notes || null
         };
@@ -462,14 +462,28 @@ function ReservationsContent() {
                         />
 
                         {categories.find(c => c.id == selectedCategory)?.slug === 'kendaraan' && (
-                            <Input 
-                                label="Tujuan Perjalanan (Wajib)"
-                                placeholder="Misal: Kantor OJK Pusat, Jakarta"
-                                value={destination}
-                                onChange={(e) => setDestination(e.target.value)}
-                                className="sm:col-span-2"
-                                required
-                            />
+                            <>
+                                <Input 
+                                    label="Tujuan Perjalanan (Wajib)"
+                                    placeholder="Misal: Kantor OJK Pusat, Jakarta"
+                                    value={destination}
+                                    onChange={(e) => setDestination(e.target.value)}
+                                    className="sm:col-span-2"
+                                    required
+                                />
+
+                                <div className="sm:col-span-2 space-y-2 pt-1 border-t border-slate-100 dark:border-slate-800">
+                                    <label className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={driverRequired}
+                                            onChange={(e) => setDriverRequired(e.target.checked)}
+                                            className="rounded border-slate-300 text-ojk-red focus:ring-ojk-red w-4 h-4"
+                                        />
+                                        Membutuhkan Driver / Pengemudi Dinas <span className="text-[10px] text-slate-400 font-normal">(Penugasan driver akan ditentukan oleh Validator)</span>
+                                    </label>
+                                </div>
+                            </>
                         )}
 
                         <TextArea 
