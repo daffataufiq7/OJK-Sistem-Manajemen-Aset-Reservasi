@@ -1,7 +1,7 @@
 {
   "version": 2,
   "framework": null,
-  "outputDirectory": "dist",
+  "outputDirectory": "public",
   "buildCommand": "npm run build",
   "functions": {
     "api/index.php": {
@@ -10,12 +10,7 @@
   },
   "routes": [
     {
-      "src": "/build/(.*)",
-      "dest": "/public/build/$1"
-    },
-    {
-      "src": "/(logo ojk\\.png|uny logo\\.png|itb logo\\.png|telkom logo\\.png|favicon\\.ico|robots\\.txt|Kantor OJK.*|kantor ojk.*|vidio ojk\\.mp4)",
-      "dest": "/public/$1"
+      "handle": "filesystem"
     },
     {
       "src": "/(.*)",
@@ -25,7 +20,7 @@
   "env": {
     "APP_ENV": "production",
     "APP_KEY": "base64:2ThksQrzsJvLyvWYuQBlarVzfHGoZ+hWbNkW2OLBKow=",
-    "APP_DEBUG": "true",
+    "APP_DEBUG": "false",
     "LOG_LEVEL": "error",
     "DB_CONNECTION": "sqlite",
     "DB_DATABASE": "/tmp/database.sqlite",
