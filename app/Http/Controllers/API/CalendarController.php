@@ -16,10 +16,9 @@ class CalendarController extends Controller
         $query = Reservation::with(['user', 'asset.category'])
             ->whereNotIn('status', ['rejected', 'cancelled']);
 
-        // Pegawai only sees their own calendar events or all?
-        // Usually, in a shared scheduling system, everyone should see all bookings on the calendar
-        // so that they know when assets are booked, but we can filter if requested.
-        // We will show all events to prevent double booking attempts manually.
+        if ($user->role === 'pegawai') {
+            $query->where('user_id', $user->id);
+        }
 
         $reservations = $query->get();
 

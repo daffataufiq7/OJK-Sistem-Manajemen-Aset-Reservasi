@@ -156,34 +156,39 @@ export const Users: React.FC = () => {
         {
             key: 'nip',
             header: 'NIP / ID',
-            render: (u: UserAccount) => <span className="font-bold text-slate-800 dark:text-slate-200">{u.nip}</span>
-        },
-        {
-            key: 'name',
-            header: 'Nama Pegawai',
             render: (u: UserAccount) => (
-                <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center shrink-0">
-                        <User className="w-4 h-4 text-ojk-red" />
-                    </div>
-                    <span className="font-bold text-slate-850 dark:text-slate-100">{u.name}</span>
-                </div>
+                <span className="font-extrabold text-slate-700 dark:text-slate-200 font-mono text-xs px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-200/60 dark:border-slate-700">
+                    {u.nip}
+                </span>
             )
         },
         {
-            key: 'email',
-            header: 'Email OJK',
+            key: 'name',
+            header: 'Nama & Email Kedinasan',
             render: (u: UserAccount) => (
-                <span className="flex items-center gap-1.5 font-semibold text-slate-450 dark:text-slate-400">
-                    <Mail className="w-3.5 h-3.5 shrink-0" />
-                    {u.email}
-                </span>
+                <div className="flex items-center gap-3 min-w-[210px]">
+                    <div className="w-9 h-9 rounded-full bg-red-50 dark:bg-slate-800 border border-red-100 dark:border-slate-700 flex items-center justify-center text-ojk-red dark:text-slate-200 font-extrabold text-xs shadow-2xs shrink-0">
+                        {u.name ? u.name.charAt(0).toUpperCase() : 'U'}
+                    </div>
+                    <div className="flex flex-col leading-tight overflow-hidden space-y-0.5">
+                        <span className="font-extrabold text-slate-850 dark:text-white text-xs truncate max-w-[200px]" title={u.name}>
+                            {u.name}
+                        </span>
+                        <span className="text-[11px] text-slate-400 font-medium truncate max-w-[200px]">
+                            {u.email}
+                        </span>
+                    </div>
+                </div>
             )
         },
         {
             key: 'division.name',
             header: 'Divisi Kantor',
-            render: (u: UserAccount) => <span className="font-semibold text-slate-500 dark:text-slate-400">{u.division?.name || '-'}</span>
+            render: (u: UserAccount) => (
+                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 min-w-[160px] block">
+                    {u.division?.name || 'Kantor Regional 2 Jabar'}
+                </span>
+            )
         },
         {
             key: 'role',
@@ -195,12 +200,12 @@ export const Users: React.FC = () => {
                     pegawai: 'Pegawai'
                 };
                 const badges = {
-                    super_admin: 'bg-red-500/10 text-red-600 border-red-200 dark:bg-red-950/20 dark:text-red-400',
-                    validator: 'bg-blue-500/10 text-blue-600 border-blue-200 dark:bg-blue-950/20 dark:text-blue-400',
-                    pegawai: 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400'
+                    super_admin: 'bg-red-50 text-red-700 border-red-200/60 dark:bg-red-950/50 dark:text-red-300',
+                    validator: 'bg-blue-50 text-blue-700 border-blue-200/60 dark:bg-blue-950/50 dark:text-blue-300',
+                    pegawai: 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300'
                 };
                 return (
-                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase border ${badges[u.role]}`}>
+                    <span className={`px-3 py-1 rounded-lg text-[11px] font-extrabold border uppercase tracking-wider ${badges[u.role]}`}>
                         {labels[u.role]}
                     </span>
                 );
@@ -208,26 +213,27 @@ export const Users: React.FC = () => {
         },
         {
             key: 'actions',
-            header: 'Aksi',
+            header: 'Opsi Super Admin',
             sortable: false,
             render: (u: UserAccount) => (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0 min-w-[140px]">
                     <button 
                         onClick={() => handleEditOpen(u)}
-                        className="p-1.5 hover:bg-blue-50 hover:text-blue-600 rounded-lg text-slate-500 transition-colors"
-                        title="Edit"
+                        className="px-2.5 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/80 dark:text-indigo-300 text-xs font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs hover:scale-102 active:scale-98"
+                        title="Edit User"
                     >
-                        <Edit className="w-4 h-4" />
+                        <Edit className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                        <span>Edit</span>
                     </button>
-                    {u.id !== currentUser?.id && (
-                        <button 
-                            onClick={() => handleDelete(u)}
-                            className="p-1.5 hover:bg-red-50 hover:text-red-650 rounded-lg text-slate-500 transition-colors"
-                            title="Hapus"
-                        >
-                            <Trash2 className="w-4 h-4" />
-                        </button>
-                    )}
+                    <button 
+                        onClick={() => handleDelete(u)}
+                        disabled={u.id === currentUser?.id}
+                        className="px-2.5 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 dark:bg-red-950/60 dark:hover:bg-red-900/80 dark:text-red-300 text-xs font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs hover:scale-102 active:scale-98 disabled:opacity-40 disabled:cursor-not-allowed"
+                        title={u.id === currentUser?.id ? 'Tidak dapat menghapus akun sendiri' : 'Hapus User'}
+                    >
+                        <Trash2 className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
+                        <span>Hapus</span>
+                    </button>
                 </div>
             )
         }

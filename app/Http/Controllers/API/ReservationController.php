@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Services\ReservationService;
+use App\Services\AuditLogService;
 use App\Repositories\ReservationRepositoryInterface;
 use Illuminate\Http\Request;
 use Exception;
@@ -181,6 +182,7 @@ class ReservationController extends Controller
             'status' => 'required|in:pending,approved,rejected,reserved,in_use,completed,cancelled',
             'rejection_reason' => 'nullable|string',
             'notes' => 'nullable|string',
+            'driver_name' => 'nullable|string',
         ]);
 
         try {

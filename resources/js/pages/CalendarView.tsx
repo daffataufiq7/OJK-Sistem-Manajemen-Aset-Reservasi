@@ -107,6 +107,23 @@ export const CalendarView: React.FC = () => {
                 </div>
             </div>
 
+            {/* Empty State Banner when no reservations exist for user */}
+            {!loading && events.length === 0 && (
+                <div className="p-6 bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/40 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 text-amber-800 dark:text-amber-300 font-sans">
+                    <div className="flex items-center gap-3 text-center sm:text-left">
+                        <div className="p-3 rounded-2xl bg-amber-500/15 shrink-0 mx-auto sm:mx-0">
+                            <Info className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+                        </div>
+                        <div className="space-y-0.5">
+                            <h4 className="font-extrabold text-sm text-amber-900 dark:text-amber-200">Belum Ada Agenda Reservasi</h4>
+                            <p className="text-xs text-amber-700 dark:text-amber-400">
+                                Kalender reservasi Anda saat ini masih kosong. Silakan ajukan permohonan baru untuk meminjam kendaraan atau ruang rapat.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Calendar Card */}
             <Card className="p-6">
                 <CardContent className="p-0">

@@ -98,21 +98,21 @@ async function main() {
 
   // 4. Vehicles
   const vehiclesData = [
-    { code: 'AST-KND-001', name: 'Toyota Fortuner D 1882 E', location: 'Basement Lt. 1', status: 'available' },
-    { code: 'AST-KND-002', name: 'Toyota Alphard B 1707 NZU', location: 'Basement Lt. 1 / VIP', status: 'available' },
-    { code: 'AST-KND-003', name: 'Toyota Kijang Innova D 1872 E', location: 'Basement Lt. 1', status: 'in_use' },
-    { code: 'AST-KND-004', name: 'Toyota Kijang Innova D 1870 E', location: 'Basement Lt. 1', status: 'available' },
-    { code: 'AST-KND-005', name: 'Toyota Kijang Innova D 1869 E', location: 'Basement Lt. 1', status: 'available' },
-    { code: 'AST-KND-006', name: 'Toyota Hilux D 8069 D', location: 'Basement Lt. 1', status: 'available' },
-    { code: 'AST-KND-007', name: 'Nissan X Trail D 1868 E', location: 'Basement Lt. 1', status: 'available' },
-    { code: 'AST-KND-008', name: 'Toyota Camry 2.5 HV D 13', location: 'Basement Lt. 1 / Pimpinan', status: 'available' },
-    { code: 'AST-KND-009', name: 'Toyota Zenix 2.0 Q HV D 1041 C', location: 'Basement Lt. 1', status: 'available' },
-    { code: 'AST-KND-010', name: 'Toyota Zenix 2.0 G CVT D 1162 F', location: 'Basement Lt. 1', status: 'available' },
-    { code: 'AST-KND-011', name: 'Toyota Zenix 2.0 G CVT D 1056 F', location: 'Basement Lt. 1', status: 'available' },
-    { code: 'AST-KND-012', name: 'Isuzu Traga Box B 9455 PQW', location: 'Parkiran Logistik', status: 'available' },
-    { code: 'AST-KND-013', name: 'Isuzu Traga Box B 9545 PQW', location: 'Parkiran Logistik', status: 'available' },
-    { code: 'AST-KND-014', name: 'Isuzu Traga Box B 9543 PQW', location: 'Parkiran Logistik', status: 'available' },
-    { code: 'AST-KND-015', name: 'Honda CB 150 R D 3044 F', location: 'Parkiran Motor', status: 'available' },
+    { code: 'AST-KND-001', name: 'Toyota Fortuner D 1882 E', location: 'Basement Lt. 1', status: 'available', photo: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=800&q=80' },
+    { code: 'AST-KND-002', name: 'Toyota Alphard B 1707 NZU', location: 'Basement Lt. 1 / VIP', status: 'available', photo: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=800&q=80' },
+    { code: 'AST-KND-003', name: 'Toyota Kijang Innova D 1872 E', location: 'Basement Lt. 1', status: 'in_use', photo: 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=800&q=80' },
+    { code: 'AST-KND-004', name: 'Toyota Kijang Innova D 1870 E', location: 'Basement Lt. 1', status: 'available', photo: 'https://images.unsplash.com/photo-1583121274602-3e2820c69888?auto=format&fit=crop&w=800&q=80' },
+    { code: 'AST-KND-005', name: 'Toyota Kijang Innova D 1869 E', location: 'Basement Lt. 1', status: 'available', photo: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=800&q=80' },
+    { code: 'AST-KND-006', name: 'Toyota Hilux D 8069 D', location: 'Basement Lt. 1', status: 'available', photo: 'https://images.unsplash.com/photo-1559416523-140ddc3d238c?auto=format&fit=crop&w=800&q=80' },
+    { code: 'AST-KND-007', name: 'Nissan X Trail D 1868 E', location: 'Basement Lt. 1', status: 'available', photo: 'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?auto=format&fit=crop&w=800&q=80' },
+    { code: 'AST-KND-008', name: 'Toyota Camry 2.5 HV D 13', location: 'Basement Lt. 1 / Pimpinan', status: 'available', photo: 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=800&q=80' },
+    { code: 'AST-KND-009', name: 'Toyota Zenix 2.0 Q HV D 1041 C', location: 'Basement Lt. 1', status: 'available', photo: 'https://images.unsplash.com/photo-1542282088-72c9c27ed0cd?auto=format&fit=crop&w=800&q=80' },
+    { code: 'AST-KND-010', name: 'Toyota Zenix 2.0 G CVT D 1162 F', location: 'Basement Lt. 1', status: 'available', photo: 'https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=800&q=80' },
+    { code: 'AST-KND-011', name: 'Toyota Zenix 2.0 G CVT D 1056 F', location: 'Basement Lt. 1', status: 'available', photo: 'https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?auto=format&fit=crop&w=800&q=80' },
+    { code: 'AST-KND-012', name: 'Isuzu Traga Box B 9455 PQW', location: 'Parkiran Logistik', status: 'available', photo: 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=800&q=80' },
+    { code: 'AST-KND-013', name: 'Isuzu Traga Box B 9545 PQW', location: 'Parkiran Logistik', status: 'available', photo: 'https://images.unsplash.com/photo-1586191582056-a36c64639d6b?auto=format&fit=crop&w=800&q=80' },
+    { code: 'AST-KND-014', name: 'Isuzu Traga Box B 9543 PQW', location: 'Parkiran Logistik', status: 'available', photo: 'https://images.unsplash.com/photo-1517524008697-84bbe3c3fd98?auto=format&fit=crop&w=800&q=80' },
+    { code: 'AST-KND-015', name: 'Honda CB 150 R D 3044 F', location: 'Parkiran Motor', status: 'available', photo: 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=800&q=80' },
   ];
 
   const vehicleAssets: Record<string, any> = {};
@@ -125,7 +125,7 @@ async function main() {
         location: v.location,
         status: v.status,
         condition: 'good',
-        photo: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?q=80&w=300&auto=format&fit=crop',
+        photo: v.photo,
         qrCode: `${v.code}|${v.name}|OJK Jawa Barat`,
       },
     });

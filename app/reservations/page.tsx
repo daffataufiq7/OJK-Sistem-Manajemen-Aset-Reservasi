@@ -41,6 +41,7 @@ interface Reservation {
     destination: string | null;
     driver_required: boolean;
     driver_name: string | null;
+    driverName?: string | null;
     notes: string | null;
     status: 'pending' | 'approved' | 'rejected' | 'reserved' | 'in_use' | 'completed' | 'cancelled';
     rejection_reason: string | null;

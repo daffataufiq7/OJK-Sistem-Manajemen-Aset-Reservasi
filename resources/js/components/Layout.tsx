@@ -33,10 +33,10 @@ import {
 import { toast, ToastContainer, Button } from './UI';
 
 export const Layout: React.FC = () => {
-    const { user, logout } = useAuth();
+    const { user, loading, logout } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
-    
+
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [reservationsSubOpen, setReservationsSubOpen] = useState(true);
     const [theme, setTheme] = useState<'light' | 'dark'>(
@@ -228,7 +228,7 @@ export const Layout: React.FC = () => {
     const markNotificationRead = async (id: number) => {
         try {
             await axios.post(`/notifications/${id}/read`);
-            setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
+            setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true, isRead: true } : n));
         } catch (error) {
             console.error(error);
         }
@@ -237,7 +237,7 @@ export const Layout: React.FC = () => {
     const markAllNotificationsRead = async () => {
         try {
             await axios.post('/notifications/read-all');
-            setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+            setNotifications(prev => prev.map(n => ({ ...n, is_read: true, isRead: true })));
             toast.success('Semua notifikasi ditandai telah dibaca.');
             setNotifDropdownOpen(false);
         } catch (error) {
@@ -245,7 +245,80 @@ export const Layout: React.FC = () => {
         }
     };
 
-    const unreadCount = notifications.filter(n => !n.is_read).length;
+    const getTargetUrl = (n: any) => {
+        if (n.link) return n.link;
+        const text = `${n.title || ''} ${n.message || ''}`.toLowerCase();
+
+        if (text.includes('laporan driver') || text.includes('laporan sopir') || text.includes('sopir') || text.includes('driver')) {
+            return user?.role === 'pegawai' ? '/history' : '/driver-reports';
+        }
+
+        if (text.includes('persetujuan') || text.includes('validator') || text.includes('menunggu persetujuan') || text.includes('pengajuan baru')) {
+            return ['super_admin', 'validator'].includes(user?.role || '') ? '/approvals' : '/history';
+        }
+
+        if (text.includes('aset') || text.includes('kendaraan') || text.includes('ruangan')) {
+            return user?.role === 'super_admin' ? '/assets' : '/reservations';
+        }
+
+        if (text.includes('user') || text.includes('pengguna') || text.includes('nip')) {
+            return user?.role === 'super_admin' ? '/users' : '/dashboard';
+        }
+
+        if (text.includes('kalender') || text.includes('jadwal')) {
+            return '/calendar';
+        }
+
+        return '/history';
+    };
+
+    const handleNotificationClick = async (n: any) => {
+        if (!n.is_read && !n.isRead) {
+            markNotificationRead(n.id);
+        }
+        setNotifDropdownOpen(false);
+        const targetUrl = getTargetUrl(n);
+        navigate(targetUrl);
+    };
+
+    const unreadCount = notifications.filter(n => !n.is_read && !n.isRead).length;
+
+    if (loading) {
+        return (
+            <div className="fixed inset-0 z-50 bg-slate-900 flex flex-col items-center justify-center space-y-6 font-sans">
+                <div className="absolute w-96 h-96 bg-red-600/15 rounded-full blur-3xl pointer-events-none" />
+
+                <div className="relative z-10 flex flex-col items-center space-y-3 text-center px-4">
+                    <div className="p-4 rounded-3xl bg-white/10 backdrop-blur-md border border-white/15 shadow-2xl flex items-center justify-center">
+                        <img 
+                            src="/logo ojk.png" 
+                            alt="Logo OJK" 
+                            className="h-16 sm:h-20 w-auto object-contain drop-shadow-md" 
+                        />
+                    </div>
+
+                    <div className="space-y-1 pt-2">
+                        <h2 className="text-base sm:text-lg font-black text-white tracking-tight">
+                            Sistem Manajemen Aset & Reservasi
+                        </h2>
+                        <p className="text-xs font-bold text-red-400 uppercase tracking-widest">
+                            OJK Kantor Regional 2 Jawa Barat
+                        </p>
+                    </div>
+                </div>
+
+                <div className="relative z-10 flex flex-col items-center space-y-3 pt-2">
+                    <div className="relative w-11 h-11">
+                        <div className="absolute inset-0 rounded-full border-4 border-red-500/20" />
+                        <div className="absolute inset-0 rounded-full border-4 border-red-600 border-t-transparent animate-spin" />
+                    </div>
+                    <span className="text-[11px] font-bold text-slate-400 tracking-wider animate-pulse">
+                        Memuat data sistem...
+                    </span>
+                </div>
+            </div>
+        );
+    }
 
     // RBAC Menu Definition
     const menuItems = [
@@ -611,8 +684,8 @@ export const Layout: React.FC = () => {
                             >
                                 <Bell className="w-5 h-5" />
                                 {unreadCount > 0 && (
-                                    <span className="absolute top-0 right-0 w-4.5 h-4.5 bg-ojk-red text-white text-[9.5px] font-bold rounded-full flex items-center justify-center transform translate-x-1 -translate-y-1">
-                                        {unreadCount}
+                                    <span className="absolute -top-1.5 -right-1.5 min-w-[20px] h-[20px] px-1 bg-ojk-red text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-white dark:border-slate-900 shadow-xs leading-none shrink-0 pointer-events-none">
+                                        {unreadCount > 99 ? '99+' : unreadCount}
                                     </span>
                                 )}
                             </button>
@@ -628,27 +701,42 @@ export const Layout: React.FC = () => {
                                             </button>
                                         )}
                                     </div>
-                                    <div className="max-h-64 overflow-y-auto divide-y divide-slate-50 dark:divide-slate-800/40">
-                                        {notifications.length > 0 ? (
-                                            notifications.map((n, i) => (
-                                                <div 
-                                                    key={i} 
-                                                    onClick={() => !n.is_read && markNotificationRead(n.id)}
-                                                    className={`p-3.5 flex flex-col space-y-1 hover:bg-slate-50/70 dark:hover:bg-slate-850/30 transition-colors cursor-pointer ${!n.is_read ? 'bg-red-500/2 dark:bg-red-500/1 border-l-2 border-ojk-red' : ''}`}
-                                                >
-                                                    <div className="flex items-center justify-between gap-2">
-                                                        <span className="text-xs font-bold text-slate-700 dark:text-slate-350">{n.title}</span>
-                                                        <span className="text-[9px] font-medium text-slate-400">{new Date(n.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB</span>
-                                                    </div>
-                                                    <p className="text-[10px] text-slate-550 dark:text-slate-400 leading-normal">{n.message}</p>
-                                                </div>
-                                            ))
-                                        ) : (
-                                            <div className="p-8 text-center text-[11px] text-slate-400 font-semibold">
-                                                Tidak ada notifikasi baru
-                                            </div>
-                                        )}
-                                    </div>
+                                    <div className="max-h-72 overflow-y-auto divide-y divide-slate-50 dark:divide-slate-800/40">
+                                         {notifications.length > 0 ? (
+                                             notifications.map((n, i) => {
+                                                 const isUnread = !n.is_read && !n.isRead;
+                                                 return (
+                                                     <div 
+                                                         key={n.id || i} 
+                                                         onClick={() => handleNotificationClick(n)}
+                                                         className={`p-3.5 flex items-start gap-3 hover:bg-slate-100/80 dark:hover:bg-slate-800/60 transition-all cursor-pointer group ${
+                                                             isUnread ? 'bg-red-50/60 dark:bg-red-950/20 border-l-3 border-ojk-red' : 'opacity-75'
+                                                         }`}
+                                                     >
+                                                         <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${isUnread ? 'bg-ojk-red ring-4 ring-red-500/20 animate-pulse' : 'bg-slate-300 dark:bg-slate-700'}`} />
+                                                         
+                                                         <div className="flex-1 min-w-0 space-y-0.5">
+                                                             <div className="flex items-center justify-between gap-2">
+                                                                 <span className={`text-xs ${isUnread ? 'font-extrabold text-slate-850 dark:text-white' : 'font-semibold text-slate-600 dark:text-slate-300'}`}>
+                                                                     {n.title}
+                                                                 </span>
+                                                                 <span className="text-[9.5px] font-medium text-slate-400 shrink-0">
+                                                                     {new Date(n.created_at || (n as any).createdAt || Date.now()).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB
+                                                                 </span>
+                                                             </div>
+                                                             <p className="text-[10.5px] text-slate-550 dark:text-slate-400 leading-snug line-clamp-2">
+                                                                 {n.message}
+                                                             </p>
+                                                         </div>
+                                                     </div>
+                                                 );
+                                             })
+                                         ) : (
+                                             <div className="p-8 text-center text-[11px] text-slate-400 font-semibold">
+                                                 Tidak ada notifikasi baru
+                                             </div>
+                                         )}
+                                     </div>
                                 </div>
                             )}
                         </div>

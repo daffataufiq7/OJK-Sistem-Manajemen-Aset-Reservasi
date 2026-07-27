@@ -25,6 +25,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setToken(storedToken);
         }
         fetchCurrentUser(storedToken || undefined);
+
+        const safetyTimer = setTimeout(() => {
+            setLoading(false);
+        }, 500);
+
+        return () => clearTimeout(safetyTimer);
     }, []);
 
     const fetchCurrentUser = async (authToken?: string) => {

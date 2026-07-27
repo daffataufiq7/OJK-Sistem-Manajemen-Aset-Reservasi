@@ -30,6 +30,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setUser(null);
             setLoading(false);
         }
+
+        const safetyTimer = setTimeout(() => {
+            setLoading(false);
+        }, 500);
+
+        return () => clearTimeout(safetyTimer);
     }, [token]);
 
     const fetchCurrentUser = async () => {
