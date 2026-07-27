@@ -8,10 +8,25 @@ $projectRoot = dirname(__DIR__);
 
 define('LARAVEL_START', microtime(true));
 
-// Create temporary storage directories in /tmp (read-write location on Vercel)
+// Ensure APP_KEY is always present so Laravel Encrypter never throws 500 error
+if (!getenv('APP_KEY')) {
+    $appKey = 'base64:2ThksQrzsJvLyvWYuQBlarVzfHGoZ+hWbNkW2OLBKow=';
+    putenv("APP_KEY={$appKey}");
+    $_ENV['APP_KEY'] = $appKey;
+    $_SERVER['APP_KEY'] = $appKey;
+}
+
+// Redirect all framework cache & compiled view paths to /tmp (writable on Vercel)
+putenv('VIEW_COMPILED_PATH=/tmp/storage/framework/views');
+putenv('APP_CONFIG_CACHE=/tmp/config.php');
+putenv('APP_SERVICES_CACHE=/tmp/services.php');
+putenv('APP_PACKAGES_CACHE=/tmp/packages.php');
+putenv('APP_ROUTES_CACHE=/tmp/routes.php');
+
+// Create temporary storage directories in /tmp
 $storageDirs = [
     '/tmp/storage/framework/views',
-    '/tmp/storage/framework/cache',
+    '/tmp/storage/framework/cache/data',
     '/tmp/storage/framework/sessions',
     '/tmp/storage/logs'
 ];
@@ -51,10 +66,10 @@ chdir($projectRoot);
 $_SERVER['DOCUMENT_ROOT']   = $projectRoot . '/public';
 $_SERVER['SCRIPT_FILENAME'] = $projectRoot . '/public/index.php';
 
+/** @var \Illuminate\Foundation\Application $app */
 $app = require_once $projectRoot . '/bootstrap/app.php';
 
-use Illuminate\Foundation\Application;
-use Illuminate\Http\Request;
+// Override storage path to /tmp/storage so file operations succeed
+$app->useStoragePath('/tmp/storage');
 
-/** @var Application $app */
-$app->handleRequest(Request::capture());
+$app->handleRequest(\Illuminate\Http\Request::capture());
