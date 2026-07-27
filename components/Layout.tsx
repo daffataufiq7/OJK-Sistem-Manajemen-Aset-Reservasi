@@ -31,10 +31,16 @@ import {
 import { toast, ToastContainer, Button } from './UI';
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const { user, logout } = useAuth();
+    const { user, loading, logout } = useAuth();
     const router = useRouter();
     const pathname = usePathname();
     
+    useEffect(() => {
+        if (!loading && !user) {
+            router.replace('/login');
+        }
+    }, [user, loading, router]);
+
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [reservationsSubOpen, setReservationsSubOpen] = useState(true);
     const [theme, setTheme] = useState<'light' | 'dark'>('light');
@@ -337,6 +343,21 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         });
         return `${dateStr}, ${hrs}:${mins}:${secs} WIB`;
     };
+
+    if (loading || !user) {
+        return (
+            <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center space-y-4 font-sans">
+                <img src="/logo ojk copy.png" alt="OJK Logo" className="h-14 object-contain animate-pulse" />
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-400">
+                    <svg className="animate-spin h-4 w-4 text-ojk-red" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    Memverifikasi Sesi Otentikasi OJK...
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex min-h-screen bg-slate-50 dark:bg-[#090D16] text-slate-800 dark:text-slate-100 transition-colors duration-250">
