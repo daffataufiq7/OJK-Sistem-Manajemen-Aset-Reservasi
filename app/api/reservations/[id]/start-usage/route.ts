@@ -18,23 +18,29 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       include: { asset: true },
     });
 
-    await prisma.asset.update({
-      where: { id: reservation.assetId },
-      data: { status: 'in_use' },
-    });
+    if (reservation.assetId) {
+      await prisma.asset.update({
+        where: { id: reservation.assetId },
+        data: { status: 'in_use' },
+      });
+    }
 
-    await prisma.auditLog.create({
-      data: {
-        userId: user.id,
-        action: 'start_usage',
-        description: `Memulai penggunaan aset ${reservation.asset.name}`,
-        ipAddress: request.headers.get('x-forwarded-for') || '127.0.0.1',
-      }
-    });
+    try {
+      await prisma.auditLog.create({
+        data: {
+          userId: user.id,
+          action: 'start_usage',
+          description: `Memulai penggunaan aset ${reservation.asset?.name || 'Aset'}`,
+          ipAddress: request.headers.get('x-forwarded-for') || '127.0.0.1',
+        }
+      });
+    } catch (auditErr) {
+      console.warn('Audit log write skipped:', auditErr);
+    }
 
     return NextResponse.json(reservation);
   } catch (error: any) {
     console.error('Start usage error:', error);
-    return NextResponse.json({ message: 'Failed to start usage' }, { status: 500 });
+    return NextResponse.json({ message: 'Gagal mengaktifkan penggunaan aset.' }, { status: 500 });
   }
 }

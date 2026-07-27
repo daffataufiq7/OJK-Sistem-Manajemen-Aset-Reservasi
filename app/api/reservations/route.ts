@@ -54,8 +54,16 @@ export async function POST(request: Request) {
     } = body;
 
     const targetAssetId = Number(asset_id || assetId);
+    if (!targetAssetId || isNaN(targetAssetId)) {
+      return NextResponse.json({ message: 'Silakan pilih aset yang valid.' }, { status: 400 });
+    }
+
     const start = new Date(start_date || startDate);
     const end = new Date(end_date || endDate);
+
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      return NextResponse.json({ message: 'Tanggal dan waktu reservasi tidak valid.' }, { status: 400 });
+    }
 
     // Conflict Check
     const conflict = await prisma.reservation.findFirst({
@@ -81,8 +89,8 @@ export async function POST(request: Request) {
         assetId: targetAssetId,
         startDate: start,
         endDate: end,
-        purpose,
-        destination,
+        purpose: purpose || 'Peminjaman Aset Kantor OJK',
+        destination: destination || '-',
         driverRequired: Boolean(driver_required || driverRequired),
         driverName: driver_name || driverName || null,
         status: 'pending',
@@ -93,34 +101,43 @@ export async function POST(request: Request) {
       }
     });
 
-    // Create Notification for Validators
-    const validators = await prisma.user.findMany({
-      where: { role: { in: ['super_admin', 'validator'] } }
-    });
-
-    for (const val of validators) {
-      await prisma.notification.create({
-        data: {
-          userId: val.id,
-          title: 'Pengajuan Reservasi Baru',
-          message: `${user.name} mengajukan peminjaman ${newReservation.asset.name}.`,
-          type: 'approval',
-        }
+    // Safe Notification creation
+    try {
+      const validators = await prisma.user.findMany({
+        where: { role: { in: ['super_admin', 'validator'] } }
       });
+
+      for (const val of validators) {
+        await prisma.notification.create({
+          data: {
+            userId: val.id,
+            title: 'Pengajuan Reservasi Baru',
+            message: `${user.name} mengajukan peminjaman ${newReservation.asset.name}.`,
+            type: 'approval',
+          }
+        });
+      }
+    } catch (notifErr) {
+      console.warn('Notification creation skipped:', notifErr);
     }
 
-    await prisma.auditLog.create({
-      data: {
-        userId: user.id,
-        action: 'create_reservation',
-        description: `Mengajukan peminjaman ${newReservation.asset.name} untuk ${purpose}`,
-        ipAddress: request.headers.get('x-forwarded-for') || '127.0.0.1',
-      }
-    });
+    // Safe Audit Log creation
+    try {
+      await prisma.auditLog.create({
+        data: {
+          userId: user.id,
+          action: 'create_reservation',
+          description: `Mengajukan peminjaman ${newReservation.asset.name} untuk ${purpose || '-'}`,
+          ipAddress: request.headers.get('x-forwarded-for') || '127.0.0.1',
+        }
+      });
+    } catch (auditErr) {
+      console.warn('Audit log creation skipped:', auditErr);
+    }
 
     return NextResponse.json(newReservation, { status: 201 });
   } catch (error: any) {
     console.error('Reservation POST error:', error);
-    return NextResponse.json({ message: 'Failed to create reservation' }, { status: 500 });
+    return NextResponse.json({ message: error?.message || 'Gagal membuat reservasi.' }, { status: 500 });
   }
 }
