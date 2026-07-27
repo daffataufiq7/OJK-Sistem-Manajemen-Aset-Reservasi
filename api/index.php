@@ -64,6 +64,20 @@ require $projectRoot . '/vendor/autoload.php';
 
 chdir($projectRoot);
 
+// Ensure HTTP Authorization Header is forwarded to PHP & Sanctum on Vercel
+if (!isset($_SERVER['HTTP_AUTHORIZATION'])) {
+    if (isset($_SERVER['REDIRECT_HTTP_AUTHORIZATION'])) {
+        $_SERVER['HTTP_AUTHORIZATION'] = $_SERVER['REDIRECT_HTTP_AUTHORIZATION'];
+    } elseif (function_exists('getallheaders')) {
+        $headers = getallheaders();
+        if (isset($headers['Authorization'])) {
+            $_SERVER['HTTP_AUTHORIZATION'] = $headers['Authorization'];
+        } elseif (isset($headers['authorization'])) {
+            $_SERVER['HTTP_AUTHORIZATION'] = $headers['authorization'];
+        }
+    }
+}
+
 $_SERVER['DOCUMENT_ROOT']   = $projectRoot . '/public';
 $_SERVER['SCRIPT_FILENAME'] = $projectRoot . '/public/index.php';
 $_SERVER['SCRIPT_NAME']     = '/index.php';

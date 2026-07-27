@@ -36,10 +36,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
             const response = await axios.get('/me');
             setUser(response.data);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to fetch user', error);
-            // If unauthorized, clear token
-            logoutAction();
+            // Only logout if status is 401 Unauthorized
+            if (error.response?.status === 401) {
+                logoutAction();
+            }
         } finally {
             setLoading(false);
         }
