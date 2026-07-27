@@ -66,6 +66,8 @@ chdir($projectRoot);
 
 $_SERVER['DOCUMENT_ROOT']   = $projectRoot . '/public';
 $_SERVER['SCRIPT_FILENAME'] = $projectRoot . '/public/index.php';
+$_SERVER['SCRIPT_NAME']     = '/index.php';
+$_SERVER['PHP_SELF']        = '/index.php';
 
 /** @var \Illuminate\Foundation\Application $app */
 $app = require_once $projectRoot . '/bootstrap/app.php';
