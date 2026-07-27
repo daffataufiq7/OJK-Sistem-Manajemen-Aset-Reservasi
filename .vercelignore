@@ -1,0 +1,10 @@
+composer.json
+composer.lock
+artisan
+bootstrap
+config
+routes
+vendor
+tests
+phpunit.xml
+vite.config.js
