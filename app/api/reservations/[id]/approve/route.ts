@@ -14,7 +14,17 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const body = await request.json().catch(() => ({}));
     const driverName = body.driver_name || body.driverName || null;
 
-    const updateData: any = { status: 'approved' };
+    const existing = await prisma.reservation.findUnique({ where: { id: resId } });
+    if (!existing) {
+      return NextResponse.json({ message: 'Reservasi tidak ditemukan' }, { status: 404 });
+    }
+
+    const now = new Date();
+    const isCurrentTimeInUse = now >= new Date(existing.startDate) && now <= new Date(existing.endDate);
+    const targetStatus = isCurrentTimeInUse ? 'in_use' : 'approved';
+    const targetAssetStatus = isCurrentTimeInUse ? 'in_use' : 'reserved';
+
+    const updateData: any = { status: targetStatus };
     if (driverName) {
       updateData.driverName = driverName;
     }
@@ -28,7 +38,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     if (reservation.assetId) {
       await prisma.asset.update({
         where: { id: reservation.assetId },
-        data: { status: 'reserved' },
+        data: { status: targetAssetStatus },
       });
     }
 

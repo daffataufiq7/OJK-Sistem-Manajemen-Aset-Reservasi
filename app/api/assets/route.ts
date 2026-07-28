@@ -1,9 +1,12 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
+import { autoSyncReservationStatuses } from '@/lib/statusSync';
 
 export async function GET(request: Request) {
   try {
+    await autoSyncReservationStatuses();
+
     const { searchParams } = new URL(request.url);
     const category = searchParams.get('category');
     const status = searchParams.get('status');

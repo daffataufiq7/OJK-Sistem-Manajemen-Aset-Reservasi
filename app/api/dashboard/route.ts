@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
+import { autoSyncReservationStatuses } from '@/lib/statusSync';
 
 export async function GET(request: Request) {
   const user = await getCurrentUser(request);
@@ -9,6 +10,8 @@ export async function GET(request: Request) {
   }
 
   try {
+    await autoSyncReservationStatuses();
+
     const totalAssets = await prisma.asset.count();
     const availableAssets = await prisma.asset.count({ where: { status: 'available' } });
     const inUseAssets = await prisma.asset.count({ where: { status: 'in_use' } });

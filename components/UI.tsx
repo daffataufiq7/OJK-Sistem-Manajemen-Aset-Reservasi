@@ -165,8 +165,8 @@ export const Badge: React.FC<{
     } else if (s === 'reserved' || s === 'disetujui' || s === 'approved') {
         text = 'Disetujui';
         style = 'bg-blue-50 text-blue-700 border border-blue-100 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-900/30';
-    } else if (s === 'in_use' || s === 'sedang dipakai' || s === 'in use') {
-        text = 'Sedang Dipakai';
+    } else if (s === 'in_use' || s === 'sedang dipakai' || s === 'sedang terpakai' || s === 'in use') {
+        text = 'Sedang Terpakai';
         style = 'bg-amber-50 text-amber-700 border border-amber-100 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-900/30';
     } else if (s === 'maintenance' || s === 'perawatan') {
         text = 'Maintenance';
