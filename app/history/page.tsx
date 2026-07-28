@@ -323,7 +323,7 @@ export default function HistoryPage() {
                         <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-medium pl-5">
                             <Clock className="w-3 h-3 text-slate-400 shrink-0" />
                             <span>
-                                {sDate ? new Date(sDate).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : ''} - {eDate ? new Date(eDate).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : ''} WIB
+                                {sDate ? `${String(new Date(sDate).getHours()).padStart(2, '0')}.${String(new Date(sDate).getMinutes()).padStart(2, '0')}` : ''} - {eDate ? `${String(new Date(eDate).getHours()).padStart(2, '0')}.${String(new Date(eDate).getMinutes()).padStart(2, '0')}` : ''} WIB
                             </span>
                         </div>
                     </div>
@@ -599,13 +599,13 @@ export default function HistoryPage() {
                                 <div>
                                     <span className="text-slate-400 block mb-0.5">Waktu Mulai:</span>
                                     <span className="font-bold text-slate-850 dark:text-white">
-                                        {getStartDate(selectedRes) ? `${new Date(getStartDate(selectedRes)).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })} • ${new Date(getStartDate(selectedRes)).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB` : '-'}
+                                        {getStartDate(selectedRes) ? `${new Date(getStartDate(selectedRes)).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })} • ${String(new Date(getStartDate(selectedRes)).getHours()).padStart(2, '0')}.${String(new Date(getStartDate(selectedRes)).getMinutes()).padStart(2, '0')} WIB` : '-'}
                                     </span>
                                 </div>
                                 <div>
                                     <span className="text-slate-400 block mb-0.5">Waktu Selesai:</span>
                                     <span className="font-bold text-slate-850 dark:text-white">
-                                        {getEndDate(selectedRes) ? `${new Date(getEndDate(selectedRes)).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })} • ${new Date(getEndDate(selectedRes)).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB` : '-'}
+                                        {getEndDate(selectedRes) ? `${new Date(getEndDate(selectedRes)).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })} • ${String(new Date(getEndDate(selectedRes)).getHours()).padStart(2, '0')}.${String(new Date(getEndDate(selectedRes)).getMinutes()).padStart(2, '0')} WIB` : '-'}
                                     </span>
                                 </div>
                             </div>

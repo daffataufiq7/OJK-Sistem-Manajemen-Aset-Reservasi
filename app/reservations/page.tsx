@@ -298,7 +298,7 @@ function ReservationsContent() {
                 const sDate = res.start_date || res.startDate;
                 return (
                     <span className="font-semibold text-slate-600 dark:text-slate-350">
-                        {sDate ? `${new Date(sDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })} - ${new Date(sDate).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB` : '-'}
+                        {sDate ? `${new Date(sDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })} - ${String(new Date(sDate).getHours()).padStart(2, '0')}.${String(new Date(sDate).getMinutes()).padStart(2, '0')} WIB` : '-'}
                     </span>
                 );
             }
@@ -310,7 +310,7 @@ function ReservationsContent() {
                 const eDate = res.end_date || res.endDate;
                 return (
                     <span className="font-semibold text-slate-655 dark:text-slate-350">
-                        {eDate ? `${new Date(eDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })} - ${new Date(eDate).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB` : '-'}
+                        {eDate ? `${new Date(eDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })} - ${String(new Date(eDate).getHours()).padStart(2, '0')}.${String(new Date(eDate).getMinutes()).padStart(2, '0')} WIB` : '-'}
                     </span>
                 );
             }

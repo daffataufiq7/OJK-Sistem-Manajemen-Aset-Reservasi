@@ -1187,7 +1187,7 @@ export default function DashboardPage() {
                                                                 <div className="flex items-center gap-1.5 text-[10.5px] text-slate-400 font-medium pl-5">
                                                                     <Clock className="w-3 h-3 text-slate-400 shrink-0" />
                                                                     <span>
-                                                                        {sDate ? new Date(sDate).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : ''} - {eDate ? new Date(eDate).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : ''} WIB
+                                                                        {sDate ? `${String(new Date(sDate).getHours()).padStart(2, '0')}.${String(new Date(sDate).getMinutes()).padStart(2, '0')}` : ''} - {eDate ? `${String(new Date(eDate).getHours()).padStart(2, '0')}.${String(new Date(eDate).getMinutes()).padStart(2, '0')}` : ''} WIB
                                                                     </span>
                                                                 </div>
                                                             </div>
@@ -1275,7 +1275,7 @@ export default function DashboardPage() {
                                             <div>
                                                 <span className="text-[10px] font-bold text-slate-400 uppercase">Waktu Reservasi</span>
                                                 <p className="font-bold text-slate-700 dark:text-slate-300">
-                                                    {new Date(selectedResDetail.startDate || selectedResDetail.start_date).toLocaleString('id-ID')} &bull; {new Date(selectedResDetail.endDate || selectedResDetail.end_date).toLocaleString('id-ID')}
+                                                    {new Date(selectedResDetail.startDate || selectedResDetail.start_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })} ({String(new Date(selectedResDetail.startDate || selectedResDetail.start_date).getHours()).padStart(2, '0')}.${String(new Date(selectedResDetail.startDate || selectedResDetail.start_date).getMinutes()).padStart(2, '0')} WIB) &bull; {new Date(selectedResDetail.endDate || selectedResDetail.end_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })} ({String(new Date(selectedResDetail.endDate || selectedResDetail.end_date).getHours()).padStart(2, '0')}.${String(new Date(selectedResDetail.endDate || selectedResDetail.end_date).getMinutes()).padStart(2, '0')} WIB)
                                                 </p>
                                             </div>
 
