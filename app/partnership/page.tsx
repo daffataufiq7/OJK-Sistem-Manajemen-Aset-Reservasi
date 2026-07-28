@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Card, Button, Input, Badge, toast, Dialog } from '@/components/UI';
+import { Card, Button, Input, Select, Badge, toast, Dialog } from '@/components/UI';
 import { 
     Building2, Search, MapPin, Handshake, Calendar, RefreshCw, PlusCircle, CheckCircle2, ShieldCheck
 } from 'lucide-react';

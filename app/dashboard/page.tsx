@@ -41,6 +41,8 @@ interface CatalogAsset {
     capacity?: string;
     description: string;
     facilities?: string[];
+    plate?: string;
+    specs?: string[];
 }
 
 export default function DashboardPage() {
@@ -124,15 +126,17 @@ export default function DashboardPage() {
                         cat = 'Ruangan';
                     }
                     return {
-                        id:       a.id,
-                        name:     a.name,
-                        plate:    a.code,
-                        category: cat,
-                        status:   mapStatus(a.status),
-                        location: a.location,
-                        image:    a.photo || 'https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=800&auto=format&fit=crop',
-                        specs:    [a.category?.name || 'Aset', a.location],
-                        capacity: a.capacity || undefined,
+                        id:          a.id,
+                        name:        a.name,
+                        code:        a.code || 'AST',
+                        plate:       a.code,
+                        category:    cat,
+                        status:      mapStatus(a.status),
+                        location:    a.location,
+                        image:       a.photo || 'https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=800&auto=format&fit=crop',
+                        specs:       [a.category?.name || 'Aset', a.location],
+                        capacity:    a.capacity || undefined,
+                        description: a.description || 'Fasilitas operasional OJK KR 2 Jawa Barat.',
                         facilities:  [],
                     };
                 };
@@ -329,19 +333,6 @@ export default function DashboardPage() {
     const isValidator = user?.role === 'validator';
     const isPegawai = user?.role === 'pegawai' || (!isSuperAdmin && !isValidator);
 
-    if (loading) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[70vh] space-y-3 font-sans">
-                <svg className="animate-spin h-9 w-9 text-ojk-red" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-                <span className="text-xs text-slate-500 font-semibold tracking-wide">Memuat Sistem Manajemen Aset OJK...</span>
-            </div>
-        );
-    }
-
-    return (
     const handleQuickApprove = async (id: number) => {
         try {
             const res = await fetch(`/api/reservations/${id}/approve`, { method: 'POST' });
