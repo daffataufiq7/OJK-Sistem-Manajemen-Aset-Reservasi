@@ -87,14 +87,14 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen w-full bg-[#F3F4F6] dark:bg-[#090D16] transition-colors duration-300 font-sans flex flex-col justify-between items-center p-4 sm:p-6 lg:p-10 relative overflow-x-hidden select-none">
+        <div className="h-screen w-full bg-[#F3F4F6] dark:bg-[#090D16] transition-colors duration-300 font-sans flex flex-col justify-between items-center p-3 sm:p-5 lg:p-6 relative overflow-hidden select-none">
             
             {/* Background Red Glow Accent */}
             <div className="absolute -bottom-32 -right-32 w-[500px] h-[500px] rounded-full bg-red-600/15 dark:bg-red-900/15 blur-3xl pointer-events-none z-0"></div>
             <div className="absolute -bottom-16 -right-16 w-[350px] h-[350px] rounded-full bg-red-600/25 pointer-events-none z-0 hidden lg:block"></div>
 
             {/* Top Bar Header */}
-            <div className="w-full max-w-[1240px] flex justify-between items-center z-10 mb-2 sm:mb-4">
+            <div className="w-full max-w-[1360px] flex justify-between items-center z-10 mb-1 sm:mb-2 shrink-0">
                 <div className="flex items-center gap-2">
                     <span className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 tracking-wider uppercase">
                         Otoritas Jasa Keuangan &bull; Regional Jawa Barat
@@ -103,7 +103,7 @@ export default function LoginPage() {
 
                 <button
                     onClick={() => setTheme(prev => prev === 'light' ? 'dark' : 'light')}
-                    className="p-2.5 bg-white/80 dark:bg-slate-900/80 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 rounded-xl transition-all cursor-pointer shadow-xs backdrop-blur-md flex items-center gap-2 text-xs font-semibold"
+                    className="p-2 bg-white/80 dark:bg-slate-900/80 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 rounded-xl transition-all cursor-pointer shadow-xs backdrop-blur-md flex items-center gap-2 text-xs font-semibold"
                     title="Ubah Tema"
                 >
                     {theme === 'light' ? (
@@ -121,10 +121,10 @@ export default function LoginPage() {
             </div>
 
             {/* Main Login Card Box */}
-            <div className="bg-white dark:bg-slate-900 rounded-[36px] border border-slate-200/80 dark:border-slate-800 shadow-2xl p-4 sm:p-6 lg:p-8 max-w-[1480px] w-full grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-stretch relative z-10 my-auto">
+            <div className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-200/80 dark:border-slate-800 shadow-2xl p-4 sm:p-5 lg:p-6 max-w-[1360px] w-full grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-8 items-stretch relative z-10 my-auto shrink-0">
                 
-                {/* ── LEFT COLUMN: FULL CARD VIDEO BACKGROUND ── */}
-                <div className="lg:col-span-8 relative rounded-[30px] overflow-hidden min-h-[580px] lg:min-h-[750px] flex flex-col justify-between p-6 sm:p-10 group shadow-xl">
+                {/* ── LEFT COLUMN: FULL CARD VIDEO BACKGROUND (Persegi Panjang Landscape) ── */}
+                <div className="lg:col-span-7 relative rounded-[26px] overflow-hidden h-[460px] sm:h-[500px] lg:h-[530px] flex flex-col justify-between p-6 sm:p-8 group shadow-xl">
                     
                     {/* Continuous Auto-Playing Loop Video */}
                     <video
@@ -178,7 +178,7 @@ export default function LoginPage() {
                 </div>
 
                 {/* ── RIGHT COLUMN: AUTHENTICATION FORM ── */}
-                <div className="lg:col-span-4 flex flex-col justify-between py-3 sm:py-6 px-2 sm:px-4 relative space-y-6">
+                <div className="lg:col-span-5 flex flex-col justify-between py-2 sm:py-4 px-2 sm:px-4 relative space-y-4">
                     
                     {/* Top Right Dot Matrix Decorative Grid */}
                     <div className="absolute top-2 right-2 pointer-events-none opacity-25 dark:opacity-15">
