@@ -465,7 +465,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                             <div className="space-y-1">
                                 <button
                                     onClick={() => setReservationsSubOpen(!reservationsSubOpen)}
-                                    className={`w-full flex items-center justify-between px-4 py-3 text-xs font-semibold rounded-xl transition-all duration-200 cursor-pointer ${['sec-kendaraan', 'sec-ruangan'].includes(activeSection) ? 'bg-red-50 dark:bg-red-950/40 text-ojk-red dark:text-red-400 font-bold' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-850'}`}
+                                    className={`w-full flex items-center justify-between px-4 py-3 text-xs font-semibold rounded-xl transition-all duration-200 cursor-pointer ${['sec-kendaraan', 'sec-ruangan', 'sec-partnership'].includes(activeSection) ? 'bg-red-50 dark:bg-red-950/40 text-ojk-red dark:text-red-400 font-bold' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-850'}`}
                                 >
                                     <div className="flex items-center gap-3.5">
                                         <PlusCircle className="w-5 h-5" />
@@ -491,9 +491,28 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                                             <HomeIcon className="w-3.5 h-3.5" />
                                             <span>Ruang Rapat & Aula</span>
                                         </button>
+
+                                        <button
+                                            onClick={() => scrollToSection('sec-partnership')}
+                                            className={`w-full flex items-center gap-2 px-3 py-2 text-[11px] font-semibold rounded-lg transition-all cursor-pointer ${activeSection === 'sec-partnership' ? 'bg-amber-500 text-white font-extrabold shadow-xs' : 'text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40'}`}
+                                        >
+                                            <Building2 className="w-3.5 h-3.5 text-amber-500" />
+                                            <span>Partnership & Hotel</span>
+                                        </button>
                                     </div>
                                 )}
                             </div>
+
+                            <Link
+                                href="/partnership"
+                                onClick={() => setSidebarOpen(false)}
+                                className={`w-full flex items-center justify-between px-4 py-3 text-xs font-semibold rounded-xl transition-all duration-200 cursor-pointer ${pathname === '/partnership' || activeSection === 'sec-partnership' ? 'bg-amber-500 text-white shadow-sm shadow-amber-500/10 font-bold' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-850'}`}
+                            >
+                                <div className="flex items-center gap-3.5">
+                                    <Building2 className="w-5 h-5 text-amber-500" />
+                                    <span>Partnership</span>
+                                </div>
+                            </Link>
 
                             <button
                                 onClick={() => scrollToSection('sec-kalender')}
