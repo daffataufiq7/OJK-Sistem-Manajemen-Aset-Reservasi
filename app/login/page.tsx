@@ -121,10 +121,10 @@ export default function LoginPage() {
             </div>
 
             {/* Main Login Card Box */}
-            <div className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-200/80 dark:border-slate-800 shadow-2xl p-4 sm:p-6 lg:p-8 max-w-[1400px] w-full grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-stretch relative z-10 my-auto">
+            <div className="bg-white dark:bg-slate-900 rounded-[36px] border border-slate-200/80 dark:border-slate-800 shadow-2xl p-4 sm:p-6 lg:p-8 max-w-[1480px] w-full grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-stretch relative z-10 my-auto">
                 
                 {/* ── LEFT COLUMN: FULL CARD VIDEO BACKGROUND ── */}
-                <div className="lg:col-span-7 relative rounded-[28px] overflow-hidden min-h-[540px] lg:min-h-[680px] flex flex-col justify-between p-6 sm:p-10 group shadow-lg">
+                <div className="lg:col-span-7 relative rounded-[30px] overflow-hidden min-h-[580px] lg:min-h-[750px] flex flex-col justify-between p-6 sm:p-10 group shadow-xl">
                     
                     {/* Continuous Auto-Playing Loop Video */}
                     <video
@@ -137,8 +137,8 @@ export default function LoginPage() {
                         <source src="/vidio ojk.mp4" type="video/mp4" />
                     </video>
 
-                    {/* Gradient Overlay for Text Readability */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/30 z-10 pointer-events-none"></div>
+                    {/* Gradient Overlay for Text Readability (Ultra Clear Center) */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-black/25 z-10 pointer-events-none"></div>
 
                     {/* TOP-LEFT OVERLAY: OJK White Logo */}
                     <div className="relative z-20 flex items-center gap-3">
