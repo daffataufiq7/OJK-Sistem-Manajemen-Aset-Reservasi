@@ -66,7 +66,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     }, []);
 
     useEffect(() => {
-        const sectionIds = ['sec-dashboard', 'sec-kendaraan', 'sec-ruangan', 'sec-kalender', 'sec-riwayat', 'sec-pengaturan'];
+        const sectionIds = ['sec-dashboard', 'sec-kendaraan', 'sec-ruangan', 'sec-partnership', 'sec-kalender', 'sec-riwayat', 'sec-pengaturan'];
         const container = document.getElementById('snap-scroll-container');
         const TRIGGER_Y = (container?.getBoundingClientRect().top ?? 73) + 5;
 
@@ -86,7 +86,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             }
 
             setActiveSection(currentActive);
-            if (['sec-kendaraan', 'sec-ruangan'].includes(currentActive)) {
+            if (['sec-kendaraan', 'sec-ruangan', 'sec-partnership'].includes(currentActive)) {
                 setReservationsSubOpen(true);
             }
         };
@@ -109,7 +109,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     const scrollToSection = (secId: string) => {
         setSidebarOpen(false);
         setActiveSection(secId);
-        if (['sec-kendaraan', 'sec-ruangan'].includes(secId)) {
+        if (['sec-kendaraan', 'sec-ruangan', 'sec-partnership'].includes(secId)) {
             setReservationsSubOpen(true);
         }
 

@@ -203,12 +203,12 @@ export default function PartnershipPage() {
                     {filteredAssets.map(hotel => (
                         <Card key={hotel.id} className="rounded-3xl overflow-hidden hover:-translate-y-1 hover:shadow-xl transition-all duration-300 border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm flex flex-col group">
                             
-                            {/* Image Container with Top-Left Capacity Badge */}
-                            <div className="relative h-48 overflow-hidden bg-slate-900 shrink-0">
+                            {/* Image Container - Fixed Landscape 16:9 */}
+                            <div className="relative h-52 w-full overflow-hidden bg-slate-900 shrink-0">
                                 <img 
                                     src={hotel.photo || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80'} 
                                     alt={hotel.name}
-                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                    className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
                                     onError={(e) => {
                                         (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80';
                                     }}
