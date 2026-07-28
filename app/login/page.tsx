@@ -121,10 +121,10 @@ export default function LoginPage() {
             </div>
 
             {/* Main Login Card Box */}
-            <div className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-200/80 dark:border-slate-800 shadow-2xl p-4 sm:p-6 lg:p-7 max-w-[1300px] w-full grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-stretch relative z-10 my-auto">
+            <div className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-200/80 dark:border-slate-800 shadow-2xl p-4 sm:p-6 lg:p-8 max-w-[1400px] w-full grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-stretch relative z-10 my-auto">
                 
                 {/* ── LEFT COLUMN: FULL CARD VIDEO BACKGROUND ── */}
-                <div className="lg:col-span-7 relative rounded-[28px] overflow-hidden min-h-[480px] lg:min-h-[620px] flex flex-col justify-between p-6 sm:p-8 group shadow-lg">
+                <div className="lg:col-span-7 relative rounded-[28px] overflow-hidden min-h-[540px] lg:min-h-[680px] flex flex-col justify-between p-6 sm:p-10 group shadow-lg">
                     
                     {/* Continuous Auto-Playing Loop Video */}
                     <video
