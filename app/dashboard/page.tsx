@@ -342,66 +342,477 @@ export default function DashboardPage() {
     }
 
     return (
+    const handleQuickApprove = async (id: number) => {
+        try {
+            const res = await fetch(`/api/reservations/${id}/approve`, { method: 'POST' });
+            if (res.ok) {
+                toast.success(`Reservasi #RSV-${id} berhasil disetujui!`);
+                fetchDashboardData();
+            } else {
+                const err = await res.json();
+                toast.error(err.message || 'Gagal menyetujui reservasi.');
+            }
+        } catch {
+            toast.error('Gagal menyetujui reservasi.');
+        }
+    };
+
+    const handleQuickReject = async (id: number) => {
+        const reason = window.prompt('Masukkan alasan penolakan (opsional):', 'Aset tidak tersedia atau jadwal bentrok');
+        if (reason === null) return;
+        try {
+            const res = await fetch(`/api/reservations/${id}/reject`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ notes: reason })
+            });
+            if (res.ok) {
+                toast.success(`Reservasi #RSV-${id} berhasil ditolak.`);
+                fetchDashboardData();
+            } else {
+                const err = await res.json();
+                toast.error(err.message || 'Gagal menolak reservasi.');
+            }
+        } catch {
+            toast.error('Gagal menolak reservasi.');
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[70vh] space-y-3 font-sans">
+                <svg className="animate-spin h-9 w-9 text-ojk-red" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                <span className="text-xs text-slate-500 font-semibold tracking-wide">Memuat Sistem Manajemen Aset OJK...</span>
+            </div>
+        );
+    }
+
+    return (
         <div className="font-sans">
             {!isPegawai && (
-                <div className="p-8 space-y-8">
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                        <div className="space-y-1">
-                            <h2 className="text-2xl font-black text-slate-850 dark:text-white tracking-tight">
-                                {getGreeting()}, {user?.name || 'User'}! 👋
+                <div className="p-6 md:p-8 space-y-6 max-w-7xl mx-auto">
+                    {/* Header Banner */}
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white dark:bg-slate-900 p-6 rounded-[24px] border border-slate-100 dark:border-slate-800 shadow-xs gap-4">
+                        <div className="space-y-1.5">
+                            <div className="flex items-center gap-2">
+                                <span className="px-2.5 py-0.5 rounded-full bg-red-500/10 text-ojk-red text-[10px] font-black uppercase tracking-wider">
+                                    {isSuperAdmin ? 'SUPER ADMIN PANEL' : 'VALIDATOR RESERVASI'}
+                                </span>
+                                <span className="text-[10px] text-slate-400 font-bold">&bull; OJK KR 2 Jawa Barat</span>
+                            </div>
+                            <h2 className="text-2xl md:text-3xl font-black text-slate-850 dark:text-white tracking-tight">
+                                {getGreeting()}, {user?.name || 'Administrator'}! 👋
                             </h2>
                             <p className="text-xs text-slate-450 dark:text-slate-400 font-medium">
-                                {isSuperAdmin && 'Overview sistem dan statistik penggunaan aset Kantor Regional 2 Jawa Barat.'}
-                                {isValidator && 'Panel persetujuan reservasi dan jadwal peminjaman aset kantor.'}
+                                Ringkasan statistik operasional, permohonan reservasi terbaru, dan pemantauan aset kantor secara real-time.
                             </p>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-2">
+                            <Button 
+                                variant="outline"
+                                size="sm"
+                                onClick={fetchDashboardData}
+                                className="rounded-xl text-xs font-bold flex items-center gap-1.5 py-2"
+                            >
+                                <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+                                Refresh Data
+                            </Button>
+
+                            <Button 
+                                onClick={() => router.push('/reservations')}
+                                className="rounded-xl text-xs font-extrabold bg-ojk-red text-white hover:bg-red-700 py-2 px-4 flex items-center gap-1.5 cursor-pointer shadow-xs"
+                            >
+                                <CheckSquare className="w-4 h-4" />
+                                Kelola Persetujuan ({allReservations.filter(r => r.status === 'pending').length})
+                            </Button>
+
+                            {isSuperAdmin && (
+                                <Button 
+                                    onClick={() => router.push('/assets')}
+                                    className="rounded-xl text-xs font-extrabold bg-slate-800 dark:bg-slate-700 text-white hover:bg-slate-900 py-2 px-4 flex items-center gap-1.5 cursor-pointer shadow-xs"
+                                >
+                                    <PlusCircle className="w-4 h-4" />
+                                    Kelola Master Aset
+                                </Button>
+                            )}
                         </div>
                     </div>
 
-                    {isSuperAdmin && (
-                        <div className="space-y-6">
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 lg:gap-6">
-                                <Card className="border-l-4 border-l-red-600">
-                                    <CardContent className="p-5 flex items-center justify-between">
-                                        <div>
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Aset</span>
-                                            <h4 className="text-2xl font-extrabold text-slate-800 dark:text-white">{dashData?.stats?.total_assets ?? 19}</h4>
-                                        </div>
-                                        <Briefcase className="w-5 h-5 text-ojk-red" />
-                                    </CardContent>
-                                </Card>
-
-                                <Card className="border-l-4 border-l-emerald-600">
-                                    <CardContent className="p-5 flex items-center justify-between">
-                                        <div>
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Aset Tersedia</span>
-                                            <h4 className="text-2xl font-extrabold text-slate-800 dark:text-white">{dashData?.stats?.available ?? 17}</h4>
-                                        </div>
-                                        <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                                    </CardContent>
-                                </Card>
-
-                                <Card className="border-l-4 border-l-amber-600">
-                                    <CardContent className="p-5 flex items-center justify-between">
-                                        <div>
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Sedang Dipakai</span>
-                                            <h4 className="text-2xl font-extrabold text-slate-800 dark:text-white">{dashData?.stats?.in_use ?? 0}</h4>
-                                        </div>
-                                        <Clock className="w-5 h-5 text-amber-600" />
-                                    </CardContent>
-                                </Card>
-
-                                <Card className="border-l-4 border-l-purple-600">
-                                    <CardContent className="p-5 flex items-center justify-between">
-                                        <div>
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Maintenance</span>
-                                            <h4 className="text-2xl font-extrabold text-slate-800 dark:text-white">{dashData?.stats?.maintenance ?? 0}</h4>
-                                        </div>
-                                        <Wrench className="w-5 h-5 text-purple-600" />
-                                    </CardContent>
-                                </Card>
+                    {/* Top 6 KPI Stats Cards */}
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3.5">
+                        <Card className="p-4 rounded-2xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
+                            <div className="flex items-center justify-between">
+                                <span className="text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider">TOTAL ASET</span>
+                                <div className="p-1.5 rounded-lg bg-red-50 dark:bg-slate-800 text-ojk-red">
+                                    <Briefcase className="w-4 h-4" />
+                                </div>
                             </div>
+                            <h3 className="text-xl sm:text-2xl font-black text-slate-800 dark:text-white mt-2">
+                                {dashData?.stats?.total_assets ?? (vehicleAssets.length + roomAssets.length + partnershipAssets.length)}
+                            </h3>
+                            <span className="text-[10px] text-slate-400 font-medium block mt-0.5">Kendaraan & Ruang</span>
+                        </Card>
+
+                        <Card className="p-4 rounded-2xl border border-amber-100 dark:border-amber-900/30 bg-amber-50/40 dark:bg-amber-950/20 shadow-xs">
+                            <div className="flex items-center justify-between">
+                                <span className="text-[9.5px] font-extrabold text-amber-600 dark:text-amber-400 uppercase tracking-wider">SEDANG DIPAKAI</span>
+                                <div className="p-1.5 rounded-lg bg-amber-100 dark:bg-amber-900/50 text-amber-600 dark:text-amber-400">
+                                    <Car className="w-4 h-4" />
+                                </div>
+                            </div>
+                            <h3 className="text-xl sm:text-2xl font-black text-amber-700 dark:text-amber-400 mt-2">
+                                {allReservations.filter(r => r.status === 'in_use').length}
+                            </h3>
+                            <span className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold block mt-0.5">Aktif Digunakan</span>
+                        </Card>
+
+                        <Card className="p-4 rounded-2xl border border-red-200 dark:border-red-900/40 bg-red-50/60 dark:bg-red-950/30 shadow-xs">
+                            <div className="flex items-center justify-between">
+                                <span className="text-[9.5px] font-extrabold text-red-600 dark:text-red-400 uppercase tracking-wider">MENUNGGU</span>
+                                <div className="p-1.5 rounded-lg bg-red-100 dark:bg-red-900/60 text-red-600 dark:text-red-400 animate-pulse">
+                                    <Hourglass className="w-4 h-4" />
+                                </div>
+                            </div>
+                            <h3 className="text-xl sm:text-2xl font-black text-red-600 dark:text-red-400 mt-2">
+                                {allReservations.filter(r => r.status === 'pending').length}
+                            </h3>
+                            <span className="text-[10px] text-red-500 font-bold block mt-0.5">Perlu Tindakan</span>
+                        </Card>
+
+                        <Card className="p-4 rounded-2xl border border-emerald-100 dark:border-emerald-900/30 bg-emerald-50/40 dark:bg-emerald-950/20 shadow-xs">
+                            <div className="flex items-center justify-between">
+                                <span className="text-[9.5px] font-extrabold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">TERSEDIA</span>
+                                <div className="p-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400">
+                                    <CheckCircle2 className="w-4 h-4" />
+                                </div>
+                            </div>
+                            <h3 className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-2">
+                                {dashData?.stats?.available ?? 17}
+                            </h3>
+                            <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold block mt-0.5">Siap Dipinjam</span>
+                        </Card>
+
+                        <Card className="p-4 rounded-2xl border border-blue-100 dark:border-blue-900/30 bg-blue-50/40 dark:bg-blue-950/20 shadow-xs">
+                            <div className="flex items-center justify-between">
+                                <span className="text-[9.5px] font-extrabold text-blue-600 dark:text-blue-400 uppercase tracking-wider">SELESAI</span>
+                                <div className="p-1.5 rounded-lg bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400">
+                                    <CheckSquare className="w-4 h-4" />
+                                </div>
+                            </div>
+                            <h3 className="text-xl sm:text-2xl font-black text-blue-700 dark:text-blue-400 mt-2">
+                                {allReservations.filter(r => r.status === 'completed').length}
+                            </h3>
+                            <span className="text-[10px] text-blue-600 font-medium block mt-0.5">Transaksi Selesai</span>
+                        </Card>
+
+                        <Card className="p-4 rounded-2xl border border-purple-100 dark:border-purple-900/30 bg-purple-50/40 dark:bg-purple-950/20 shadow-xs">
+                            <div className="flex items-center justify-between">
+                                <span className="text-[9.5px] font-extrabold text-purple-600 dark:text-purple-400 uppercase tracking-wider">MAINTENANCE</span>
+                                <div className="p-1.5 rounded-lg bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400">
+                                    <Wrench className="w-4 h-4" />
+                                </div>
+                            </div>
+                            <h3 className="text-xl sm:text-2xl font-black text-purple-700 dark:text-purple-400 mt-2">
+                                {dashData?.stats?.maintenance ?? 0}
+                            </h3>
+                            <span className="text-[10px] text-purple-600 font-medium block mt-0.5">Perawatan Aset</span>
+                        </Card>
+                    </div>
+
+                    {/* Main Content 2-Column Section */}
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                        {/* Left Column (8 cols): Pending Approvals & Live Asset Overview */}
+                        <div className="lg:col-span-8 space-y-6">
+                            {/* Card 1: Permohonan Reservasi Menunggu Persetujuan */}
+                            <Card className="rounded-[24px] border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
+                                <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                                    <div className="flex items-center gap-2.5">
+                                        <div className="p-2 rounded-xl bg-red-500/10 text-ojk-red">
+                                            <Hourglass className="w-5 h-5" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-base font-black text-slate-850 dark:text-white">
+                                                Permohonan Menunggu Persetujuan
+                                            </h3>
+                                            <p className="text-[11px] text-slate-400 font-medium">
+                                                Pengajuan reservasi aset dari pegawai yang memerlukan verifikasi validator.
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {allReservations.filter(r => r.status === 'pending').length > 0 && (
+                                        <span className="px-2.5 py-1 rounded-full bg-red-500 text-white font-black text-[10px]">
+                                            {allReservations.filter(r => r.status === 'pending').length} Baru
+                                        </span>
+                                    )}
+                                </div>
+
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left text-xs">
+                                        <thead className="bg-slate-50 dark:bg-slate-850/80 text-slate-400 uppercase text-[9.5px] font-black tracking-wider border-b border-slate-100 dark:border-slate-800">
+                                            <tr>
+                                                <th className="px-5 py-3.5">KODE & PEMOHON</th>
+                                                <th className="px-5 py-3.5">ASET DIPINJAM</th>
+                                                <th className="px-5 py-3.5">WAKTU PERJALANAN</th>
+                                                <th className="px-5 py-3.5">KEPERLUAN</th>
+                                                <th className="px-5 py-3.5 text-right">AKSI CEPAT</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                            {allReservations.filter(r => r.status === 'pending').length > 0 ? (
+                                                allReservations.filter(r => r.status === 'pending').map((res: any) => {
+                                                    const sDate = res.startDate || res.start_date;
+                                                    const eDate = res.endDate || res.end_date;
+                                                    return (
+                                                        <tr key={res.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-850/30 transition-colors">
+                                                            <td className="px-5 py-3.5">
+                                                                <div className="flex items-center gap-2.5">
+                                                                    <div className="w-7 h-7 rounded-full bg-red-50 dark:bg-slate-800 border border-red-100 dark:border-slate-700 flex items-center justify-center text-ojk-red dark:text-slate-200 font-bold shrink-0 text-xs">
+                                                                        {res.user?.name ? res.user.name.charAt(0).toUpperCase() : 'U'}
+                                                                    </div>
+                                                                    <div className="flex flex-col leading-tight">
+                                                                        <span className="font-extrabold text-slate-850 dark:text-white text-xs">
+                                                                            #RSV-{res.id}
+                                                                        </span>
+                                                                        <span className="text-[10.5px] text-slate-400 font-medium">
+                                                                            {res.user?.name || 'Pegawai OJK'}
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                            </td>
+                                                            <td className="px-5 py-3.5">
+                                                                <div className="flex flex-col space-y-0.5">
+                                                                    <span className="font-extrabold text-slate-800 dark:text-slate-200">
+                                                                        {res.asset?.name || 'Aset OJK'}
+                                                                    </span>
+                                                                    <span className="text-[10px] text-slate-400 font-bold uppercase">
+                                                                        {res.asset?.code || 'AST'}
+                                                                    </span>
+                                                                </div>
+                                                            </td>
+                                                            <td className="px-5 py-3.5">
+                                                                <div className="flex flex-col text-[11px]">
+                                                                    <span className="font-bold text-slate-700 dark:text-slate-300">
+                                                                        {sDate ? new Date(sDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) : '-'}
+                                                                    </span>
+                                                                    <span className="text-slate-400 text-[10px]">
+                                                                        {sDate ? `${String(new Date(sDate).getHours()).padStart(2, '0')}.${String(new Date(sDate).getMinutes()).padStart(2, '0')}` : ''} - {eDate ? `${String(new Date(eDate).getHours()).padStart(2, '0')}.${String(new Date(eDate).getMinutes()).padStart(2, '0')}` : ''} WIB
+                                                                    </span>
+                                                                </div>
+                                                            </td>
+                                                            <td className="px-5 py-3.5">
+                                                                <span className="text-xs font-medium text-slate-600 dark:text-slate-300 line-clamp-1 max-w-[150px]">
+                                                                    {res.purpose}
+                                                                </span>
+                                                            </td>
+                                                            <td className="px-5 py-3.5 text-right">
+                                                                <div className="flex items-center justify-end gap-1.5">
+                                                                    <button
+                                                                        onClick={() => handleQuickApprove(res.id)}
+                                                                        className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[10.5px] font-extrabold transition-all cursor-pointer shadow-2xs"
+                                                                    >
+                                                                        Setujui
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => handleQuickReject(res.id)}
+                                                                        className="px-2.5 py-1 rounded-lg bg-red-600 hover:bg-red-700 text-white text-[10.5px] font-extrabold transition-all cursor-pointer shadow-2xs"
+                                                                    >
+                                                                        Tolak
+                                                                    </button>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })
+                                            ) : (
+                                                <tr>
+                                                    <td colSpan={5} className="px-6 py-10 text-center text-slate-400 font-medium">
+                                                        Tidak ada pengajuan reservasi yang menunggu persetujuan saat ini. 🎉
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </Card>
+
+                            {/* Card 2: Status Aset & Kendaraan Operasional */}
+                            <Card className="p-5 rounded-[24px] border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-4">
+                                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                                    <div className="flex items-center gap-2">
+                                        <div className="p-2 rounded-xl bg-blue-500/10 text-blue-600">
+                                            <Car className="w-5 h-5" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-base font-black text-slate-850 dark:text-white">
+                                                Status Ketersediaan Aset Utama
+                                            </h3>
+                                            <p className="text-[11px] text-slate-400 font-medium">
+                                                Pemantauan langsung aset kendaraan dinas & ruang rapat utama.
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <Button 
+                                        variant="outline" 
+                                        size="sm" 
+                                        onClick={() => router.push('/assets')}
+                                        className="rounded-xl text-xs font-bold"
+                                    >
+                                        Kelola Aset
+                                    </Button>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                    {[...vehicleAssets, ...roomAssets].slice(0, 6).map(asset => (
+                                        <div key={asset.id} className="p-3.5 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-850/40 space-y-2.5">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider">
+                                                    {asset.code || 'ASET'}
+                                                </span>
+                                                <Badge status={asset.status === 'Tersedia' ? 'available' : asset.status === 'Sedang Dipakai' ? 'in_use' : 'maintenance'} />
+                                            </div>
+
+                                            <div>
+                                                <h4 className="font-extrabold text-xs text-slate-850 dark:text-white line-clamp-1">{asset.name}</h4>
+                                                <p className="text-[10.5px] text-slate-400 flex items-center gap-1 mt-0.5">
+                                                    <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
+                                                    {asset.location}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </Card>
                         </div>
-                    )}
+
+                        {/* Right Column (4 cols): Quick Management Links & Today's Schedule */}
+                        <div className="lg:col-span-4 space-y-6">
+                            {/* Card 1: Pintasan Kontrol Operasional */}
+                            <Card className="p-5 rounded-[24px] border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-3">
+                                <h3 className="text-sm font-black text-slate-850 dark:text-white flex items-center gap-2">
+                                    <Briefcase className="w-4 h-4 text-ojk-red" />
+                                    Pintasan Menu Manajemen
+                                </h3>
+
+                                <div className="space-y-2">
+                                    <button 
+                                        onClick={() => router.push('/reservations')}
+                                        className="w-full p-3 rounded-xl bg-slate-50 hover:bg-red-50/60 dark:bg-slate-800 dark:hover:bg-slate-700/60 border border-slate-100 dark:border-slate-700 flex items-center justify-between group transition-all text-left cursor-pointer"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-2 rounded-lg bg-red-500/10 text-ojk-red group-hover:bg-ojk-red group-hover:text-white transition-colors">
+                                                <CheckSquare className="w-4 h-4" />
+                                            </div>
+                                            <div>
+                                                <span className="font-extrabold text-xs text-slate-800 dark:text-white block">Persetujuan Reservasi</span>
+                                                <span className="text-[10px] text-slate-400">Verifikasi & Pengesahan Pemohon</span>
+                                            </div>
+                                        </div>
+                                        <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
+                                    </button>
+
+                                    <button 
+                                        onClick={() => router.push('/assets')}
+                                        className="w-full p-3 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700/60 border border-slate-100 dark:border-slate-700 flex items-center justify-between group transition-all text-left cursor-pointer"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-2 rounded-lg bg-blue-500/10 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                                                <Briefcase className="w-4 h-4" />
+                                            </div>
+                                            <div>
+                                                <span className="font-extrabold text-xs text-slate-800 dark:text-white block">Katalog & Master Aset</span>
+                                                <span className="text-[10px] text-slate-400">Kelola Spesifikasi & Status</span>
+                                            </div>
+                                        </div>
+                                        <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
+                                    </button>
+
+                                    <button 
+                                        onClick={() => router.push('/calendar')}
+                                        className="w-full p-3 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700/60 border border-slate-100 dark:border-slate-700 flex items-center justify-between group transition-all text-left cursor-pointer"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+                                                <Calendar className="w-4 h-4" />
+                                            </div>
+                                            <div>
+                                                <span className="font-extrabold text-xs text-slate-800 dark:text-white block">Jadwal Kalender Aset</span>
+                                                <span className="text-[10px] text-slate-400">Pantau Agenda Harian Aset</span>
+                                            </div>
+                                        </div>
+                                        <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
+                                    </button>
+
+                                    {isSuperAdmin && (
+                                        <button 
+                                            onClick={() => router.push('/users')}
+                                            className="w-full p-3 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700/60 border border-slate-100 dark:border-slate-700 flex items-center justify-between group transition-all text-left cursor-pointer"
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <div className="p-2 rounded-lg bg-purple-500/10 text-purple-600 group-hover:bg-purple-600 group-hover:text-white transition-colors">
+                                                    <UserIcon className="w-4 h-4" />
+                                                </div>
+                                                <div>
+                                                    <span className="font-extrabold text-xs text-slate-800 dark:text-white block">Manajemen Pengguna</span>
+                                                    <span className="text-[10px] text-slate-400">Kelola Akun, NIP, & Role</span>
+                                                </div>
+                                            </div>
+                                            <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
+                                        </button>
+                                    )}
+                                </div>
+                            </Card>
+
+                            {/* Card 2: Agenda Hari Ini */}
+                            <Card className="p-5 rounded-[24px] border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-3">
+                                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
+                                    <h3 className="text-xs font-black text-slate-850 dark:text-white flex items-center gap-2">
+                                        <Clock className="w-4 h-4 text-amber-500" />
+                                        Agenda Operasional Hari Ini
+                                    </h3>
+                                    <span className="text-[9.5px] font-bold bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-slate-500">
+                                        {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
+                                    </span>
+                                </div>
+
+                                <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                                    {allReservations.filter(r => ['in_use', 'approved', 'reserved'].includes(r.status)).length > 0 ? (
+                                        allReservations.filter(r => ['in_use', 'approved', 'reserved'].includes(r.status)).slice(0, 4).map((res: any) => {
+                                            const sDate = res.startDate || res.start_date;
+                                            const eDate = res.endDate || res.end_date;
+                                            return (
+                                                <div key={res.id} className="p-3 rounded-xl bg-slate-50 dark:bg-slate-850/60 border border-slate-100 dark:border-slate-800 space-y-1">
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-[9.5px] font-extrabold text-ojk-red uppercase">
+                                                            {res.asset?.name || 'Aset OJK'}
+                                                        </span>
+                                                        <span className="text-[9px] font-bold text-slate-400">
+                                                            {sDate ? `${String(new Date(sDate).getHours()).padStart(2, '0')}.${String(new Date(sDate).getMinutes()).padStart(2, '0')}` : ''} WIB
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-xs font-bold text-slate-800 dark:text-white truncate">
+                                                        {res.purpose}
+                                                    </p>
+                                                    <span className="text-[10px] text-slate-400 block font-medium">
+                                                        Pemohon: {res.user?.name || 'Pegawai OJK'}
+                                                    </span>
+                                                </div>
+                                            );
+                                        })
+                                    ) : (
+                                        <p className="text-xs text-slate-400 font-medium text-center py-6">
+                                            Belum ada agenda reservasi hari ini.
+                                        </p>
+                                    )}
+                                </div>
+                            </Card>
+                        </div>
+                    </div>
                 </div>
             )}
 
