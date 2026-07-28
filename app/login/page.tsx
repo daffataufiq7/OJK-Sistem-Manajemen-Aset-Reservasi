@@ -121,10 +121,10 @@ export default function LoginPage() {
             </div>
 
             {/* Main Login Card Box */}
-            <div className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-200/80 dark:border-slate-800 shadow-2xl p-4 sm:p-6 lg:p-7 max-w-[1240px] w-full grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-stretch relative z-10 my-auto">
+            <div className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-200/80 dark:border-slate-800 shadow-2xl p-4 sm:p-6 lg:p-7 max-w-[1300px] w-full grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-stretch relative z-10 my-auto">
                 
                 {/* ── LEFT COLUMN: FULL CARD VIDEO BACKGROUND ── */}
-                <div className="lg:col-span-6 relative rounded-[28px] overflow-hidden min-h-[460px] lg:min-h-[580px] flex flex-col justify-between p-6 sm:p-8 group shadow-lg">
+                <div className="lg:col-span-7 relative rounded-[28px] overflow-hidden min-h-[480px] lg:min-h-[620px] flex flex-col justify-between p-6 sm:p-8 group shadow-lg">
                     
                     {/* Continuous Auto-Playing Loop Video */}
                     <video
@@ -138,21 +138,12 @@ export default function LoginPage() {
                     </video>
 
                     {/* Gradient Overlay for Text Readability */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-black/50 z-10 pointer-events-none"></div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/30 z-10 pointer-events-none"></div>
 
                     {/* TOP-LEFT OVERLAY: OJK White Logo */}
                     <div className="relative z-20 flex items-center gap-3">
                         <div className="bg-white/95 dark:bg-slate-900/90 backdrop-blur-md px-4 py-2.5 rounded-2xl shadow-md border border-white/30 flex items-center">
                             <img src="/logo ojk.png" alt="Logo OJK" className="h-9 w-auto object-contain" />
-                        </div>
-                    </div>
-
-                    {/* CENTER OVERLAY: Play Icon Badge */}
-                    <div className="relative z-20 my-auto flex items-center justify-center pointer-events-none">
-                        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white/25 backdrop-blur-md border border-white/40 flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform duration-300">
-                            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/90 flex items-center justify-center shadow-md">
-                                <Play className="w-5 h-5 sm:w-6 sm:h-6 text-red-600 fill-red-600 ml-1" />
-                            </div>
                         </div>
                     </div>
 
@@ -187,7 +178,7 @@ export default function LoginPage() {
                 </div>
 
                 {/* ── RIGHT COLUMN: AUTHENTICATION FORM ── */}
-                <div className="lg:col-span-6 flex flex-col justify-between py-3 sm:py-6 px-2 sm:px-6 relative space-y-6">
+                <div className="lg:col-span-5 flex flex-col justify-between py-3 sm:py-6 px-2 sm:px-6 relative space-y-6">
                     
                     {/* Top Right Dot Matrix Decorative Grid */}
                     <div className="absolute top-2 right-2 pointer-events-none opacity-25 dark:opacity-15">
