@@ -238,10 +238,14 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
     const getTargetUrl = (n: any) => {
         if (n.link) return n.link;
+        if (user?.role === 'pegawai') {
+            return '/history';
+        }
+
         const text = `${n.title || ''} ${n.message || ''}`.toLowerCase();
 
         if (text.includes('laporan driver') || text.includes('laporan sopir') || text.includes('sopir') || text.includes('driver')) {
-            return user?.role === 'pegawai' ? '/history' : '/driver-reports';
+            return '/driver-reports';
         }
 
         if (text.includes('persetujuan') || text.includes('validator') || text.includes('menunggu persetujuan') || text.includes('pengajuan baru')) {
@@ -249,7 +253,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         }
 
         if (text.includes('aset') || text.includes('kendaraan') || text.includes('ruangan')) {
-            return user?.role === 'super_admin' ? '/assets' : '/reservations';
+            return user?.role === 'super_admin' ? '/assets' : '/history';
         }
 
         if (text.includes('user') || text.includes('pengguna') || text.includes('nip')) {
