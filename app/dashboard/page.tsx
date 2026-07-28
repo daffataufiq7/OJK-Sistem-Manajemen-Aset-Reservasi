@@ -21,7 +21,10 @@ import {
     User as UserIcon,
     Eye,
     Building2,
-    Lock
+    Lock,
+    CheckSquare,
+    Layers,
+    RefreshCw
 } from 'lucide-react';
 import { Card, CardContent, Button, Badge, toast, Dialog, TextArea, Input, Select } from '@/components/UI';
 import { useRouter } from 'next/navigation';
@@ -33,10 +36,10 @@ interface CatalogAsset {
     category: 'Kendaraan' | 'Ruangan' | 'Partnership';
     status: 'Tersedia' | 'Sedang Dipakai' | 'Reserved' | 'Maintenance';
     location: string;
+    code: string;
     image: string;
-    specs: string[];
-    plate?: string;
     capacity?: string;
+    description: string;
     facilities?: string[];
 }
 
@@ -62,6 +65,11 @@ export default function DashboardPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedLocationFilter, setSelectedLocationFilter] = useState('all');
     const [selectedStatusFilter, setSelectedStatusFilter] = useState('all');
+
+    const [historySearchQuery, setHistorySearchQuery] = useState('');
+    const [historyStatusFilter, setHistoryStatusFilter] = useState('all');
+    const [selectedResDetail, setSelectedResDetail] = useState<any | null>(null);
+    const [resDetailOpen, setResDetailOpen] = useState(false);
 
     const [currentMonthDate, setCurrentMonthDate] = useState(new Date());
 
@@ -971,70 +979,265 @@ export default function DashboardPage() {
                         id="sec-riwayat" 
                         className="snap-start min-h-[calc(100vh-73px)] p-6 md:p-8 space-y-6 transition-all duration-500 ease-in-out"
                     >
+                        {/* Header Title & Refresh Button */}
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4 gap-3">
                             <div className="space-y-0.5">
-                                <div className="flex items-center gap-2">
-                                    <div className="w-8 h-8 rounded-xl bg-red-500/10 flex items-center justify-center text-ojk-red">
-                                        <HistoryIcon className="w-4 h-4" />
+                                <div className="flex items-center gap-2.5">
+                                    <div className="p-2 rounded-xl bg-red-500/10 text-ojk-red">
+                                        <HistoryIcon className="w-5 h-5" />
                                     </div>
                                     <h3 className="text-xl font-black text-slate-850 dark:text-white tracking-tight">
-                                        Riwayat Reservasi Saya
+                                        Riwayat Peminjaman Aset
                                     </h3>
                                 </div>
-                                <p className="text-xs text-slate-400 font-medium">
-                                    Daftar status permohonan reservasi kendaraan dinas dan ruang rapat Anda.
+                                <p className="text-xs text-slate-400 font-medium pl-0.5">
+                                    Daftar seluruh transaksi peminjaman aset kantor yang pernah Anda ajukan.
                                 </p>
                             </div>
+
+                            <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={fetchDashboardData}
+                                className="rounded-xl flex items-center gap-1.5 self-start sm:self-auto text-xs font-semibold"
+                            >
+                                <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+                                Refresh Data
+                            </Button>
                         </div>
 
+                        {/* Top 4 Summary Cards */}
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+                            <Card className="p-4 rounded-2xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">TOTAL RIWAYAT</span>
+                                    <div className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500">
+                                        <Layers className="w-4 h-4" />
+                                    </div>
+                                </div>
+                                <h3 className="text-xl sm:text-2xl font-black text-slate-800 dark:text-white mt-2">{allReservations.length}</h3>
+                            </Card>
+
+                            <Card className="p-4 rounded-2xl border border-blue-100 dark:border-blue-900/30 bg-blue-50/40 dark:bg-blue-950/20 shadow-xs">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">DISETUJUI</span>
+                                    <div className="p-1.5 rounded-lg bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400">
+                                        <CheckSquare className="w-4 h-4" />
+                                    </div>
+                                </div>
+                                <h3 className="text-xl sm:text-2xl font-black text-blue-700 dark:text-blue-400 mt-2">
+                                    {allReservations.filter(r => ['approved', 'reserved'].includes(r.status)).length}
+                                </h3>
+                            </Card>
+
+                            <Card className="p-4 rounded-2xl border border-amber-100 dark:border-amber-900/30 bg-amber-50/40 dark:bg-amber-950/20 shadow-xs">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">SEDANG DIPAKAI</span>
+                                    <div className="p-1.5 rounded-lg bg-amber-100 dark:bg-amber-900/50 text-amber-600 dark:text-amber-400">
+                                        <Car className="w-4 h-4" />
+                                    </div>
+                                </div>
+                                <h3 className="text-xl sm:text-2xl font-black text-amber-700 dark:text-amber-400 mt-2">
+                                    {allReservations.filter(r => r.status === 'in_use').length}
+                                </h3>
+                            </Card>
+
+                            <Card className="p-4 rounded-2xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">SELESAI</span>
+                                    <div className="p-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400">
+                                        <CheckCircle2 className="w-4 h-4" />
+                                    </div>
+                                </div>
+                                <h3 className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-2">
+                                    {allReservations.filter(r => r.status === 'completed').length}
+                                </h3>
+                            </Card>
+                        </div>
+
+                        {/* Search & Filter Bar */}
+                        <Card className="p-3 rounded-[16px] border border-slate-100 dark:border-slate-800 shadow-xs">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div className="relative">
+                                    <Input
+                                        placeholder="Cari berdasarkan nama aset, pemohon, keperluan..."
+                                        value={historySearchQuery}
+                                        onChange={(e) => setHistorySearchQuery(e.target.value)}
+                                        className="pl-9 text-xs py-2 rounded-xl"
+                                    />
+                                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-3" />
+                                </div>
+
+                                <Select
+                                    value={historyStatusFilter}
+                                    onChange={(e) => setHistoryStatusFilter(e.target.value)}
+                                    className="text-xs py-2 rounded-xl"
+                                >
+                                    <option value="all">Semua Status</option>
+                                    <option value="pending">Menunggu (Pending)</option>
+                                    <option value="approved">Disetujui</option>
+                                    <option value="in_use">Sedang Dipakai</option>
+                                    <option value="completed">Selesai</option>
+                                    <option value="rejected">Ditolak</option>
+                                    <option value="cancelled">Batal</option>
+                                </Select>
+                            </div>
+                        </Card>
+
+                        {/* Rich Data Table */}
                         <Card className="rounded-[24px] border border-slate-100 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900 overflow-hidden">
                             <div className="overflow-x-auto">
                                 <table className="w-full text-left text-xs">
                                     <thead className="bg-slate-50 dark:bg-slate-850/80 text-slate-400 uppercase text-[10px] font-black tracking-wider border-b border-slate-100 dark:border-slate-800">
                                         <tr>
-                                            <th className="px-6 py-4">ID</th>
-                                            <th className="px-6 py-4">Aset</th>
-                                            <th className="px-6 py-4">Tanggal & Waktu</th>
-                                            <th className="px-6 py-4">Keperluan</th>
-                                            <th className="px-6 py-4">Status</th>
-                                            <th className="px-6 py-4 text-right">Aksi</th>
+                                            <th className="px-6 py-4">KODE RSV</th>
+                                            <th className="px-6 py-4">PEGAWAI PEMOHON</th>
+                                            <th className="px-6 py-4">ASET PEMINJAMAN</th>
+                                            <th className="px-6 py-4">WAKTU PEMINJAMAN</th>
+                                            <th className="px-6 py-4">AGENDA & DRIVER</th>
+                                            <th className="px-6 py-4">STATUS</th>
+                                            <th className="px-6 py-4 text-right">OPSI CRUD</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                                        {allReservations.length > 0 ? (
-                                            allReservations.map((res: any) => (
-                                                <tr key={res.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-850/30 transition-colors">
-                                                    <td className="px-6 py-4 font-mono font-bold text-slate-400">#{res.id}</td>
-                                                    <td className="px-6 py-4 font-extrabold text-slate-800 dark:text-white">
-                                                        {res.asset?.name || 'Aset OJK'}
-                                                    </td>
-                                                    <td className="px-6 py-4 text-slate-500 dark:text-slate-400 font-semibold">
-                                                        {new Date(res.startDate || res.start_date).toLocaleDateString('id-ID')}
-                                                    </td>
-                                                    <td className="px-6 py-4 text-slate-600 dark:text-slate-300 font-medium max-w-xs truncate">
-                                                        {res.purpose}
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <Badge status={res.status} />
-                                                    </td>
-                                                    <td className="px-6 py-4 text-right">
-                                                        {res.status === 'pending' && (
-                                                            <Button 
-                                                                variant="danger" 
-                                                                size="sm" 
-                                                                onClick={() => handleCancelReservation(res.id)}
-                                                                className="rounded-lg text-[10px] font-bold px-3 py-1 cursor-pointer"
-                                                            >
-                                                                Batal
-                                                            </Button>
-                                                        )}
-                                                    </td>
-                                                </tr>
-                                            ))
+                                        {allReservations.filter((res: any) => {
+                                            const query = historySearchQuery.toLowerCase();
+                                            const matchesSearch = 
+                                                !query ||
+                                                (res.asset?.name || '').toLowerCase().includes(query) ||
+                                                (res.user?.name || '').toLowerCase().includes(query) ||
+                                                (res.purpose || '').toLowerCase().includes(query) ||
+                                                `#rsv-${res.id}`.includes(query);
+                                            
+                                            const matchesStatus = 
+                                                historyStatusFilter === 'all' || 
+                                                res.status === historyStatusFilter;
+
+                                            return matchesSearch && matchesStatus;
+                                        }).length > 0 ? (
+                                            allReservations.filter((res: any) => {
+                                                const query = historySearchQuery.toLowerCase();
+                                                const matchesSearch = 
+                                                    !query ||
+                                                    (res.asset?.name || '').toLowerCase().includes(query) ||
+                                                    (res.user?.name || '').toLowerCase().includes(query) ||
+                                                    (res.purpose || '').toLowerCase().includes(query) ||
+                                                    `#rsv-${res.id}`.includes(query);
+                                                
+                                                const matchesStatus = 
+                                                    historyStatusFilter === 'all' || 
+                                                    res.status === historyStatusFilter;
+
+                                                return matchesSearch && matchesStatus;
+                                            }).map((res: any) => {
+                                                const sDate = res.startDate || res.start_date;
+                                                const eDate = res.endDate || res.end_date;
+                                                const driverName = res.driverName || res.driver_name;
+                                                return (
+                                                    <tr key={res.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-850/30 transition-colors">
+                                                        <td className="px-6 py-4">
+                                                            <div className="flex flex-col space-y-0.5">
+                                                                <span className="font-extrabold text-slate-800 dark:text-slate-100 text-xs">
+                                                                    #RSV-{res.id}
+                                                                </span>
+                                                                <span className="text-[10.5px] text-slate-400 font-medium">
+                                                                    {sDate ? new Date(sDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) : '-'}
+                                                                </span>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-4">
+                                                            <div className="flex items-center gap-2.5">
+                                                                <div className="w-8 h-8 rounded-full bg-red-50 dark:bg-slate-800 border border-red-100 dark:border-slate-700 flex items-center justify-center text-ojk-red dark:text-slate-200 font-bold shrink-0 text-xs">
+                                                                    {res.user?.name ? res.user.name.charAt(0).toUpperCase() : (user?.name?.charAt(0).toUpperCase() || 'U')}
+                                                                </div>
+                                                                <div className="flex flex-col leading-tight overflow-hidden">
+                                                                    <span className="font-extrabold text-slate-850 dark:text-white text-xs truncate max-w-[180px]">
+                                                                        {res.user?.name || user?.name || '-'}
+                                                                    </span>
+                                                                    <span className="text-[10.5px] text-slate-400 font-medium truncate max-w-[180px]">
+                                                                        NIP: {res.user?.nip || user?.nip || '-'} &bull; {res.user?.division?.name || 'OJK Jabar'}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-4">
+                                                            <div className="flex flex-col space-y-1">
+                                                                <span className="font-extrabold text-slate-850 dark:text-white text-xs">
+                                                                    {res.asset?.name || 'Aset OJK'}
+                                                                </span>
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[9px] font-extrabold rounded uppercase tracking-wider border border-slate-200/60 dark:border-slate-700">
+                                                                        {res.asset?.code || 'AST'}
+                                                                    </span>
+                                                                    {res.asset?.location && (
+                                                                        <span className="text-[10.5px] text-slate-400 flex items-center gap-1">
+                                                                            <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
+                                                                            {res.asset.location}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-4">
+                                                            <div className="flex flex-col space-y-0.5 text-xs">
+                                                                <div className="flex items-center gap-1.5 text-slate-800 dark:text-slate-200 font-bold">
+                                                                    <Calendar className="w-3.5 h-3.5 text-ojk-red shrink-0" />
+                                                                    <span>{sDate ? new Date(sDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}</span>
+                                                                </div>
+                                                                <div className="flex items-center gap-1.5 text-[10.5px] text-slate-400 font-medium pl-5">
+                                                                    <Clock className="w-3 h-3 text-slate-400 shrink-0" />
+                                                                    <span>
+                                                                        {sDate ? new Date(sDate).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : ''} - {eDate ? new Date(eDate).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : ''} WIB
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-4">
+                                                            <div className="flex flex-col space-y-1 max-w-[200px]">
+                                                                <span className="text-xs font-medium text-slate-700 dark:text-slate-300 line-clamp-2">
+                                                                    {res.purpose}
+                                                                </span>
+                                                                {driverName && (
+                                                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded border border-emerald-200/60 dark:border-emerald-900/40 w-fit">
+                                                                        <UserIcon className="w-3 h-3 text-emerald-600" /> Driver: {driverName}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-4">
+                                                            <Badge status={res.status} />
+                                                        </td>
+                                                        <td className="px-6 py-4 text-right">
+                                                            <div className="flex items-center justify-end gap-2">
+                                                                <button
+                                                                    onClick={() => {
+                                                                        setSelectedResDetail(res);
+                                                                        setResDetailOpen(true);
+                                                                    }}
+                                                                    className="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 text-xs font-bold transition-all cursor-pointer flex items-center gap-1"
+                                                                >
+                                                                    <Eye className="w-3.5 h-3.5 text-slate-500" />
+                                                                    <span>Detail</span>
+                                                                </button>
+                                                                {['pending', 'approved', 'reserved'].includes(res.status) && (
+                                                                    <Button 
+                                                                        variant="danger" 
+                                                                        size="sm" 
+                                                                        onClick={() => handleCancelReservation(res.id)}
+                                                                        className="rounded-xl text-xs font-extrabold px-3 py-1.5 cursor-pointer shadow-2xs"
+                                                                    >
+                                                                        Batalkan
+                                                                    </Button>
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })
                                         ) : (
                                             <tr>
-                                                <td colSpan={6} className="px-6 py-12 text-center text-slate-400 font-medium">
-                                                    Belum ada riwayat reservasi.
+                                                <td colSpan={7} className="px-6 py-12 text-center text-slate-400 font-medium">
+                                                    Belum ada riwayat reservasi yang sesuai.
                                                 </td>
                                             </tr>
                                         )}
@@ -1042,6 +1245,66 @@ export default function DashboardPage() {
                                 </table>
                             </div>
                         </Card>
+
+                        {/* Modal Detail Reservasi */}
+                        <Dialog
+                            isOpen={resDetailOpen}
+                            onClose={() => {
+                                setResDetailOpen(false);
+                                setSelectedResDetail(null);
+                            }}
+                            title="Detail Permohonan Reservasi"
+                            size="md"
+                        >
+                            {selectedResDetail && (
+                                <div className="space-y-4 text-xs">
+                                    <div className="bg-slate-50 dark:bg-slate-850 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-3">
+                                        <div className="flex items-center justify-between">
+                                            <span className="font-mono font-extrabold text-slate-500">#RSV-{selectedResDetail.id}</span>
+                                            <Badge status={selectedResDetail.status} />
+                                        </div>
+
+                                        <div className="border-t border-slate-200/60 dark:border-slate-800 pt-3 space-y-2">
+                                            <div>
+                                                <span className="text-[10px] font-bold text-slate-400 uppercase">Aset Dipinjam</span>
+                                                <p className="font-extrabold text-sm text-slate-800 dark:text-white">
+                                                    {selectedResDetail.asset?.name || 'Aset OJK'}
+                                                </p>
+                                            </div>
+
+                                            <div>
+                                                <span className="text-[10px] font-bold text-slate-400 uppercase">Waktu Reservasi</span>
+                                                <p className="font-bold text-slate-700 dark:text-slate-300">
+                                                    {new Date(selectedResDetail.startDate || selectedResDetail.start_date).toLocaleString('id-ID')} &bull; {new Date(selectedResDetail.endDate || selectedResDetail.end_date).toLocaleString('id-ID')}
+                                                </p>
+                                            </div>
+
+                                            <div>
+                                                <span className="text-[10px] font-bold text-slate-400 uppercase">Agenda / Keperluan</span>
+                                                <p className="font-medium text-slate-700 dark:text-slate-300">
+                                                    {selectedResDetail.purpose}
+                                                </p>
+                                            </div>
+
+                                            {(selectedResDetail.driverName || selectedResDetail.driver_name) && (
+                                                <div>
+                                                    <span className="text-[10px] font-bold text-slate-400 uppercase">Driver</span>
+                                                    <p className="font-bold text-emerald-600">
+                                                        {selectedResDetail.driverName || selectedResDetail.driver_name}
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="flex justify-end">
+                                        <Button variant="secondary" onClick={() => setResDetailOpen(false)}>
+                                            Tutup
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
+                        </Dialog>
                     </section>
 
                     {/* SECTION 6: PENGATURAN */}

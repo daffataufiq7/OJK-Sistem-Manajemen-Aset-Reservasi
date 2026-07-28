@@ -272,8 +272,12 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             markNotificationRead(n.id);
         }
         setNotifDropdownOpen(false);
-        const targetUrl = getTargetUrl(n);
-        router.push(targetUrl);
+        if (user?.role === 'pegawai') {
+            scrollToSection('sec-riwayat');
+        } else {
+            const targetUrl = getTargetUrl(n);
+            router.push(targetUrl);
+        }
     };
 
     const unreadCount = notifications.filter(n => !n.is_read && !n.isRead).length;
