@@ -443,7 +443,7 @@ export default function DashboardPage() {
                                 <div className="flex items-center justify-between">
                                     <div className="space-y-0.5">
                                         <span className="text-[9.5px] font-bold text-slate-400 uppercase tracking-wider block">Total Asset</span>
-                                        <h4 className="text-2xl font-black text-slate-850 dark:text-white tracking-tight">19</h4>
+                                        <h4 className="text-2xl font-black text-slate-850 dark:text-white tracking-tight">{dashData?.stats?.total_assets ?? (vehicleAssets.length + roomAssets.length)}</h4>
                                         <span className="text-[9.5px] font-semibold text-slate-400">Kendaraan & Ruangan</span>
                                     </div>
                                     <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center shrink-0">
@@ -506,7 +506,7 @@ export default function DashboardPage() {
                                             <Car className="w-4 h-4" />
                                         </div>
                                         <h3 className="text-xl font-black text-slate-850 dark:text-white tracking-tight">
-                                            Kendaraan Dinas (15 Unit)
+                                            Kendaraan Dinas ({vehicleAssets.length} Unit)
                                         </h3>
                                     </div>
                                     <p className="text-xs text-slate-400 font-medium">
@@ -653,7 +653,7 @@ export default function DashboardPage() {
                                         <HomeIcon className="w-4 h-4" />
                                     </div>
                                     <h3 className="text-xl font-black text-slate-850 dark:text-white tracking-tight">
-                                        Ruang Rapat & Aula (4 Ruangan)
+                                        Ruang Rapat & Aula ({roomAssets.length} Ruangan)
                                     </h3>
                                 </div>
                                 <p className="text-xs text-slate-400 font-medium">
@@ -799,6 +799,11 @@ export default function DashboardPage() {
                                 {Array.from({ length: daysInMonth }).map((_, i) => {
                                     const dayNum = i + 1;
                                     const isToday = dayNum === new Date().getDate() && calMonth === new Date().getMonth() && calYear === new Date().getFullYear();
+                                    // Get reservations for this day from real API data
+                                    const dayReservations = allReservations.filter((res: any) => {
+                                        const d = new Date(res.startDate || res.start_date);
+                                        return d.getDate() === dayNum && d.getMonth() === calMonth && d.getFullYear() === calYear;
+                                    });
                                     return (
                                         <div 
                                             key={dayNum} 
@@ -807,10 +812,13 @@ export default function DashboardPage() {
                                             <span className={`text-xs font-black ${isToday ? 'text-ojk-red' : 'text-slate-700 dark:text-slate-300'}`}>
                                                 {dayNum}
                                             </span>
-                                            {dayNum % 4 === 0 && (
-                                                <div className="p-1 rounded-lg bg-ojk-red/10 border border-ojk-red/20 text-[9px] font-bold text-ojk-red truncate">
-                                                    Bale Astama (09:00)
+                                            {dayReservations.slice(0, 2).map((res: any) => (
+                                                <div key={res.id} className="p-1 rounded-lg bg-ojk-red/10 border border-ojk-red/20 text-[9px] font-bold text-ojk-red truncate">
+                                                    {res.asset?.name || 'Reservasi'}
                                                 </div>
+                                            ))}
+                                            {dayReservations.length > 2 && (
+                                                <div className="text-[8px] text-slate-400 font-semibold pl-0.5">+{dayReservations.length - 2} lainnya</div>
                                             )}
                                         </div>
                                     );
