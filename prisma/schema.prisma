@@ -58,6 +58,7 @@ model Asset {
   condition           String        @default("good")      // good, damaged, maintenance
   photo               String?
   qrCode              String?
+  capacity            String?   // for rooms: e.g. "25 Orang"
   maintenanceSchedule DateTime?
 
   reservations Reservation[]

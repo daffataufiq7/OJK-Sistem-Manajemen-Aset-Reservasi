@@ -15,6 +15,7 @@ interface Asset {
     category_id?: number; categoryId?: number;
     location: string; status: string; condition: string;
     photo: string | null; qr_code?: string | null; qrCode?: string | null;
+    capacity?: string | null;
     category?: AssetCategory;
 }
 
@@ -114,6 +115,7 @@ export default function AssetsPage() {
     const [name, setName]         = useState('');
     const [categoryId, setCategoryId] = useState<number | string>('');
     const [location, setLocation] = useState('');
+    const [capacity, setCapacity] = useState('');
     const [status, setStatus]     = useState('available');
     const [condition, setCondition] = useState('good');
     const [photo, setPhoto]       = useState<string>('');
@@ -162,6 +164,7 @@ export default function AssetsPage() {
         setName('');
         setCategoryId(filteredCategories[0]?.id || categories[0]?.id || '');
         setLocation('');
+        setCapacity('');
         setStatus('available');
         setCondition('good');
         setPhoto('');
@@ -174,6 +177,7 @@ export default function AssetsPage() {
         setName(asset.name);
         setCategoryId(asset.category_id || asset.categoryId || (categories[0]?.id || ''));
         setLocation(asset.location);
+        setCapacity(asset.capacity || '');
         setStatus(asset.status);
         setCondition(asset.condition);
         setPhoto(asset.photo || '');
@@ -207,7 +211,7 @@ export default function AssetsPage() {
         if (!code || !name || !categoryId || !location) { toast.warning('Silakan lengkapi semua bidang wajib.'); return; }
         try {
             setSubmitting(true);
-            const payload = { code, name, category_id: Number(categoryId), location, status, condition, photo: photo || null };
+            const payload = { code, name, category_id: Number(categoryId), location, status, condition, photo: photo || null, capacity: capacity || null };
             const res = editingAsset
                 ? await fetch(`/api/assets/${editingAsset.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
                 : await fetch('/api/assets', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
@@ -237,19 +241,31 @@ export default function AssetsPage() {
         {
             key: 'name', header: 'Nama & Foto Aset',
             render: (a: Asset) => (
-                <div className="flex items-center gap-3.5 min-w-[230px]">
-                    {a.photo ? (
-                        <img src={a.photo} alt={a.name} className="w-12 h-12 object-cover rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xs shrink-0" />
-                    ) : (
-                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border ${colors.badge}`}>
-                            {activeTab === 'kendaraan'   ? <Car className="w-6 h-6" /> :
-                             activeTab === 'ruangan'     ? <Building2 className="w-6 h-6" /> :
-                                                           <Handshake className="w-6 h-6" />}
-                        </div>
-                    )}
+                <div className="flex items-center gap-3.5 min-w-[240px]">
+                    <div className="relative shrink-0">
+                        {a.photo ? (
+                            <img src={a.photo} alt={a.name} className="w-14 h-14 object-cover rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xs" />
+                        ) : (
+                            <div className={`w-14 h-14 rounded-xl flex items-center justify-center border ${colors.badge}`}>
+                                {activeTab === 'kendaraan'   ? <Car className="w-6 h-6" /> :
+                                 activeTab === 'ruangan'     ? <Building2 className="w-6 h-6" /> :
+                                                               <Handshake className="w-6 h-6" />}
+                            </div>
+                        )}
+                        {a.capacity && (
+                            <span className="absolute top-0.5 left-0.5 bg-blue-600/90 backdrop-blur-md text-white text-[8.5px] font-extrabold px-1.5 py-0.5 rounded shadow-sm flex items-center gap-0.5">
+                                👥 {a.capacity}
+                            </span>
+                        )}
+                    </div>
                     <div className="flex flex-col leading-tight overflow-hidden">
                         <span className="font-extrabold text-slate-850 dark:text-white text-xs truncate max-w-[200px]" title={a.name}>{a.name}</span>
                         <span className="text-[11px] text-slate-400 font-mono font-bold mt-0.5">{a.code}</span>
+                        {a.capacity && (
+                            <span className="text-[10px] text-blue-600 dark:text-blue-400 font-extrabold mt-0.5">
+                                Kapasitas: {a.capacity}
+                            </span>
+                        )}
                     </div>
                 </div>
             )
@@ -497,7 +513,13 @@ export default function AssetsPage() {
                         <Input label="Lokasi" placeholder={currentTabConfig.locationPlaceholder} value={location} onChange={e => setLocation(e.target.value)} required />
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <Input 
+                            label="Kapasitas Ruangan / Fasilitas" 
+                            placeholder="Contoh: 25 Orang / 100 Kursi / VIP" 
+                            value={capacity} 
+                            onChange={e => setCapacity(e.target.value)} 
+                        />
                         <Select label="Status Ketersediaan" value={status} onChange={e => setStatus(e.target.value)}>
                             <option value="available">Tersedia (Available)</option>
                             <option value="reserved">Disetujui (Reserved)</option>

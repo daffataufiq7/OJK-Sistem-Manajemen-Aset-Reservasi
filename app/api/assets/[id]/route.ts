@@ -11,7 +11,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   try {
     const { id } = await params;
     const body = await request.json();
-    const { name, location, status, condition, photo } = body;
+    const { name, location, status, condition, photo, capacity } = body;
 
     const updatedAsset = await prisma.asset.update({
       where: { id: Number(id) },
@@ -21,6 +21,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         status,
         condition,
         photo,
+        capacity: capacity !== undefined ? capacity : undefined,
       },
       include: { category: true },
     });

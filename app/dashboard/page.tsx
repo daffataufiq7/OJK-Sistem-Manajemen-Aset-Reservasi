@@ -30,7 +30,7 @@ import { DRIVER_LIST } from '@/constants/drivers';
 interface CatalogAsset {
     id: number;
     name: string;
-    category: 'Kendaraan' | 'Ruangan';
+    category: 'Kendaraan' | 'Ruangan' | 'Partnership';
     status: 'Tersedia' | 'Sedang Dipakai' | 'Reserved' | 'Maintenance';
     location: string;
     image: string;
@@ -57,6 +57,7 @@ export default function DashboardPage() {
     const [allReservations, setAllReservations] = useState<any[]>([]);
     const [vehicleAssets, setVehicleAssets] = useState<CatalogAsset[]>([]);
     const [roomAssets, setRoomAssets] = useState<CatalogAsset[]>([]);
+    const [partnershipAssets, setPartnershipAssets] = useState<CatalogAsset[]>([]);
 
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedLocationFilter, setSelectedLocationFilter] = useState('all');
@@ -105,18 +106,28 @@ export default function DashboardPage() {
             if (resList.ok)   setAllReservations(await resList.json());
             if (assetRes.ok) {
                 const raw: any[] = await assetRes.json();
-                const toAsset = (a: any): CatalogAsset => ({
-                    id:       a.id,
-                    name:     a.name,
-                    plate:    a.code,
-                    category: (a.category?.slug?.includes('ruang') || a.category?.name?.toLowerCase().includes('ruang') || a.category?.name?.toLowerCase().includes('aula')) ? 'Ruangan' : 'Kendaraan',
-                    status:   mapStatus(a.status),
-                    location: a.location,
-                    image:    a.photo || 'https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=800&auto=format&fit=crop',
-                    specs:    [a.category?.name || 'Aset', a.location],
-                    capacity:    undefined,
-                    facilities:  [],
-                });
+                const toAsset = (a: any): CatalogAsset => {
+                    const slug = (a.category?.slug || '').toLowerCase();
+                    const n    = (a.category?.name || '').toLowerCase();
+                    let cat: 'Kendaraan' | 'Ruangan' | 'Partnership' = 'Kendaraan';
+                    if (slug.includes('partner') || n.includes('partner') || slug.includes('kerjasama') || n.includes('kerjasama')) {
+                        cat = 'Partnership';
+                    } else if (slug.includes('ruang') || n.includes('ruang') || slug.includes('aula') || n.includes('aula')) {
+                        cat = 'Ruangan';
+                    }
+                    return {
+                        id:       a.id,
+                        name:     a.name,
+                        plate:    a.code,
+                        category: cat,
+                        status:   mapStatus(a.status),
+                        location: a.location,
+                        image:    a.photo || 'https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=800&auto=format&fit=crop',
+                        specs:    [a.category?.name || 'Aset', a.location],
+                        capacity: a.capacity || undefined,
+                        facilities:  [],
+                    };
+                };
                 const vehicles = raw.filter(a => {
                     const slug = (a.category?.slug || '').toLowerCase();
                     const n    = (a.category?.name || '').toLowerCase();
@@ -127,8 +138,14 @@ export default function DashboardPage() {
                     const n    = (a.category?.name || '').toLowerCase();
                     return slug.includes('ruang') || n.includes('ruang') || n.includes('aula');
                 }).map(toAsset);
+                const partners = raw.filter(a => {
+                    const slug = (a.category?.slug || '').toLowerCase();
+                    const n    = (a.category?.name || '').toLowerCase();
+                    return slug.includes('partner') || n.includes('partner') || slug.includes('kerjasama') || n.includes('kerjasama');
+                }).map(toAsset);
                 setVehicleAssets(vehicles);
                 setRoomAssets(rooms);
+                setPartnershipAssets(partners);
             }
         } catch (error) {
             console.error('Error fetching dashboard data', error);
@@ -254,6 +271,18 @@ export default function DashboardPage() {
     });
 
     const filteredRooms = roomAssets.filter(item => {
+        const matchesQuery = item.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                             item.location.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesLocFilter = selectedLocationFilter === 'all' || item.location.toLowerCase().includes(selectedLocationFilter.toLowerCase());
+        const matchesStatusFilter = selectedStatusFilter === 'all' || 
+            (selectedStatusFilter === 'available' && item.status === 'Tersedia') ||
+            (selectedStatusFilter === 'in_use' && item.status === 'Sedang Dipakai') ||
+            (selectedStatusFilter === 'reserved' && item.status === 'Reserved') ||
+            (selectedStatusFilter === 'maintenance' && item.status === 'Maintenance');
+        return matchesQuery && matchesLocFilter && matchesStatusFilter;
+    });
+
+    const filteredPartnerships = partnershipAssets.filter(item => {
         const matchesQuery = item.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                              item.location.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesLocFilter = selectedLocationFilter === 'all' || item.location.toLowerCase().includes(selectedLocationFilter.toLowerCase());
@@ -684,7 +713,12 @@ export default function DashboardPage() {
                                         />
                                         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent md:bg-gradient-to-r"></div>
 
-                                        <div className="absolute top-3 left-3">
+                                        <div className="absolute top-3 left-3 flex flex-col gap-1 items-start z-10">
+                                            {room.capacity && (
+                                                <span className="bg-blue-600/90 backdrop-blur-md text-white text-[9.5px] font-black px-2.5 py-1 rounded-lg shadow-md border border-white/20">
+                                                    👥 Kapasitas: {room.capacity}
+                                                </span>
+                                            )}
                                             {room.status === 'Tersedia' && (
                                                 <span className="bg-emerald-500/90 backdrop-blur-md text-white text-[9.5px] font-black px-2.5 py-0.5 rounded-full shadow-md">
                                                     Tersedia
@@ -709,8 +743,12 @@ export default function DashboardPage() {
                                                         <MapPin className="w-3.5 h-3.5 text-red-500 shrink-0" />
                                                         {room.location}
                                                     </span>
-                                                    <span>&bull;</span>
-                                                    <span className="text-ojk-red font-bold">{room.capacity}</span>
+                                                    {room.capacity && (
+                                                        <>
+                                                            <span>&bull;</span>
+                                                            <span className="text-blue-600 dark:text-blue-400 font-bold">Kapasitas: {room.capacity}</span>
+                                                        </>
+                                                    )}
                                                 </div>
                                             </div>
 
@@ -722,6 +760,11 @@ export default function DashboardPage() {
                                                             ✓ {f}
                                                         </span>
                                                     ))}
+                                                    {(!room.facilities || room.facilities.length === 0) && (
+                                                        <span className="bg-slate-100 dark:bg-slate-800 text-[10px] text-slate-500 px-2 py-0.5 rounded-md font-semibold">
+                                                            AC, Sound System, Proyektor
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
@@ -738,6 +781,102 @@ export default function DashboardPage() {
                                                 variant="primary" 
                                                 className="w-full text-xs font-bold py-2.5 rounded-xl bg-ojk-red hover:bg-red-700 text-white cursor-pointer shadow-sm"
                                                 onClick={() => handleOpenReservationModal(room)}
+                                            >
+                                                Reservasi
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </Card>
+                            ))}
+                        </div>
+                    </section>
+
+                    {/* SECTION 4: PARTNERSHIP & HOTEL MITRA */}
+                    <section 
+                        id="sec-partnership" 
+                        className="snap-start min-h-[calc(100vh-73px)] p-6 md:p-8 space-y-6 transition-all duration-500 ease-in-out"
+                    >
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4 gap-3">
+                            <div className="space-y-0.5">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-8 h-8 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-600 dark:text-amber-400">
+                                        <Building2 className="w-4 h-4" />
+                                    </div>
+                                    <h3 className="text-xl font-black text-slate-850 dark:text-white tracking-tight">
+                                        Partnership Hotel & Fasilitas Mitra ({partnershipAssets.length} Lokasi)
+                                    </h3>
+                                </div>
+                                <p className="text-xs text-slate-400 font-medium">
+                                    Fasilitas kerjasama hotel bintang lima dan lokasi akomodasi resmi OJK Jawa Barat.
+                                </p>
+                            </div>
+
+                            <Button 
+                                onClick={() => router.push('/partnership')} 
+                                className="rounded-xl font-bold flex items-center gap-1.5 text-xs bg-amber-500 hover:bg-amber-600 text-white py-2.5 px-5 shadow-sm self-start sm:self-auto cursor-pointer"
+                            >
+                                <Building2 className="w-4 h-4" />
+                                Buka Portal Partnership
+                            </Button>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {filteredPartnerships.map(partner => (
+                                <Card key={partner.id} className="rounded-[24px] overflow-hidden hover:-translate-y-1 hover:shadow-xl transition-all duration-300 flex flex-col md:flex-row group border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+                                    <div className="relative md:w-5/12 h-52 md:h-auto overflow-hidden bg-slate-900 shrink-0">
+                                        <img 
+                                            src={partner.image} 
+                                            alt={partner.name} 
+                                            className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+                                            onError={(e) => {
+                                                (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80';
+                                            }}
+                                        />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent md:bg-gradient-to-r"></div>
+
+                                        <div className="absolute top-3 left-3 flex flex-col gap-1 items-start z-10">
+                                            {partner.capacity && (
+                                                <span className="bg-amber-600/90 backdrop-blur-md text-white text-[9.5px] font-black px-2.5 py-1 rounded-lg shadow-md border border-white/20">
+                                                    🤝 {partner.capacity}
+                                                </span>
+                                            )}
+                                            <span className="bg-emerald-500/90 backdrop-blur-md text-white text-[9.5px] font-black px-2.5 py-0.5 rounded-full shadow-md">
+                                                Mitra Resmi OJK
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
+                                        <div className="space-y-2">
+                                            <div className="space-y-1">
+                                                <h4 className="text-base font-black text-slate-850 dark:text-white leading-snug group-hover:text-amber-500 transition-colors">
+                                                    {partner.name}
+                                                </h4>
+                                                <div className="flex items-center gap-2 text-[11px] font-semibold text-slate-400">
+                                                    <MapPin className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                                                    <span>{partner.location}</span>
+                                                </div>
+                                            </div>
+
+                                            <div className="pt-1">
+                                                <span className="text-[10px] font-extrabold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border border-amber-200/60 dark:border-amber-900/50 px-2.5 py-1 rounded-lg inline-block">
+                                                    ★ Kerjasama Hotel & Akomodasi OJK Jabar
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                                            <Button 
+                                                variant="secondary" 
+                                                className="w-full text-xs font-bold py-2.5 rounded-xl cursor-pointer"
+                                                onClick={() => { setSelectedAssetDetail(partner); setAssetDetailOpen(true); }}
+                                            >
+                                                Detail
+                                            </Button>
+                                            <Button 
+                                                variant="primary" 
+                                                className="w-full text-xs font-bold py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white cursor-pointer shadow-sm"
+                                                onClick={() => handleOpenReservationModal(partner)}
                                             >
                                                 Reservasi
                                             </Button>

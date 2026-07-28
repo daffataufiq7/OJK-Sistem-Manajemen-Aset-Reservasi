@@ -333,7 +333,8 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             subItems: [
                 { label: 'Semua Reservasi', path: '/reservations', icon: <PlusCircle className="w-3.5 h-3.5" /> },
                 { label: 'Mobil Dinas', path: '/reservations?category=Kendaraan', icon: <Car className="w-3.5 h-3.5" /> },
-                { label: 'Ruang Rapat & Aula', path: '/reservations?category=Ruangan', icon: <HomeIcon className="w-3.5 h-3.5" /> }
+                { label: 'Ruang Rapat & Aula', path: '/reservations?category=Ruangan', icon: <HomeIcon className="w-3.5 h-3.5" /> },
+                { label: 'Partnership & Hotel', path: '/partnership', icon: <Building2 className="w-3.5 h-3.5 text-amber-500" /> }
             ]
         },
         {

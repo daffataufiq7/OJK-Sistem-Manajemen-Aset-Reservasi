@@ -37,7 +37,7 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { code, name, category_id, categoryId, location, status, condition, photo } = body;
+    const { code, name, category_id, categoryId, location, status, condition, photo, capacity } = body;
 
     const catId = category_id || categoryId;
 
@@ -50,6 +50,7 @@ export async function POST(request: Request) {
         status: status || 'available',
         condition: condition || 'good',
         photo,
+        capacity: capacity || null,
         qrCode: `${code}|${name}|OJK Jawa Barat`,
       },
       include: { category: true },
