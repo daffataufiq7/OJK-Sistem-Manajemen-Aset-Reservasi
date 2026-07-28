@@ -55,6 +55,8 @@ export default function DashboardPage() {
     const [loading, setLoading] = useState(true);
     const [dashData, setDashData] = useState<any>(null);
     const [allReservations, setAllReservations] = useState<any[]>([]);
+    const [vehicleAssets, setVehicleAssets] = useState<CatalogAsset[]>([]);
+    const [roomAssets, setRoomAssets] = useState<CatalogAsset[]>([]);
 
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedLocationFilter, setSelectedLocationFilter] = useState('all');
@@ -81,43 +83,52 @@ export default function DashboardPage() {
     const [resNotes, setResNotes] = useState('');
     const [resSubmitting, setResSubmitting] = useState(false);
 
-    const vehicleAssets: CatalogAsset[] = [
-        { id: 1, name: 'Toyota Fortuner', plate: 'D 1882 E', category: 'Kendaraan', status: 'Tersedia', location: 'Basement Lt. 1', image: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=800&q=80', specs: ['7 Kursi', 'SUV Premium'] },
-        { id: 2, name: 'Toyota Alphard', plate: 'B 1707 NZU', category: 'Kendaraan', status: 'Tersedia', location: 'Basement Lt. 1 / VIP', image: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=800&q=80', specs: ['7 Kursi', 'VIP Luxury'] },
-        { id: 3, name: 'Toyota Kijang Innova', plate: 'D 1872 E', category: 'Kendaraan', status: 'Sedang Dipakai', location: 'Basement Lt. 1', image: 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=800&q=80', specs: ['7 Kursi', 'MPV Operasional'] },
-        { id: 4, name: 'Toyota Kijang Innova', plate: 'D 1870 E', category: 'Kendaraan', status: 'Tersedia', location: 'Basement Lt. 1', image: 'https://images.unsplash.com/photo-1583121274602-3e2820c69888?auto=format&fit=crop&w=800&q=80', specs: ['7 Kursi', 'MPV Operasional'] },
-        { id: 5, name: 'Toyota Kijang Innova', plate: 'D 1869 E', category: 'Kendaraan', status: 'Tersedia', location: 'Basement Lt. 1', image: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=800&q=80', specs: ['7 Kursi', 'MPV Operasional'] },
-        { id: 6, name: 'Toyota Hilux', plate: 'D 8069 D', category: 'Kendaraan', status: 'Tersedia', location: 'Basement Lt. 1', image: 'https://images.unsplash.com/photo-1559416523-140ddc3d238c?auto=format&fit=crop&w=800&q=80', specs: ['Double Cab', '4x4 Double Cab'] },
-        { id: 7, name: 'Nissan X Trail', plate: 'D 1868 E', category: 'Kendaraan', status: 'Tersedia', location: 'Basement Lt. 1', image: 'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?auto=format&fit=crop&w=800&q=80', specs: ['5 Kursi', 'SUV Medium'] },
-        { id: 8, name: 'Toyota Camry 2.5 HV', plate: 'D 13', category: 'Kendaraan', status: 'Tersedia', location: 'Basement Lt. 1 / Pimpinan', image: 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=800&q=80', specs: ['Sedan Hybrid', 'Mobil Dinas Pimpinan'] },
-        { id: 9, name: 'Toyota Zenix 2.0 Q HV', plate: 'D 1041 C', category: 'Kendaraan', status: 'Tersedia', location: 'Basement Lt. 1', image: 'https://images.unsplash.com/photo-1542282088-72c9c27ed0cd?auto=format&fit=crop&w=800&q=80', specs: ['Hybrid EV', 'Captain Seat'] },
-        { id: 10, name: 'Toyota Zenix 2.0 G CVT', plate: 'D 1162 F', category: 'Kendaraan', status: 'Tersedia', location: 'Basement Lt. 1', image: 'https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=800&q=80', specs: ['CVT Automatic', '7 Kursi'] },
-        { id: 11, name: 'Toyota Zenix 2.0 G CVT', plate: 'D 1056 F', category: 'Kendaraan', status: 'Tersedia', location: 'Basement Lt. 1', image: 'https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?auto=format&fit=crop&w=800&q=80', specs: ['CVT Automatic', '7 Kursi'] },
-        { id: 12, name: 'Isuzu Traga Box', plate: 'B 9455 PQW', category: 'Kendaraan', status: 'Tersedia', location: 'Parkiran Logistik', image: 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=800&q=80', specs: ['Angkutan Barang', 'Box Logistik'] },
-        { id: 13, name: 'Isuzu Traga Box', plate: 'B 9545 PQW', category: 'Kendaraan', status: 'Tersedia', location: 'Parkiran Logistik', image: 'https://images.unsplash.com/photo-1586191582056-a36c64639d6b?auto=format&fit=crop&w=800&q=80', specs: ['Angkutan Barang', 'Box Logistik'] },
-        { id: 14, name: 'Isuzu Traga Box', plate: 'B 9543 PQW', category: 'Kendaraan', status: 'Tersedia', location: 'Parkiran Logistik', image: 'https://images.unsplash.com/photo-1517524008697-84bbe3c3fd98?auto=format&fit=crop&w=800&q=80', specs: ['Angkutan Barang', 'Box Logistik'] },
-        { id: 15, name: 'Honda CB 150 R', plate: 'D 3044 F', category: 'Kendaraan', status: 'Tersedia', location: 'Parkiran Motor', image: 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=800&q=80', specs: ['Sepeda Motor', 'Kurir / Operasional'] }
-    ];
+    // vehicleAssets & roomAssets are now loaded from API (see fetchDashboardData below)
 
-    const roomAssets: CatalogAsset[] = [
-        { id: 16, name: 'Ruang Rapat Bale Astama', category: 'Ruangan', status: 'Tersedia', location: 'Lantai 2', image: 'https://images.unsplash.com/photo-1431540015161-0bf868a2d407?auto=format&fit=crop&w=800&q=80', capacity: '25 Orang', facilities: ['Smart TV', 'Proyektor', 'AC', 'Sound System', 'Wi-Fi'], specs: ['Kapasitas 25 Orang', 'Lantai 2'] },
-        { id: 17, name: 'Ruang Rapat Nakula', category: 'Ruangan', status: 'Reserved', location: 'Lantai 3', image: 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=800&q=80', capacity: '15 Orang', facilities: ['Video Conference', 'Glass Board', 'AC', 'Wi-Fi'], specs: ['Kapasitas 15 Orang', 'Lantai 3'] },
-        { id: 18, name: 'Aula Catur Dharma', category: 'Ruangan', status: 'Tersedia', location: 'Lantai 1', image: 'https://images.unsplash.com/photo-1517502884422-41eaead166d4?auto=format&fit=crop&w=800&q=80', capacity: '100 Orang', facilities: ['Panggung Utama', 'Wireless Mic', 'Podium', 'AC Sentral', 'Wi-Fi'], specs: ['Kapasitas 100 Orang', 'Lantai 1'] },
-        { id: 19, name: 'Ruang Rapat Sadewa', category: 'Ruangan', status: 'Tersedia', location: 'Lantai 2', image: 'https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=800&q=80', capacity: '12 Orang', facilities: ['LED Display', 'Executive Desk', 'AC', 'Wi-Fi'], specs: ['Kapasitas 12 Orang', 'Lantai 2'] }
-    ];
+    const mapStatus = (s: string): CatalogAsset['status'] => {
+        if (s === 'available')   return 'Tersedia';
+        if (s === 'in_use')      return 'Sedang Dipakai';
+        if (s === 'reserved')    return 'Reserved';
+        if (s === 'maintenance') return 'Maintenance';
+        return 'Tersedia';
+    };
 
     const fetchDashboardData = async () => {
         try {
             setLoading(true);
-            const [dashRes, resList] = await Promise.all([
+            const [dashRes, resList, assetRes] = await Promise.all([
                 fetch('/api/dashboard'),
-                fetch('/api/reservations')
+                fetch('/api/reservations'),
+                fetch('/api/assets'),
             ]);
-            if (dashRes.ok) {
-                setDashData(await dashRes.json());
-            }
-            if (resList.ok) {
-                setAllReservations(await resList.json());
+            if (dashRes.ok)   setDashData(await dashRes.json());
+            if (resList.ok)   setAllReservations(await resList.json());
+            if (assetRes.ok) {
+                const raw: any[] = await assetRes.json();
+                const toAsset = (a: any): CatalogAsset => ({
+                    id:       a.id,
+                    name:     a.name,
+                    plate:    a.code,
+                    category: (a.category?.slug?.includes('ruang') || a.category?.name?.toLowerCase().includes('ruang') || a.category?.name?.toLowerCase().includes('aula')) ? 'Ruangan' : 'Kendaraan',
+                    status:   mapStatus(a.status),
+                    location: a.location,
+                    image:    a.photo || 'https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=800&auto=format&fit=crop',
+                    specs:    [a.category?.name || 'Aset', a.location],
+                    capacity:    undefined,
+                    facilities:  [],
+                });
+                const vehicles = raw.filter(a => {
+                    const slug = (a.category?.slug || '').toLowerCase();
+                    const n    = (a.category?.name || '').toLowerCase();
+                    return slug.includes('kendaraan') || n.includes('kendaraan');
+                }).map(toAsset);
+                const rooms = raw.filter(a => {
+                    const slug = (a.category?.slug || '').toLowerCase();
+                    const n    = (a.category?.name || '').toLowerCase();
+                    return slug.includes('ruang') || n.includes('ruang') || n.includes('aula');
+                }).map(toAsset);
+                setVehicleAssets(vehicles);
+                setRoomAssets(rooms);
             }
         } catch (error) {
             console.error('Error fetching dashboard data', error);
