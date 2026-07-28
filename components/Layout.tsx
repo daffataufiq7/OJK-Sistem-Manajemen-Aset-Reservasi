@@ -338,12 +338,6 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             ]
         },
         {
-            label: 'Partnership',
-            path: '/partnership',
-            icon: <Building2 className="w-5 h-5 text-amber-500" />,
-            roles: ['super_admin', 'validator', 'pegawai']
-        },
-        {
             label: 'Kalender',
             path: '/calendar',
             icon: <Calendar className="w-5 h-5" />,
@@ -502,17 +496,6 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                                     </div>
                                 )}
                             </div>
-
-                            <Link
-                                href="/partnership"
-                                onClick={() => setSidebarOpen(false)}
-                                className={`w-full flex items-center justify-between px-4 py-3 text-xs font-semibold rounded-xl transition-all duration-200 cursor-pointer ${pathname === '/partnership' || activeSection === 'sec-partnership' ? 'bg-amber-500 text-white shadow-sm shadow-amber-500/10 font-bold' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-850'}`}
-                            >
-                                <div className="flex items-center gap-3.5">
-                                    <Building2 className="w-5 h-5 text-amber-500" />
-                                    <span>Partnership</span>
-                                </div>
-                            </Link>
 
                             <button
                                 onClick={() => scrollToSection('sec-kalender')}
