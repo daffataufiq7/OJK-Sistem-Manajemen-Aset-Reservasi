@@ -30,8 +30,10 @@ export default function PartnershipPage() {
     // Reservation Modal State
     const [resModalOpen, setResModalOpen] = useState(false);
     const [selectedAsset, setSelectedAsset] = useState<PartnershipAsset | null>(null);
-    const [startDate, setStartDate] = useState('');
-    const [endDate, setEndDate] = useState('');
+    const [startDateOnly, setStartDateOnly] = useState('');
+    const [startTime24, setStartTime24] = useState('14:00');
+    const [endDateOnly, setEndDateOnly] = useState('');
+    const [endTime24, setEndTime24] = useState('12:00');
     const [purpose, setPurpose] = useState('');
     const [submitting, setSubmitting] = useState(false);
 
@@ -69,18 +71,25 @@ export default function PartnershipPage() {
 
     const handleOpenResModal = (asset: PartnershipAsset) => {
         setSelectedAsset(asset);
-        setStartDate('');
-        setEndDate('');
+        const todayStr = new Date().toISOString().split('T')[0];
+        setStartDateOnly(todayStr);
+        setStartTime24('14:00');
+        setEndDateOnly(todayStr);
+        setEndTime24('12:00');
         setPurpose('');
         setResModalOpen(true);
     };
 
     const handleResSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!selectedAsset || !startDate || !endDate || !purpose) {
+        if (!selectedAsset || !startDateOnly || !endDateOnly || !purpose) {
             toast.warning('Silakan lengkapi semua bidang permohonan.');
             return;
         }
+
+        const start_date = `${startDateOnly}T${startTime24}`;
+        const end_date = `${endDateOnly}T${endTime24}`;
+
         try {
             setSubmitting(true);
             const res = await fetch('/api/reservations', {
@@ -88,8 +97,8 @@ export default function PartnershipPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     asset_id: selectedAsset.id,
-                    start_date: startDate,
-                    end_date: endDate,
+                    start_date,
+                    end_date,
                     purpose,
                     driver_required: false
                 })
@@ -279,20 +288,59 @@ export default function PartnershipPage() {
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <Input 
-                            label="Tanggal & Waktu Mulai Check-in" 
-                            type="datetime-local" 
-                            value={startDate} 
-                            onChange={(e) => setStartDate(e.target.value)} 
-                            required 
-                        />
-                        <Input 
-                            label="Tanggal & Waktu Selesai Check-out" 
-                            type="datetime-local" 
-                            value={endDate} 
-                            onChange={(e) => setEndDate(e.target.value)} 
-                            required 
-                        />
+                        <div className="space-y-1">
+                            <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">Waktu Mulai Check-in</label>
+                            <div className="grid grid-cols-2 gap-1.5">
+                                <Input
+                                    type="date"
+                                    value={startDateOnly}
+                                    onChange={(e) => setStartDateOnly(e.target.value)}
+                                    className="text-xs py-2 rounded-xl"
+                                    required
+                                />
+                                <Select
+                                    value={startTime24}
+                                    onChange={(e) => setStartTime24(e.target.value)}
+                                    className="text-xs py-2 rounded-xl"
+                                >
+                                    {[
+                                        "06:00", "06:30", "07:00", "07:30", "08:00", "08:30", "09:00", "09:30",
+                                        "10:00", "10:30", "11:00", "11:30", "12:00", "12:30", "13:00", "13:30",
+                                        "14:00", "14:30", "15:00", "15:30", "16:00", "16:30", "17:00", "17:30",
+                                        "18:00", "18:30", "19:00", "19:30", "20:00", "20:30", "21:00", "21:30", "22:00"
+                                    ].map(t => (
+                                        <option key={t} value={t}>{t} WIB</option>
+                                    ))}
+                                </Select>
+                            </div>
+                        </div>
+
+                        <div className="space-y-1">
+                            <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">Waktu Selesai Check-out</label>
+                            <div className="grid grid-cols-2 gap-1.5">
+                                <Input
+                                    type="date"
+                                    value={endDateOnly}
+                                    onChange={(e) => setEndDateOnly(e.target.value)}
+                                    className="text-xs py-2 rounded-xl"
+                                    required
+                                />
+                                <Select
+                                    value={endTime24}
+                                    onChange={(e) => setEndTime24(e.target.value)}
+                                    className="text-xs py-2 rounded-xl"
+                                >
+                                    {[
+                                        "06:00", "06:30", "07:00", "07:30", "08:00", "08:30", "09:00", "09:30",
+                                        "10:00", "10:30", "11:00", "11:30", "12:00", "12:30", "13:00", "13:30",
+                                        "14:00", "14:30", "15:00", "15:30", "16:00", "16:30", "17:00", "17:30",
+                                        "18:00", "18:30", "19:00", "19:30", "20:00", "20:30", "21:00", "21:30", "22:00"
+                                    ].map(t => (
+                                        <option key={t} value={t}>{t} WIB</option>
+                                    ))}
+                                </Select>
+                            </div>
+                        </div>
                     </div>
 
                     <Input 

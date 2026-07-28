@@ -171,14 +171,22 @@ export default function DashboardPage() {
         if (el) el.scrollIntoView({ behavior: 'smooth' });
     };
 
+    const [resStartDateOnly, setResStartDateOnly] = useState('');
+    const [resStartTime24, setResStartTime24] = useState('08:00');
+    const [resEndDateOnly, setResEndDateOnly] = useState('');
+    const [resEndTime24, setResEndTime24] = useState('17:00');
+
     const handleOpenReservationModal = (asset?: CatalogAsset) => {
         if (asset) {
             setSelectedAssetForRes(asset);
         } else {
             setSelectedAssetForRes(vehicleAssets[0]);
         }
-        setResStartDate('');
-        setResEndDate('');
+        const todayStr = new Date().toISOString().split('T')[0];
+        setResStartDateOnly(todayStr);
+        setResStartTime24('08:00');
+        setResEndDateOnly(todayStr);
+        setResEndTime24('17:00');
         setResPurpose('');
         setResDestination('');
         setResDriverRequired(false);
@@ -190,10 +198,13 @@ export default function DashboardPage() {
     const handleCreateReservationSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!selectedAssetForRes) return;
-        if (!resStartDate || !resEndDate || !resPurpose) {
+        if (!resStartDateOnly || !resEndDateOnly || !resPurpose) {
             toast.warning('Silakan lengkapi tanggal mulai, tanggal selesai, dan tujuan peminjaman.');
             return;
         }
+
+        const start_date = `${resStartDateOnly}T${resStartTime24}`;
+        const end_date = `${resEndDateOnly}T${resEndTime24}`;
 
         try {
             setResSubmitting(true);
@@ -202,8 +213,8 @@ export default function DashboardPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     asset_id: selectedAssetForRes.id,
-                    start_date: resStartDate,
-                    end_date: resEndDate,
+                    start_date,
+                    end_date,
                     purpose: resPurpose,
                     destination: resDestination,
                     driver_required: selectedAssetForRes.category === 'Kendaraan',
@@ -1402,21 +1413,60 @@ export default function DashboardPage() {
                 size="md"
             >
                 <form onSubmit={handleCreateReservationSubmit} className="space-y-4">
-                    <div className="grid grid-cols-2 gap-3">
-                        <Input
-                            label="Tanggal & Waktu Mulai"
-                            type="datetime-local"
-                            value={resStartDate}
-                            onChange={(e) => setResStartDate(e.target.value)}
-                            required
-                        />
-                        <Input
-                            label="Tanggal & Waktu Selesai"
-                            type="datetime-local"
-                            value={resEndDate}
-                            onChange={(e) => setResEndDate(e.target.value)}
-                            required
-                        />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                            <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">Waktu Mulai Pinjam</label>
+                            <div className="grid grid-cols-2 gap-1.5">
+                                <Input
+                                    type="date"
+                                    value={resStartDateOnly}
+                                    onChange={(e) => setResStartDateOnly(e.target.value)}
+                                    className="text-xs py-2 rounded-xl"
+                                    required
+                                />
+                                <Select
+                                    value={resStartTime24}
+                                    onChange={(e) => setResStartTime24(e.target.value)}
+                                    className="text-xs py-2 rounded-xl"
+                                >
+                                    {[
+                                        "06:00", "06:30", "07:00", "07:30", "08:00", "08:30", "09:00", "09:30",
+                                        "10:00", "10:30", "11:00", "11:30", "12:00", "12:30", "13:00", "13:30",
+                                        "14:00", "14:30", "15:00", "15:30", "16:00", "16:30", "17:00", "17:30",
+                                        "18:00", "18:30", "19:00", "19:30", "20:00", "20:30", "21:00", "21:30", "22:00"
+                                    ].map(t => (
+                                        <option key={t} value={t}>{t} WIB</option>
+                                    ))}
+                                </Select>
+                            </div>
+                        </div>
+
+                        <div className="space-y-1">
+                            <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">Waktu Selesai Pinjam</label>
+                            <div className="grid grid-cols-2 gap-1.5">
+                                <Input
+                                    type="date"
+                                    value={resEndDateOnly}
+                                    onChange={(e) => setResEndDateOnly(e.target.value)}
+                                    className="text-xs py-2 rounded-xl"
+                                    required
+                                />
+                                <Select
+                                    value={resEndTime24}
+                                    onChange={(e) => setResEndTime24(e.target.value)}
+                                    className="text-xs py-2 rounded-xl"
+                                >
+                                    {[
+                                        "06:00", "06:30", "07:00", "07:30", "08:00", "08:30", "09:00", "09:30",
+                                        "10:00", "10:30", "11:00", "11:30", "12:00", "12:30", "13:00", "13:30",
+                                        "14:00", "14:30", "15:00", "15:30", "16:00", "16:30", "17:00", "17:30",
+                                        "18:00", "18:30", "19:00", "19:30", "20:00", "20:30", "21:00", "21:30", "22:00"
+                                    ].map(t => (
+                                        <option key={t} value={t}>{t} WIB</option>
+                                    ))}
+                                </Select>
+                            </div>
+                        </div>
                     </div>
 
                     <TextArea
