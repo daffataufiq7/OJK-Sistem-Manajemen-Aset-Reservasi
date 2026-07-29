@@ -1161,15 +1161,16 @@ export default function DashboardPage() {
                                                 className="w-full text-[11px] font-bold py-2 rounded-xl cursor-pointer"
                                                 onClick={() => { setSelectedAssetDetail(vehicle); setAssetDetailOpen(true); }}
                                             >
-                                                Detail
+                                                Detail Unit
                                             </Button>
                                             
                                             <Button 
-                                                variant="primary" 
-                                                className="w-full text-[11px] font-bold py-2 rounded-xl bg-ojk-red hover:bg-red-700 text-white cursor-pointer shadow-sm"
-                                                onClick={() => handleOpenReservationModal(vehicle)}
+                                                variant="outline" 
+                                                className="w-full text-[11px] font-bold py-2 rounded-xl border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer flex items-center justify-center gap-1"
+                                                onClick={() => { setSelectedAssetDetail(vehicle); setAssetDetailOpen(true); }}
                                             >
-                                                Reservasi
+                                                <Calendar className="w-3.5 h-3.5 text-ojk-red" />
+                                                Cek Jadwal
                                             </Button>
                                         </div>
                                     </div>
@@ -2079,38 +2080,83 @@ export default function DashboardPage() {
                 )}
             </Dialog>
 
-            {/* ASSET DETAIL DIALOG */}
+            {/* ASSET SCHEDULE & DETAIL DIALOG */}
             <Dialog
                 isOpen={assetDetailOpen}
                 onClose={() => setAssetDetailOpen(false)}
-                title={`Spesifikasi & Informasi: ${selectedAssetDetail?.name || ''}`}
+                title={`Jadwal & Detail Unit: ${selectedAssetDetail?.name || ''}`}
                 size="md"
             >
                 {selectedAssetDetail && (
-                    <div className="space-y-4">
-                        <div className="relative rounded-2xl overflow-hidden aspect-video bg-slate-900">
+                    <div className="space-y-4 text-xs">
+                        <div className="relative rounded-2xl overflow-hidden aspect-video bg-slate-900 shadow-sm">
                             <img
                                 src={selectedAssetDetail.image}
                                 alt={selectedAssetDetail.name}
                                 className="w-full h-full object-cover"
                             />
+                            <div className="absolute top-3 left-3">
+                                <span className={`px-2.5 py-1 rounded-full text-[10px] font-black text-white ${selectedAssetDetail.status === 'Tersedia' ? 'bg-emerald-500' : 'bg-amber-500'}`}>
+                                    {selectedAssetDetail.status}
+                                </span>
+                            </div>
+                            {selectedAssetDetail.plate && (
+                                <div className="absolute top-3 right-3 bg-black/80 text-white font-mono font-bold text-[10px] px-2 py-0.5 rounded border border-white/20">
+                                    {selectedAssetDetail.plate}
+                                </div>
+                            )}
                         </div>
+
+                        <div className="space-y-1 bg-slate-50 dark:bg-slate-850 p-3.5 rounded-2xl border border-slate-100 dark:border-slate-800">
+                            <h4 className="text-sm font-black text-slate-850 dark:text-white">{selectedAssetDetail.name}</h4>
+                            <p className="text-slate-500 font-medium">📍 Lokasi: {selectedAssetDetail.location}</p>
+                            {selectedAssetDetail.capacity && <p className="text-slate-500 font-bold">👥 Kapasitas: {selectedAssetDetail.capacity}</p>}
+                        </div>
+
+                        {/* Jadwal Keterpakaian Unit */}
                         <div className="space-y-2">
-                            <h4 className="text-base font-black text-slate-800 dark:text-white">{selectedAssetDetail.name}</h4>
-                            <p className="text-xs text-slate-500 font-medium">Lokasi: {selectedAssetDetail.location}</p>
-                            {selectedAssetDetail.plate && <p className="text-xs text-slate-500 font-mono font-bold">Plat: {selectedAssetDetail.plate}</p>}
-                            {selectedAssetDetail.capacity && <p className="text-xs text-slate-500 font-bold">Kapasitas: {selectedAssetDetail.capacity}</p>}
+                            <div className="flex items-center gap-1.5 font-black text-slate-800 dark:text-white text-xs">
+                                <Calendar className="w-4 h-4 text-ojk-red" />
+                                <span>Jadwal Keterpakaian Unit Ini</span>
+                            </div>
+
+                            <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+                                {allReservations.filter(r => (r.assetId === selectedAssetDetail.id || r.asset?.id === selectedAssetDetail.id) && ['approved', 'in_use', 'reserved'].includes(r.status)).length > 0 ? (
+                                    allReservations.filter(r => (r.assetId === selectedAssetDetail.id || r.asset?.id === selectedAssetDetail.id) && ['approved', 'in_use', 'reserved'].includes(r.status)).map((res: any) => {
+                                        const sDate = res.startDate || res.start_date;
+                                        const eDate = res.endDate || res.end_date;
+                                        return (
+                                            <div key={res.id} className="p-2.5 bg-amber-50 dark:bg-amber-950/30 rounded-xl border border-amber-200/50 dark:border-amber-900/40 text-amber-900 dark:text-amber-300 space-y-1">
+                                                <div className="flex items-center justify-between font-bold text-[11px]">
+                                                    <span>📅 {sDate ? new Date(sDate).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : ''}</span>
+                                                    <span className="font-mono text-[10px] bg-amber-200 dark:bg-amber-900 px-1.5 py-0.5 rounded">
+                                                        {sDate ? `${String(new Date(sDate).getHours()).padStart(2, '0')}.${String(new Date(sDate).getMinutes()).padStart(2, '0')}` : ''} - {eDate ? `${String(new Date(eDate).getHours()).padStart(2, '0')}.${String(new Date(eDate).getMinutes()).padStart(2, '0')}` : ''} WIB
+                                                    </span>
+                                                </div>
+                                                <p className="font-extrabold text-[11px] truncate">{res.purpose}</p>
+                                                <span className="text-[10px] text-amber-700 dark:text-amber-400 block font-medium">Pemohon: {res.user?.name || 'Pegawai OJK'}</span>
+                                            </div>
+                                        );
+                                    })
+                                ) : (
+                                    <div className="p-3.5 bg-emerald-50 dark:bg-emerald-950/30 rounded-xl border border-emerald-100 dark:border-emerald-900/40 text-emerald-700 dark:text-emerald-300 text-center text-[11px] font-medium">
+                                        🟢 Tidak ada jadwal pemakaian untuk unit ini. Kendaraan siap dialokasikan oleh Validator.
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                        <div className="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+
+                        <div className="flex justify-between items-center pt-3 border-t border-slate-100 dark:border-slate-800 gap-2">
                             <Button variant="secondary" onClick={() => setAssetDetailOpen(false)}>
                                 Tutup
                             </Button>
                             <Button 
                                 variant="primary" 
-                                className="bg-ojk-red text-white"
-                                onClick={() => { setAssetDetailOpen(false); handleOpenReservationModal(selectedAssetDetail); }}
+                                className="bg-ojk-red hover:bg-red-700 text-white font-extrabold text-xs"
+                                onClick={() => { setAssetDetailOpen(false); handleOpenReservationModal(); }}
                             >
-                                Reservasi
+                                <PlusCircle className="w-4 h-4 mr-1" />
+                                Ajukan Permohonan Dinas
                             </Button>
                         </div>
                     </div>
