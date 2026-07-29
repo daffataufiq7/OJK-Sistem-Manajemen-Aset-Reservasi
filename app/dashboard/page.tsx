@@ -24,7 +24,12 @@ import {
     Lock,
     CheckSquare,
     Layers,
-    RefreshCw
+    RefreshCw,
+    UserCheck,
+    Users,
+    Phone,
+    AlertCircle,
+    ShieldCheck
 } from 'lucide-react';
 import { Card, CardContent, Button, Badge, toast, Dialog, TextArea, Input, Select } from '@/components/UI';
 import { useRouter } from 'next/navigation';
@@ -89,10 +94,18 @@ export default function DashboardPage() {
     const [resEndDate, setResEndDate] = useState('');
     const [resPurpose, setResPurpose] = useState('');
     const [resDestination, setResDestination] = useState('');
-    const [resDriverRequired, setResDriverRequired] = useState(false);
+    const [resPassengers, setResPassengers] = useState('');
+    const [resDriverRequired, setResDriverRequired] = useState(true);
     const [resDriverName, setResDriverName] = useState('');
     const [resNotes, setResNotes] = useState('');
     const [resSubmitting, setResSubmitting] = useState(false);
+
+    // Validator Approval Assignment Modal State
+    const [approvalModalOpen, setApprovalModalOpen] = useState(false);
+    const [selectedResForApproval, setSelectedResForApproval] = useState<any | null>(null);
+    const [assignAssetId, setAssignAssetId] = useState<number | string>('');
+    const [assignDriverName, setAssignDriverName] = useState(DRIVER_LIST[0]?.name || 'RISKI');
+    const [approvalSubmitting, setApprovalSubmitting] = useState(false);
 
     // vehicleAssets & roomAssets are now loaded from API (see fetchDashboardData below)
 
@@ -193,7 +206,8 @@ export default function DashboardPage() {
         setResEndTime24('17:00');
         setResPurpose('');
         setResDestination('');
-        setResDriverRequired(false);
+        setResPassengers('');
+        setResDriverRequired(true);
         setResDriverName('');
         setResNotes('');
         setReservationModalOpen(true);
@@ -210,6 +224,10 @@ export default function DashboardPage() {
         const start_date = `${resStartDateOnly}T${resStartTime24}`;
         const end_date = `${resEndDateOnly}T${resEndTime24}`;
 
+        const destinationWithPassengers = resPassengers 
+            ? `${resDestination || 'Lokasi Tujuan Dinas'} (Rombongan: ${resPassengers})`
+            : (resDestination || 'Lokasi Tujuan Dinas');
+
         try {
             setResSubmitting(true);
             const res = await fetch('/api/reservations', {
@@ -220,8 +238,8 @@ export default function DashboardPage() {
                     start_date,
                     end_date,
                     purpose: resPurpose,
-                    destination: resDestination,
-                    driver_required: selectedAssetForRes.category === 'Kendaraan',
+                    destination: destinationWithPassengers,
+                    driver_required: true,
                     driver_name: null,
                     notes: resNotes
                 })
@@ -229,16 +247,52 @@ export default function DashboardPage() {
 
             if (!res.ok) {
                 const errData = await res.json();
-                throw new Error(errData.message || 'Gagal mengajukan reservasi');
+                throw new Error(errData.message || 'Gagal mengajukan permohonan dinas');
             }
 
-            toast.success('Pengajuan reservasi berhasil dikirim dan menunggu persetujuan!');
+            toast.success('Pengajuan permohonan dinas berhasil masuk antrian verifikasi!');
             setReservationModalOpen(false);
             fetchDashboardData();
         } catch (error: any) {
-            toast.error(error.message || 'Gagal mengajukan reservasi.');
+            toast.error(error.message || 'Gagal mengajukan permohonan dinas.');
         } finally {
             setResSubmitting(false);
+        }
+    };
+
+    const handleOpenApprovalModal = (resItem: any) => {
+        setSelectedResForApproval(resItem);
+        setAssignAssetId(resItem.assetId || resItem.asset_id || (vehicleAssets[0]?.id ?? ''));
+        setAssignDriverName(resItem.driverName || resItem.driver_name || DRIVER_LIST[0].name);
+        setApprovalModalOpen(true);
+    };
+
+    const handleConfirmApprovalSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!selectedResForApproval) return;
+        try {
+            setApprovalSubmitting(true);
+            const res = await fetch(`/api/reservations/${selectedResForApproval.id}/approve`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    asset_id: assignAssetId,
+                    driver_name: assignDriverName
+                })
+            });
+            if (res.ok) {
+                toast.success(`Permohonan #RSV-${selectedResForApproval.id} berhasil disetujui & dialokasikan!`);
+                setApprovalModalOpen(false);
+                setSelectedResForApproval(null);
+                fetchDashboardData();
+            } else {
+                const err = await res.json();
+                toast.error(err.message || 'Gagal menyetujui permohonan.');
+            }
+        } catch {
+            toast.error('Gagal menyetujui permohonan.');
+        } finally {
+            setApprovalSubmitting(false);
         }
     };
 
@@ -603,10 +657,10 @@ export default function DashboardPage() {
                                                             <td className="px-5 py-3.5 text-right">
                                                                 <div className="flex items-center justify-end gap-1.5">
                                                                     <button
-                                                                        onClick={() => handleQuickApprove(res.id)}
+                                                                        onClick={() => handleOpenApprovalModal(res)}
                                                                         className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[10.5px] font-extrabold transition-all cursor-pointer shadow-2xs"
                                                                     >
-                                                                        Setujui
+                                                                        Setujui & Alokasikan
                                                                     </button>
                                                                     <button
                                                                         onClick={() => handleQuickReject(res.id)}
@@ -864,25 +918,58 @@ export default function DashboardPage() {
                                 <div className="p-5 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 shadow-2xl text-white space-y-3">
                                     <div className="flex items-center justify-between border-b border-white/15 pb-2.5">
                                         <div className="flex items-center gap-2">
-                                            <Calendar className="w-4 h-4 text-red-400" />
-                                            <span className="text-xs font-black">Agenda Hari Ini</span>
+                                            <ShieldCheck className="w-4 h-4 text-red-400" />
+                                            <span className="text-xs font-black">Status Penugasan Dinas</span>
                                         </div>
                                         <span className="text-[10px] font-bold bg-white/20 px-2 py-0.5 rounded-md">
                                             {new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short' })}
                                         </span>
                                     </div>
 
-                                    <div className="space-y-2 max-h-36 overflow-y-auto pr-1">
-                                        <div className="p-2.5 bg-white/10 rounded-xl border border-white/10 space-y-1">
-                                            <span className="text-[9.5px] font-extrabold text-red-300 block uppercase">Ruang Rapat Bale Astama</span>
-                                            <p className="text-[11px] font-bold truncate">Rapat Koordinasi Pengawasan Lembaga Jasa Keuangan</p>
-                                            <span className="text-[9px] text-slate-300 block">09:00 - 12:00 WIB</span>
-                                        </div>
-                                        <div className="p-2.5 bg-white/10 rounded-xl border border-white/10 space-y-1">
-                                            <span className="text-[9.5px] font-extrabold text-emerald-300 block uppercase">Toyota Fortuner (D 1882 E)</span>
-                                            <p className="text-[11px] font-bold truncate">Perjalanan Dinas Kunjungan Kerja Bandung</p>
-                                            <span className="text-[9px] text-slate-300 block">13:30 - 17:00 WIB</span>
-                                        </div>
+                                    <div className="space-y-2 max-h-48 overflow-y-auto pr-1 text-xs">
+                                        {allReservations.filter(r => ['approved', 'in_use', 'pending', 'reserved'].includes(r.status)).length > 0 ? (
+                                            allReservations.filter(r => ['approved', 'in_use', 'pending', 'reserved'].includes(r.status)).slice(0, 1).map((res: any) => {
+                                                const sDate = res.startDate || res.start_date;
+                                                const isApproved = ['approved', 'in_use', 'reserved'].includes(res.status);
+                                                return (
+                                                    <div key={res.id} className="p-3 bg-white/10 rounded-xl border border-white/15 space-y-2">
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="text-[9.5px] font-extrabold text-red-300 uppercase">
+                                                                #RSV-{res.id} &bull; {res.asset?.name || 'Aset OJK'}
+                                                            </span>
+                                                            <span className={`text-[9px] font-black px-2 py-0.5 rounded ${isApproved ? 'bg-emerald-500/80 text-white' : 'bg-amber-500/80 text-white'}`}>
+                                                                {isApproved ? 'DISETUJUI' : 'ANTRIAN'}
+                                                            </span>
+                                                        </div>
+
+                                                        <p className="text-[11px] font-bold truncate">
+                                                            {res.purpose}
+                                                        </p>
+
+                                                        {isApproved ? (
+                                                            <div className="pt-1.5 border-t border-white/10 space-y-1 text-[10.5px]">
+                                                                <div className="flex items-center gap-1.5 text-emerald-300 font-extrabold">
+                                                                    <UserCheck className="w-3.5 h-3.5" />
+                                                                    <span>Driver: {res.driverName || res.driver_name || 'Driver OJK'}</span>
+                                                                </div>
+                                                                <p className="text-[10px] text-slate-200 truncate">
+                                                                    📍 {res.destination || 'Tujuan Dinas'}
+                                                                </p>
+                                                            </div>
+                                                        ) : (
+                                                            <p className="text-[10px] text-slate-300 italic pt-1 border-t border-white/10">
+                                                                ⏳ Validator sedang mengalokasikan mobil & supir...
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })
+                                        ) : (
+                                            <div className="p-4 text-center text-slate-300 space-y-1">
+                                                <p className="text-[11px] font-semibold">Belum Ada Perjalanan Dinas Aktif</p>
+                                                <p className="text-[9.5px] opacity-75">Klik "Ajukan Reservasi" untuk memulai pengajuan.</p>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -1872,23 +1959,33 @@ export default function DashboardPage() {
                     </div>
 
                     <TextArea
-                        label="Keperluan Peminjaman"
+                        label="Keperluan Perjalanan Dinas"
                         placeholder="Contoh: Perjalanan dinas pengawasan LJK ke Cirebon"
                         value={resPurpose}
                         onChange={(e) => setResPurpose(e.target.value)}
                         required
                     />
 
+                    <Input
+                        label="Daftar Anggota / Pendamping Dinas (Dinas Sama Siapa Aja)"
+                        placeholder="Contoh: Budi Santoso (Kabag), Rina Wijaya (Staf LJK)"
+                        value={resPassengers}
+                        onChange={(e) => setResPassengers(e.target.value)}
+                    />
+
                     {selectedAssetForRes?.category === 'Kendaraan' && (
                         <Input
-                            label="Lokasi Tujuan (Opsional)"
+                            label="Lokasi Tujuan Dinas"
                             placeholder="Contoh: Kantor OJK Cirebon / Pemkot Bandung"
                             value={resDestination}
                             onChange={(e) => setResDestination(e.target.value)}
                         />
                     )}
 
-
+                    <div className="p-3 bg-red-50 dark:bg-red-950/30 rounded-xl border border-red-100 dark:border-red-900/40 text-[11px] text-red-700 dark:text-red-300 flex items-center gap-2 font-medium">
+                        <AlertCircle className="w-4 h-4 shrink-0 text-ojk-red" />
+                        <span>Seluruh perjalanan dinas kendaraan wajib menggunakan supir. Armada & Supir akan dialokasikan resmi oleh Validator.</span>
+                    </div>
 
                     <TextArea
                         label="Catatan Tambahan (Opsional)"
@@ -1901,11 +1998,85 @@ export default function DashboardPage() {
                         <Button variant="secondary" onClick={() => setReservationModalOpen(false)}>
                             Batal
                         </Button>
-                        <Button variant="primary" type="submit" disabled={resSubmitting} className="bg-ojk-red text-white">
-                            {resSubmitting ? 'Mengirim...' : 'Kirim Pengajuan'}
+                        <Button variant="primary" type="submit" disabled={resSubmitting} className="bg-ojk-red text-white font-extrabold">
+                            {resSubmitting ? 'Mengirim...' : 'Kirim Ke Antrian Dinas'}
                         </Button>
                     </div>
                 </form>
+            </Dialog>
+
+            {/* VALIDATOR APPROVAL & ASSIGNMENT DIALOG */}
+            <Dialog
+                isOpen={approvalModalOpen}
+                onClose={() => setApprovalModalOpen(false)}
+                title="Persetujuan & Alokasi Armada Dinas"
+                size="md"
+            >
+                {selectedResForApproval && (
+                    <form onSubmit={handleConfirmApprovalSubmit} className="space-y-4 text-xs">
+                        <div className="p-3.5 bg-slate-50 dark:bg-slate-850 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-2">
+                            <div className="flex items-center justify-between">
+                                <span className="font-mono font-extrabold text-slate-500">#RSV-{selectedResForApproval.id}</span>
+                                <span className="px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 font-extrabold text-[10px]">
+                                    Menunggu Alokasi
+                                </span>
+                            </div>
+
+                            <div className="text-slate-800 dark:text-white font-extrabold text-sm">
+                                Pemohon: {selectedResForApproval.user?.name || 'Pegawai OJK'}
+                            </div>
+
+                            <div className="text-slate-600 dark:text-slate-300">
+                                <span className="font-semibold text-slate-400">Keperluan:</span> {selectedResForApproval.purpose}
+                            </div>
+
+                            {selectedResForApproval.destination && (
+                                <div className="text-slate-600 dark:text-slate-300">
+                                    <span className="font-semibold text-slate-400">Tujuan & Rombongan:</span> {selectedResForApproval.destination}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="space-y-3 pt-1">
+                            <Select
+                                label="Alokasikan Unit Kendaraan Dinas"
+                                value={assignAssetId}
+                                onChange={(e) => setAssignAssetId(e.target.value)}
+                                required
+                            >
+                                <option value="">-- Pilih Kendaraan Kosong --</option>
+                                {[...vehicleAssets, ...roomAssets].map(a => (
+                                    <option key={a.id} value={a.id}>
+                                        {a.name} ({a.code || 'ASET'}) - Status: {a.status}
+                                    </option>
+                                ))}
+                            </Select>
+
+                            <Select
+                                label="Penugasan Supir / Driver Operasional"
+                                value={assignDriverName}
+                                onChange={(e) => setAssignDriverName(e.target.value)}
+                                required
+                            >
+                                <option value="">-- Pilih Supir Bertugas --</option>
+                                {DRIVER_LIST.map(d => (
+                                    <option key={d.id} value={d.name}>
+                                        {d.name} ({d.nip} &bull; {d.phone})
+                                    </option>
+                                ))}
+                            </Select>
+                        </div>
+
+                        <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                            <Button variant="secondary" type="button" onClick={() => setApprovalModalOpen(false)}>
+                                Batal
+                            </Button>
+                            <Button variant="primary" type="submit" disabled={approvalSubmitting} className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold">
+                                {approvalSubmitting ? 'Memproses...' : 'Setujui & Alokasikan Armada'}
+                            </Button>
+                        </div>
+                    </form>
+                )}
             </Dialog>
 
             {/* ASSET DETAIL DIALOG */}

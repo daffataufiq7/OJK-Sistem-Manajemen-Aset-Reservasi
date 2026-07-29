@@ -24,9 +24,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const targetStatus = isCurrentTimeInUse ? 'in_use' : 'approved';
     const targetAssetStatus = isCurrentTimeInUse ? 'in_use' : 'reserved';
 
+    const targetAssetId = body.asset_id || body.assetId;
     const updateData: any = { status: targetStatus };
     if (driverName) {
       updateData.driverName = driverName;
+    }
+    if (targetAssetId && !isNaN(Number(targetAssetId))) {
+      updateData.assetId = Number(targetAssetId);
     }
 
     const reservation = await prisma.reservation.update({
