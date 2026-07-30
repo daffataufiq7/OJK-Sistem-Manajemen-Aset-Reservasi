@@ -1044,13 +1044,14 @@ export default function DashboardPage() {
                                 </p>
                             </div>
 
-                            <Button
+                            <button
+                                type="button"
                                 onClick={() => handleOpenReservationModal()}
-                                className="relative z-10 rounded-xl text-xs font-black bg-white text-ojk-red hover:bg-red-50 hover:scale-105 active:scale-95 py-3.5 px-7 shadow-lg transition-all cursor-pointer shrink-0 border border-white/20"
+                                className="relative z-10 flex items-center gap-2 rounded-xl text-xs font-black bg-white !text-red-700 hover:bg-red-50 hover:scale-105 active:scale-95 py-3.5 px-7 shadow-lg transition-all cursor-pointer shrink-0 border border-red-100"
                             >
-                                <PlusCircle className="w-4 h-4 mr-2" />
+                                <PlusCircle className="w-4 h-4" />
                                 Isi Permohonan Dinas Baru
-                            </Button>
+                            </button>
                         </Card>
                     </div>
 
