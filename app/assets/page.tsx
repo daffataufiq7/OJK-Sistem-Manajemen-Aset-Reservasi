@@ -187,9 +187,44 @@ export default function AssetsPage() {
     // ─── File Drag & Drop ────────────────────────────────────────────────────
     const processFile = (file: File) => {
         if (!file.type.startsWith('image/')) { toast.error('File harus berupa gambar (JPG, PNG, WEBP).'); return; }
-        if (file.size > 7 * 1024 * 1024)    { toast.error('Ukuran gambar maksimal 7 MB.'); return; }
+        if (file.size > 10 * 1024 * 1024)   { toast.error('Ukuran file maksimal 10 MB.'); return; }
+        
         const reader = new FileReader();
-        reader.onload  = () => { setPhoto(reader.result as string); toast.success('Foto berhasil dimuat!'); };
+        reader.onload = (e) => {
+            const rawDataUrl = e.target?.result as string;
+            const img = new Image();
+            img.onload = () => {
+                try {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    const maxDim = 1200;
+                    if (width > maxDim || height > maxDim) {
+                        if (width > height) {
+                            height = Math.round((height * maxDim) / width);
+                            width = maxDim;
+                        } else {
+                            width = Math.round((width * maxDim) / height);
+                            height = maxDim;
+                        }
+                    }
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    if (ctx) {
+                        ctx.drawImage(img, 0, 0, width, height);
+                        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8);
+                        setPhoto(compressedBase64);
+                        toast.success('Foto berhasil dimuat & dioptimasi!');
+                        return;
+                    }
+                } catch {}
+                setPhoto(rawDataUrl);
+                toast.success('Foto berhasil dimuat!');
+            };
+            img.onerror = () => toast.error('Gagal memproses gambar.');
+            img.src = rawDataUrl;
+        };
         reader.onerror = () => toast.error('Gagal membaca file gambar.');
         reader.readAsDataURL(file);
     };
@@ -474,7 +509,7 @@ export default function AssetsPage() {
                                     <p className="text-xs font-bold text-slate-800 dark:text-slate-200">Geser & Lepas foto di sini</p>
                                     <p className="text-[11px] text-slate-400 font-medium">atau <span className="text-ojk-red font-semibold underline">klik untuk memilih gambar</span></p>
                                 </div>
-                                <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">PNG, JPG, WEBP (Maks 7MB)</span>
+                                <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">PNG, JPG, WEBP (Maks 10MB • Auto Optimasi)</span>
                             </div>
                         )}
                     </div>
