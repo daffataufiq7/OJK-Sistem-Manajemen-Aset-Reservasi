@@ -6,7 +6,7 @@ import { DataTable } from '@/components/DataTable';
 import { Button, Input, Select, Dialog, Badge, toast } from '@/components/UI';
 import { 
     Plus, Edit2, Trash2, ShieldAlert, UploadCloud, Car, Building2,
-    CheckCircle2, RefreshCw, MapPin, Handshake, LayoutGrid
+    CheckCircle2, RefreshCw, MapPin, Handshake, LayoutGrid, ZoomIn, Eye
 } from 'lucide-react';
 
 interface AssetCategory { id: number; name: string; slug?: string; }
@@ -121,6 +121,7 @@ export default function AssetsPage() {
     const [photo, setPhoto]       = useState<string>('');
     const [dragActive, setDragActive] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+    const [previewAsset, setPreviewAsset] = useState<Asset | null>(null);
 
     const currentTabConfig = TABS.find(t => t.key === activeTab)!;
     const colors = TAB_COLORS[activeTab];
@@ -276,29 +277,38 @@ export default function AssetsPage() {
         {
             key: 'name', header: 'Nama & Foto Aset',
             render: (a: Asset) => (
-                <div className="flex items-center gap-3.5 min-w-[240px]">
-                    <div className="relative shrink-0">
+                <div className="flex items-center gap-4 min-w-[320px] py-1">
+                    <div 
+                        onClick={() => a.photo && setPreviewAsset(a)}
+                        className={`relative shrink-0 w-36 h-24 sm:w-44 sm:h-28 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-md group ${a.photo ? 'cursor-pointer' : ''} bg-slate-100 dark:bg-slate-800 transition-all duration-300 hover:shadow-lg`}
+                    >
                         {a.photo ? (
-                            <img src={a.photo} alt={a.name} className="w-14 h-14 object-cover rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xs" />
+                            <>
+                                <img src={a.photo} alt={a.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[11px] font-bold gap-1.5 backdrop-blur-[1px]">
+                                    <ZoomIn className="w-4 h-4" /> Lihat Foto Full
+                                </div>
+                            </>
                         ) : (
-                            <div className={`w-14 h-14 rounded-xl flex items-center justify-center border ${colors.badge}`}>
-                                {activeTab === 'kendaraan'   ? <Car className="w-6 h-6" /> :
-                                 activeTab === 'ruangan'     ? <Building2 className="w-6 h-6" /> :
-                                                               <Handshake className="w-6 h-6" />}
+                            <div className={`w-full h-full flex flex-col items-center justify-center border ${colors.badge}`}>
+                                {activeTab === 'kendaraan'   ? <Car className="w-8 h-8 opacity-60" /> :
+                                 activeTab === 'ruangan'     ? <Building2 className="w-8 h-8 opacity-60" /> :
+                                                               <Handshake className="w-8 h-8 opacity-60" />}
+                                <span className="text-[10px] text-slate-400 mt-1 font-extrabold uppercase tracking-wider">Tanpa Foto</span>
                             </div>
                         )}
                         {a.capacity && (
-                            <span className="absolute top-0.5 left-0.5 bg-blue-600/90 backdrop-blur-md text-white text-[8.5px] font-extrabold px-1.5 py-0.5 rounded shadow-sm flex items-center gap-0.5">
+                            <span className="absolute top-1.5 left-1.5 bg-black/75 backdrop-blur-md text-white text-[9.5px] font-extrabold px-2 py-0.5 rounded-md shadow-sm flex items-center gap-1 border border-white/20">
                                 👥 {a.capacity}
                             </span>
                         )}
                     </div>
-                    <div className="flex flex-col leading-tight overflow-hidden">
-                        <span className="font-extrabold text-slate-850 dark:text-white text-xs truncate max-w-[200px]" title={a.name}>{a.name}</span>
-                        <span className="text-[11px] text-slate-400 font-mono font-bold mt-0.5">{a.code}</span>
+                    <div className="flex flex-col leading-tight overflow-hidden space-y-1">
+                        <span className="font-black text-slate-850 dark:text-white text-xs sm:text-sm tracking-tight truncate max-w-[220px]" title={a.name}>{a.name}</span>
+                        <span className="text-[11px] text-slate-400 font-mono font-bold">{a.code}</span>
                         {a.capacity && (
-                            <span className="text-[10px] text-blue-600 dark:text-blue-400 font-extrabold mt-0.5">
-                                Kapasitas: {a.capacity}
+                            <span className="text-[10.5px] text-blue-600 dark:text-blue-400 font-extrabold flex items-center gap-1">
+                                👥 Kapasitas: {a.capacity} Orang
                             </span>
                         )}
                     </div>
@@ -482,15 +492,24 @@ export default function AssetsPage() {
                         </label>
 
                         {photo ? (
-                            <div className="relative rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 p-3 flex items-center gap-4">
-                                <img src={photo} alt="Preview" className="w-20 h-20 object-cover rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xs shrink-0" />
-                                <div className="flex flex-col space-y-1">
-                                    <span className="text-xs font-bold text-slate-800 dark:text-slate-100">Foto Berhasil Dimuat</span>
-                                    <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
-                                        <CheckCircle2 className="w-3.5 h-3.5" /> Gambar siap disimpan
+                            <div className="relative rounded-2xl border-2 border-emerald-500/30 dark:border-emerald-500/40 bg-emerald-50/50 dark:bg-emerald-950/20 p-3 space-y-2.5">
+                                <div className="relative w-full h-56 sm:h-64 rounded-xl overflow-hidden shadow-md border border-slate-200 dark:border-slate-700 bg-slate-900/5">
+                                    <img src={photo} alt="Preview Foto Aset" className="w-full h-full object-cover" />
+                                    <span className="absolute top-3 right-3 bg-emerald-600/90 backdrop-blur-md text-white text-[10px] font-black px-3 py-1 rounded-full shadow-lg flex items-center gap-1.5 uppercase tracking-wider border border-white/20">
+                                        <CheckCircle2 className="w-4 h-4 text-emerald-200" /> Foto Aktif Terpasang
                                     </span>
-                                    <button type="button" onClick={() => setPhoto('')} className="text-xs text-ojk-red font-bold hover:underline cursor-pointer text-left pt-1">
-                                        Ganti Foto / Upload Ulang...
+                                </div>
+                                <div className="flex items-center justify-between px-1">
+                                    <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300 font-extrabold text-xs">
+                                        <CheckCircle2 className="w-4 h-4 shrink-0" />
+                                        <span>Foto Siap Disimpan Saat Tekan 'Simpan Aset'</span>
+                                    </div>
+                                    <button 
+                                        type="button" 
+                                        onClick={() => setPhoto('')} 
+                                        className="text-xs text-ojk-red font-black hover:bg-red-100/60 dark:hover:bg-red-950/60 cursor-pointer flex items-center gap-1.5 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-red-200 dark:border-red-900/50 shadow-xs transition-all"
+                                    >
+                                        <RefreshCw className="w-3.5 h-3.5" /> Ganti / Upload Ulang Foto
                                     </button>
                                 </div>
                             </div>
@@ -576,6 +595,35 @@ export default function AssetsPage() {
                         </button>
                     </div>
                 </form>
+            </Dialog>
+
+            {/* ── Modal Lightbox Preview Foto Aset Full-Size ── */}
+            <Dialog
+                isOpen={!!previewAsset}
+                onClose={() => setPreviewAsset(null)}
+                title={`Pratinjau Foto: ${previewAsset?.name || ''}`}
+                size="lg"
+            >
+                {previewAsset && (
+                    <div className="space-y-4 font-sans">
+                        <div className="relative w-full max-h-[70vh] rounded-2xl overflow-hidden shadow-2xl bg-black/90 flex items-center justify-center p-2 border border-slate-700">
+                            <img 
+                                src={previewAsset.photo || ''} 
+                                alt={previewAsset.name} 
+                                className="max-w-full max-h-[65vh] object-contain rounded-xl"
+                            />
+                        </div>
+                        <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700">
+                            <div>
+                                <h4 className="font-extrabold text-sm text-slate-850 dark:text-white">{previewAsset.name}</h4>
+                                <p className="text-xs text-slate-400 font-mono font-bold mt-0.5">{previewAsset.code} • {previewAsset.location}</p>
+                            </div>
+                            <Button variant="secondary" onClick={() => setPreviewAsset(null)} className="rounded-xl text-xs font-bold">
+                                Tutup Pratinjau
+                            </Button>
+                        </div>
+                    </div>
+                )}
             </Dialog>
         </div>
     );
