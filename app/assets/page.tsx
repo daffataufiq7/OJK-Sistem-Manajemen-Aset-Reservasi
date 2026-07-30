@@ -187,7 +187,7 @@ export default function AssetsPage() {
     // ─── File Drag & Drop ────────────────────────────────────────────────────
     const processFile = (file: File) => {
         if (!file.type.startsWith('image/')) { toast.error('File harus berupa gambar (JPG, PNG, WEBP).'); return; }
-        if (file.size > 5 * 1024 * 1024)    { toast.error('Ukuran gambar maksimal 5 MB.'); return; }
+        if (file.size > 10 * 1024 * 1024)   { toast.error('Ukuran gambar maksimal 10 MB.'); return; }
         const reader = new FileReader();
         reader.onload  = () => { setPhoto(reader.result as string); toast.success('Foto berhasil dimuat!'); };
         reader.onerror = () => toast.error('Gagal membaca file gambar.');
@@ -474,7 +474,7 @@ export default function AssetsPage() {
                                     <p className="text-xs font-bold text-slate-800 dark:text-slate-200">Geser & Lepas foto di sini</p>
                                     <p className="text-[11px] text-slate-400 font-medium">atau <span className="text-ojk-red font-semibold underline">klik untuk memilih gambar</span></p>
                                 </div>
-                                <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">PNG, JPG, WEBP (Maks 5MB)</span>
+                                <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">PNG, JPG, WEBP (Maks 10MB)</span>
                             </div>
                         )}
                     </div>
