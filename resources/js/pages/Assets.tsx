@@ -72,8 +72,8 @@ export const Assets: React.FC = () => {
             return;
         }
         
-        if (file.size > 10 * 1024 * 1024) {
-            toast.error('Ukuran gambar maksimal 10 MB.');
+        if (file.size > 7 * 1024 * 1024) {
+            toast.error('Ukuran gambar maksimal 7 MB.');
             return;
         }
 
@@ -531,7 +531,7 @@ export const Assets: React.FC = () => {
                                     Drag & drop gambar ke sini, atau klik untuk memilih file
                                 </span>
                                 <span className="text-[10px] font-medium text-slate-450 dark:text-slate-500 mt-1">
-                                    Format: JPG, PNG, WEBP (Maks. 10MB)
+                                    Format: JPG, PNG, WEBP (Maks. 7MB)
                                 </span>
                             </div>
                         )}
