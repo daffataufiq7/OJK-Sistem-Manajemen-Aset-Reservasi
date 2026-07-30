@@ -6,7 +6,8 @@ import { DataTable } from '@/components/DataTable';
 import { Button, Input, Select, Dialog, Badge, toast } from '@/components/UI';
 import { 
     Plus, Edit2, Trash2, ShieldAlert, UploadCloud, Car, Building2,
-    CheckCircle2, RefreshCw, MapPin, Handshake, LayoutGrid, ZoomIn, Eye
+    CheckCircle2, RefreshCw, MapPin, Handshake, LayoutGrid, ZoomIn, Eye,
+    Crop, ZoomOut, RotateCw, Move, Check, Sliders
 } from 'lucide-react';
 
 interface AssetCategory { id: number; name: string; slug?: string; }
@@ -123,6 +124,15 @@ export default function AssetsPage() {
     const [submitting, setSubmitting] = useState(false);
     const [previewAsset, setPreviewAsset] = useState<Asset | null>(null);
 
+    // ─── Crop & Position Image States ─────────────────────────────────────────
+    const [cropModalOpen, setCropModalOpen] = useState(false);
+    const [rawImageForCrop, setRawImageForCrop] = useState<string | null>(null);
+    const [cropZoom, setCropZoom] = useState(1);
+    const [cropOffset, setCropOffset] = useState({ x: 0, y: 0 });
+    const [cropRotation, setCropRotation] = useState(0);
+    const [isDraggingCrop, setIsDraggingCrop] = useState(false);
+    const [dragStartPos, setDragStartPos] = useState({ x: 0, y: 0 });
+
     const currentTabConfig = TABS.find(t => t.key === activeTab)!;
     const colors = TAB_COLORS[activeTab];
 
@@ -185,7 +195,15 @@ export default function AssetsPage() {
         setModalOpen(true);
     };
 
-    // ─── File Drag & Drop ────────────────────────────────────────────────────
+    // ─── File Drag & Drop & Crop ─────────────────────────────────────────────
+    const openCropModalWithImage = (imageUrl: string) => {
+        setRawImageForCrop(imageUrl);
+        setCropZoom(1);
+        setCropOffset({ x: 0, y: 0 });
+        setCropRotation(0);
+        setCropModalOpen(true);
+    };
+
     const processFile = (file: File) => {
         if (!file.type.startsWith('image/')) { toast.error('File harus berupa gambar (JPG, PNG, WEBP).'); return; }
         if (file.size > 10 * 1024 * 1024)   { toast.error('Ukuran file maksimal 10 MB.'); return; }
@@ -193,41 +211,64 @@ export default function AssetsPage() {
         const reader = new FileReader();
         reader.onload = (e) => {
             const rawDataUrl = e.target?.result as string;
-            const img = new Image();
-            img.onload = () => {
-                try {
-                    const canvas = document.createElement('canvas');
-                    let width = img.width;
-                    let height = img.height;
-                    const maxDim = 1200;
-                    if (width > maxDim || height > maxDim) {
-                        if (width > height) {
-                            height = Math.round((height * maxDim) / width);
-                            width = maxDim;
-                        } else {
-                            width = Math.round((width * maxDim) / height);
-                            height = maxDim;
-                        }
-                    }
-                    canvas.width = width;
-                    canvas.height = height;
-                    const ctx = canvas.getContext('2d');
-                    if (ctx) {
-                        ctx.drawImage(img, 0, 0, width, height);
-                        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8);
-                        setPhoto(compressedBase64);
-                        toast.success('Foto berhasil dimuat & dioptimasi!');
-                        return;
-                    }
-                } catch {}
-                setPhoto(rawDataUrl);
-                toast.success('Foto berhasil dimuat!');
-            };
-            img.onerror = () => toast.error('Gagal memproses gambar.');
-            img.src = rawDataUrl;
+            openCropModalWithImage(rawDataUrl);
         };
         reader.onerror = () => toast.error('Gagal membaca file gambar.');
         reader.readAsDataURL(file);
+    };
+
+    const handleApplyCrop = () => {
+        if (!rawImageForCrop) return;
+        const img = new Image();
+        img.onload = () => {
+            try {
+                const outputWidth = 1200;
+                const outputHeight = 675; // 16:9 ratio
+                const canvas = document.createElement('canvas');
+                canvas.width = outputWidth;
+                canvas.height = outputHeight;
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(0, 0, outputWidth, outputHeight);
+
+                    ctx.save();
+                    ctx.translate(outputWidth / 2, outputHeight / 2);
+                    ctx.rotate((cropRotation * Math.PI) / 180);
+
+                    const viewportW = 480;
+                    const scaleFactor = outputWidth / viewportW;
+                    ctx.translate(cropOffset.x * scaleFactor, cropOffset.y * scaleFactor);
+                    ctx.scale(cropZoom, cropZoom);
+
+                    const imgRatio = img.width / img.height;
+                    const targetRatio = outputWidth / outputHeight;
+                    let drawW = outputWidth;
+                    let drawH = outputHeight;
+                    if (imgRatio > targetRatio) {
+                        drawH = outputHeight;
+                        drawW = outputHeight * imgRatio;
+                    } else {
+                        drawW = outputWidth;
+                        drawH = outputWidth / imgRatio;
+                    }
+
+                    ctx.drawImage(img, -drawW / 2, -drawH / 2, drawW, drawH);
+                    ctx.restore();
+
+                    const croppedBase64 = canvas.toDataURL('image/jpeg', 0.85);
+                    setPhoto(croppedBase64);
+                    setCropModalOpen(false);
+                    toast.success('Posisi foto & potong gambar berhasil diterapkan!');
+                    return;
+                }
+            } catch {}
+            setPhoto(rawImageForCrop);
+            setCropModalOpen(false);
+            toast.success('Foto berhasil dimuat!');
+        };
+        img.onerror = () => toast.error('Gagal memproses gambar.');
+        img.src = rawImageForCrop;
     };
     const handleDrag = (e: React.DragEvent) => {
         e.preventDefault(); e.stopPropagation();
@@ -499,18 +540,27 @@ export default function AssetsPage() {
                                         <CheckCircle2 className="w-4 h-4 text-emerald-200" /> Foto Aktif Terpasang
                                     </span>
                                 </div>
-                                <div className="flex items-center justify-between px-1">
+                                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 px-1">
                                     <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300 font-extrabold text-xs">
                                         <CheckCircle2 className="w-4 h-4 shrink-0" />
                                         <span>Foto Siap Disimpan Saat Tekan 'Simpan Aset'</span>
                                     </div>
-                                    <button 
-                                        type="button" 
-                                        onClick={() => setPhoto('')} 
-                                        className="text-xs text-ojk-red font-black hover:bg-red-100/60 dark:hover:bg-red-950/60 cursor-pointer flex items-center gap-1.5 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-red-200 dark:border-red-900/50 shadow-xs transition-all"
-                                    >
-                                        <RefreshCw className="w-3.5 h-3.5" /> Ganti / Upload Ulang Foto
-                                    </button>
+                                    <div className="flex items-center gap-2 shrink-0">
+                                        <button 
+                                            type="button" 
+                                            onClick={() => openCropModalWithImage(photo)} 
+                                            className="text-xs text-blue-700 dark:text-blue-300 font-extrabold hover:bg-blue-100/60 dark:hover:bg-blue-950/60 cursor-pointer flex items-center gap-1.5 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-blue-200 dark:border-blue-900/50 shadow-xs transition-all"
+                                        >
+                                            <Crop className="w-3.5 h-3.5 text-blue-600" /> Atur / Geser Posisi
+                                        </button>
+                                        <button 
+                                            type="button" 
+                                            onClick={() => setPhoto('')} 
+                                            className="text-xs text-ojk-red font-black hover:bg-red-100/60 dark:hover:bg-red-950/60 cursor-pointer flex items-center gap-1.5 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-red-200 dark:border-red-900/50 shadow-xs transition-all"
+                                        >
+                                            <RefreshCw className="w-3.5 h-3.5" /> Upload Ulang
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         ) : (
@@ -620,6 +670,157 @@ export default function AssetsPage() {
                             </div>
                             <Button variant="secondary" onClick={() => setPreviewAsset(null)} className="rounded-xl text-xs font-bold">
                                 Tutup Pratinjau
+                            </Button>
+                        </div>
+                    </div>
+                )}
+            </Dialog>
+
+            {/* ── Modal Interaktif Crop & Posisi Foto Aset ── */}
+            <Dialog
+                isOpen={cropModalOpen}
+                onClose={() => setCropModalOpen(false)}
+                title="Atur Posisi & Potong (Crop) Foto Aset"
+                size="lg"
+            >
+                {rawImageForCrop && (
+                    <div className="space-y-4 font-sans text-xs">
+                        {/* Notice Header */}
+                        <div className="p-3 bg-blue-50 dark:bg-blue-950/40 rounded-xl border border-blue-100 dark:border-blue-900/50 text-[11.5px] text-blue-800 dark:text-blue-200 flex items-center justify-between font-semibold">
+                            <div className="flex items-center gap-2">
+                                <Move className="w-4 h-4 text-blue-600 shrink-0" />
+                                <span>Klik & geser gambar di dalam bingkai untuk menyesuaikan posisi tengah.</span>
+                            </div>
+                            <span className="bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider">
+                                Aspect 16:9
+                            </span>
+                        </div>
+
+                        {/* Interactive Viewport Crop Container */}
+                        <div className="flex justify-center bg-slate-950 p-4 rounded-2xl border border-slate-800 shadow-inner overflow-hidden">
+                            <div 
+                                className="relative w-[480px] h-[270px] max-w-full rounded-2xl overflow-hidden shadow-2xl border-2 border-dashed border-white/40 cursor-grab active:cursor-grabbing select-none bg-black/60 flex items-center justify-center group"
+                                onMouseDown={(e) => {
+                                    setIsDraggingCrop(true);
+                                    setDragStartPos({ x: e.clientX - cropOffset.x, y: e.clientY - cropOffset.y });
+                                }}
+                                onMouseMove={(e) => {
+                                    if (isDraggingCrop) {
+                                        setCropOffset({ x: e.clientX - dragStartPos.x, y: e.clientY - dragStartPos.y });
+                                    }
+                                }}
+                                onMouseUp={() => setIsDraggingCrop(false)}
+                                onMouseLeave={() => setIsDraggingCrop(false)}
+                                onTouchStart={(e) => {
+                                    if (e.touches[0]) {
+                                        setIsDraggingCrop(true);
+                                        setDragStartPos({ x: e.touches[0].clientX - cropOffset.x, y: e.touches[0].clientY - cropOffset.y });
+                                    }
+                                }}
+                                onTouchMove={(e) => {
+                                    if (isDraggingCrop && e.touches[0]) {
+                                        setCropOffset({ x: e.touches[0].clientX - dragStartPos.x, y: e.touches[0].clientY - dragStartPos.y });
+                                    }
+                                }}
+                                onTouchEnd={() => setIsDraggingCrop(false)}
+                            >
+                                {/* Grid Rule of Thirds Overlay Lines */}
+                                <div className="absolute inset-0 pointer-events-none z-10 grid grid-cols-3 grid-rows-3 opacity-30 group-hover:opacity-60 transition-opacity">
+                                    <div className="border-r border-b border-white/60"></div>
+                                    <div className="border-r border-b border-white/60"></div>
+                                    <div className="border-b border-white/60"></div>
+                                    <div className="border-r border-b border-white/60"></div>
+                                    <div className="border-r border-b border-white/60"></div>
+                                    <div className="border-b border-white/60"></div>
+                                    <div className="border-r border-white/60"></div>
+                                    <div className="border-r border-white/60"></div>
+                                    <div></div>
+                                </div>
+
+                                {/* Watermark Instruction Overlay */}
+                                <div className="absolute top-2 left-2 z-10 bg-black/60 backdrop-blur-md text-white text-[9.5px] font-extrabold px-2.5 py-1 rounded-lg border border-white/20 flex items-center gap-1.5 pointer-events-none">
+                                    <Move className="w-3 h-3 text-blue-400" /> Geser Gambar dengan Drag Mouse
+                                </div>
+
+                                {/* Transformed Image */}
+                                <img
+                                    src={rawImageForCrop}
+                                    alt="Crop Preview"
+                                    draggable={false}
+                                    style={{
+                                        transform: `translate(${cropOffset.x}px, ${cropOffset.y}px) scale(${cropZoom}) rotate(${cropRotation}deg)`,
+                                        transition: isDraggingCrop ? 'none' : 'transform 0.15s ease-out',
+                                    }}
+                                    className="max-w-none max-h-none pointer-events-none w-full h-full object-cover origin-center"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Interactive Controls Bar */}
+                        <div className="p-3.5 bg-slate-50 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
+                            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                                {/* Zoom Slider */}
+                                <div className="flex items-center gap-3 w-full sm:w-2/3">
+                                    <label className="font-extrabold text-slate-700 dark:text-slate-200 flex items-center gap-1.5 shrink-0 text-[11px]">
+                                        <ZoomIn className="w-3.5 h-3.5 text-blue-600" /> Zoom ({Math.round(cropZoom * 100)}%):
+                                    </label>
+                                    <button 
+                                        type="button" 
+                                        onClick={() => setCropZoom(prev => Math.max(0.5, prev - 0.1))}
+                                        className="p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300"
+                                    >
+                                        <ZoomOut className="w-4 h-4" />
+                                    </button>
+                                    <input 
+                                        type="range" 
+                                        min="0.5" 
+                                        max="3" 
+                                        step="0.05" 
+                                        value={cropZoom} 
+                                        onChange={(e) => setCropZoom(parseFloat(e.target.value))}
+                                        className="w-full accent-blue-600 cursor-pointer h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg"
+                                    />
+                                    <button 
+                                        type="button" 
+                                        onClick={() => setCropZoom(prev => Math.min(3, prev + 0.1))}
+                                        className="p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300"
+                                    >
+                                        <ZoomIn className="w-4 h-4" />
+                                    </button>
+                                </div>
+
+                                {/* Action Quick Tools (Rotate & Reset) */}
+                                <div className="flex items-center gap-2 shrink-0">
+                                    <button
+                                        type="button"
+                                        onClick={() => setCropRotation(prev => (prev + 90) % 360)}
+                                        className="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 font-bold text-slate-700 dark:text-slate-200 text-xs flex items-center gap-1.5 hover:bg-slate-100 dark:hover:bg-slate-600 transition-all cursor-pointer shadow-2xs"
+                                    >
+                                        <RotateCw className="w-3.5 h-3.5 text-slate-500" /> Putar 90°
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => { setCropZoom(1); setCropOffset({ x: 0, y: 0 }); setCropRotation(0); }}
+                                        className="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 font-bold text-slate-700 dark:text-slate-200 text-xs flex items-center gap-1.5 hover:bg-slate-100 dark:hover:bg-slate-600 transition-all cursor-pointer shadow-2xs"
+                                    >
+                                        <RefreshCw className="w-3.5 h-3.5 text-slate-500" /> Reset Posisi
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Footer Buttons */}
+                        <div className="flex justify-end gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800">
+                            <Button variant="secondary" type="button" onClick={() => setCropModalOpen(false)} className="rounded-xl font-bold">
+                                Batal
+                            </Button>
+                            <Button 
+                                variant="primary" 
+                                type="button" 
+                                onClick={handleApplyCrop}
+                                className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold px-5 flex items-center gap-2 cursor-pointer shadow-md"
+                            >
+                                <Check className="w-4 h-4" /> Terapkan & Potong Foto
                             </Button>
                         </div>
                     </div>
