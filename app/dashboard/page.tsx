@@ -193,12 +193,8 @@ export default function DashboardPage() {
     const [resEndDateOnly, setResEndDateOnly] = useState('');
     const [resEndTime24, setResEndTime24] = useState('17:00');
 
-    const handleOpenReservationModal = (asset?: CatalogAsset) => {
-        if (asset) {
-            setSelectedAssetForRes(asset);
-        } else {
-            setSelectedAssetForRes(vehicleAssets[0]);
-        }
+    const handleOpenReservationModal = () => {
+        setSelectedAssetForRes(null);
         const todayStr = new Date().toISOString().split('T')[0];
         setResStartDateOnly(todayStr);
         setResStartTime24('08:00');
@@ -1030,6 +1026,34 @@ export default function DashboardPage() {
                         </div>
                     </section>
 
+                    {/* DEDICATED TRIP REQUEST CARD FOR PEGAWAI */}
+                    <div className="px-6 md:px-8 pt-4">
+                        <Card className="p-6 rounded-[24px] border border-red-100 dark:border-red-900/30 bg-gradient-to-r from-red-600 via-red-700 to-slate-900 text-white shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden group">
+                            <div className="absolute right-0 top-0 -mr-10 -mt-10 w-48 h-48 bg-white/10 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-700 pointer-events-none"></div>
+
+                            <div className="space-y-2 relative z-10 max-w-2xl">
+                                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md text-[10px] font-extrabold uppercase tracking-widest text-red-200">
+                                    <PlusCircle className="w-3.5 h-3.5 text-red-200" />
+                                    <span>Layanan Resmi Dinas OJK</span>
+                                </div>
+                                <h3 className="text-xl md:text-2xl font-black tracking-tight">
+                                    Formulir Permohonan Perjalanan Dinas Baru
+                                </h3>
+                                <p className="text-xs text-red-100/90 font-medium leading-relaxed">
+                                    Ajukan permohonan dinas dengan mengisi jadwal berangkat, lokasi tujuan, keperluan, dan rombongan. Validator akan mengalokasikan armada kendaraan & supir operasional secara resmi.
+                                </p>
+                            </div>
+
+                            <Button
+                                onClick={() => handleOpenReservationModal()}
+                                className="relative z-10 rounded-xl text-xs font-black bg-white text-ojk-red hover:bg-red-50 hover:scale-105 active:scale-95 py-3.5 px-7 shadow-lg transition-all cursor-pointer shrink-0 border border-white/20"
+                            >
+                                <PlusCircle className="w-4 h-4 mr-2" />
+                                Isi Permohonan Dinas Baru
+                            </Button>
+                        </Card>
+                    </div>
+
                     {/* SECTION 2: KENDARAAN DINAS */}
                     <section 
                         id="sec-kendaraan" 
@@ -1289,7 +1313,7 @@ export default function DashboardPage() {
                                             <Button 
                                                 variant="primary" 
                                                 className="w-full text-xs font-bold py-2.5 rounded-xl bg-ojk-red hover:bg-red-700 text-white cursor-pointer shadow-sm"
-                                                onClick={() => handleOpenReservationModal(room)}
+                                                onClick={() => handleOpenReservationModal()}
                                             >
                                                 Reservasi
                                             </Button>
@@ -1385,7 +1409,7 @@ export default function DashboardPage() {
                                             <Button 
                                                 variant="primary" 
                                                 className="w-full text-xs font-bold py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white cursor-pointer shadow-sm"
-                                                onClick={() => handleOpenReservationModal(partner)}
+                                                onClick={() => handleOpenReservationModal()}
                                             >
                                                 Reservasi
                                             </Button>
@@ -1899,7 +1923,7 @@ export default function DashboardPage() {
             <Dialog
                 isOpen={reservationModalOpen}
                 onClose={() => setReservationModalOpen(false)}
-                title={`Formulir Reservasi: ${selectedAssetForRes?.name || 'Aset'}`}
+                title="Formulir Permohonan Perjalanan Dinas OJK"
                 size="md"
             >
                 <form onSubmit={handleCreateReservationSubmit} className="space-y-4">
@@ -1974,14 +1998,13 @@ export default function DashboardPage() {
                         onChange={(e) => setResPassengers(e.target.value)}
                     />
 
-                    {selectedAssetForRes?.category === 'Kendaraan' && (
-                        <Input
-                            label="Lokasi Tujuan Dinas"
-                            placeholder="Contoh: Kantor OJK Cirebon / Pemkot Bandung"
-                            value={resDestination}
-                            onChange={(e) => setResDestination(e.target.value)}
-                        />
-                    )}
+                    <Input
+                        label="Lokasi Tujuan Dinas"
+                        placeholder="Contoh: Kantor OJK Cirebon / Pemkot Bandung"
+                        value={resDestination}
+                        onChange={(e) => setResDestination(e.target.value)}
+                        required
+                    />
 
                     <div className="p-3 bg-red-50 dark:bg-red-950/30 rounded-xl border border-red-100 dark:border-red-900/40 text-[11px] text-red-700 dark:text-red-300 flex items-center gap-2 font-medium">
                         <AlertCircle className="w-4 h-4 shrink-0 text-ojk-red" />
@@ -2146,17 +2169,9 @@ export default function DashboardPage() {
                             </div>
                         </div>
 
-                        <div className="flex justify-between items-center pt-3 border-t border-slate-100 dark:border-slate-800 gap-2">
+                        <div className="flex justify-end items-center pt-3 border-t border-slate-100 dark:border-slate-800">
                             <Button variant="secondary" onClick={() => setAssetDetailOpen(false)}>
                                 Tutup
-                            </Button>
-                            <Button 
-                                variant="primary" 
-                                className="bg-ojk-red hover:bg-red-700 text-white font-extrabold text-xs"
-                                onClick={() => { setAssetDetailOpen(false); handleOpenReservationModal(); }}
-                            >
-                                <PlusCircle className="w-4 h-4 mr-1" />
-                                Ajukan Permohonan Dinas
                             </Button>
                         </div>
                     </div>
