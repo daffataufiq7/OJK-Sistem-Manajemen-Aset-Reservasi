@@ -23,6 +23,7 @@ interface PartnershipAsset {
 export default function PartnershipPage() {
     const { user } = useAuth();
     const router = useRouter();
+    const isAdminOrValidator = user?.role === 'super_admin' || user?.role === 'validator';
     const [assets, setAssets] = useState<PartnershipAsset[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
@@ -273,7 +274,11 @@ export default function PartnershipPage() {
                                 <div className="p-4 space-y-2.5 flex-1 flex flex-col justify-between">
                                     <div className="space-y-1 text-xs text-slate-500 dark:text-slate-400">
                                         <p className="flex items-center gap-1.5 truncate"><MapPin className="w-3.5 h-3.5 text-amber-500 shrink-0" />{hotel.location}</p>
-                                        <p className="flex items-center gap-1.5 truncate font-medium"><PhoneCall className="w-3.5 h-3.5 text-emerald-500 shrink-0" />{hotel.contact}</p>
+                                        {isAdminOrValidator ? (
+                                            <p className="flex items-center gap-1.5 truncate font-medium"><PhoneCall className="w-3.5 h-3.5 text-emerald-500 shrink-0" />{hotel.contact}</p>
+                                        ) : (
+                                            <p className="flex items-center gap-1.5 truncate font-medium text-emerald-600 dark:text-emerald-400"><ShieldCheck className="w-3.5 h-3.5 shrink-0" />Mitra Resmi OJK</p>
+                                        )}
                                     </div>
                                     <Button 
                                         onClick={() => handleOpenResModal(hotel)}
@@ -297,7 +302,7 @@ export default function PartnershipPage() {
                         <div className="relative flex-1">
                             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
                             <Input 
-                                placeholder="Cari nama hotel, kota, alamat, atau nomor telepon CP..." 
+                                placeholder={isAdminOrValidator ? "Cari nama hotel, kota, alamat, atau nomor telepon CP..." : "Cari nama hotel, kota, atau alamat lokasi..."} 
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 className="pl-10 text-xs rounded-xl"
@@ -345,14 +350,14 @@ export default function PartnershipPage() {
                                     <th className="py-3.5 px-4">Kode & Nama Hotel</th>
                                     <th className="py-3.5 px-4">Wilayah / Kota</th>
                                     <th className="py-3.5 px-4">Alamat Lokasi</th>
-                                    <th className="py-3.5 px-4">Telepon / Contact Person</th>
+                                    {isAdminOrValidator && <th className="py-3.5 px-4">Telepon / Contact Person</th>}
                                     <th className="py-3.5 px-4 text-right">Aksi Booking</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
                                 {filteredHotels.length === 0 ? (
                                     <tr>
-                                        <td colSpan={6} className="py-12 text-center text-slate-400 font-semibold">
+                                        <td colSpan={isAdminOrValidator ? 6 : 5} className="py-12 text-center text-slate-400 font-semibold">
                                             Tidak ada data hotel kerjasama yang cocok dengan pencarian.
                                         </td>
                                     </tr>
@@ -378,10 +383,12 @@ export default function PartnershipPage() {
                                             <td className="py-3 px-4 max-w-xs truncate text-[11px] font-medium text-slate-500 dark:text-slate-400" title={hotel.location}>
                                                 {hotel.location}
                                             </td>
-                                            <td className="py-3 px-4 text-[11px] font-semibold text-slate-700 dark:text-slate-300">
-                                                {hotel.contact}
-                                                {hotel.price && <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">{hotel.price}</div>}
-                                            </td>
+                                            {isAdminOrValidator && (
+                                                <td className="py-3 px-4 text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                                                    {hotel.contact}
+                                                    {hotel.price && <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">{hotel.price}</div>}
+                                                </td>
+                                            )}
                                             <td className="py-3 px-4 text-right">
                                                 <Button
                                                     size="sm"
