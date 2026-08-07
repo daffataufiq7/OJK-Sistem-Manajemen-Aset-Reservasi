@@ -3,12 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Button, Input, Select, Badge, toast, Dialog } from '@/components/UI';
 import { 
-    Building2, Search, MapPin, Handshake, Calendar, RefreshCw, PlusCircle, CheckCircle2, ShieldCheck, PhoneCall, Star, Filter
+    Building2, Search, MapPin, Handshake, Calendar, RefreshCw, PlusCircle, CheckCircle2, ShieldCheck, PhoneCall, Star, Filter, Edit2, Trash2, Plus, UploadCloud
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { PARTNERSHIP_HOTELS_DATA, PartnershipHotelItem } from '@/lib/partnershipData';
 
+interface AssetCategory { id: number; name: string; slug: string; }
 interface PartnershipAsset {
     id: number;
     code: string;
@@ -17,14 +18,18 @@ interface PartnershipAsset {
     status: string;
     photo: string | null;
     capacity?: string | null;
-    category?: { name: string; slug: string };
+    category_id?: number;
+    categoryId?: number;
+    category?: AssetCategory;
 }
 
 export default function PartnershipPage() {
     const { user } = useAuth();
     const router = useRouter();
-    const isAdminOrValidator = user?.role === 'super_admin' || user?.role === 'validator';
+    const isAdminOrValidator = Boolean(user && (user.role === 'super_admin' || user.role === 'validator'));
+
     const [assets, setAssets] = useState<PartnershipAsset[]>([]);
+    const [categories, setCategories] = useState<AssetCategory[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedRegion, setSelectedRegion] = useState('all');
@@ -39,19 +44,35 @@ export default function PartnershipPage() {
     const [purpose, setPurpose] = useState('');
     const [submitting, setSubmitting] = useState(false);
 
+    // Admin Hotel CRUD Modal State
+    const [hotelModalOpen, setHotelModalOpen] = useState(false);
+    const [editingHotel, setEditingHotel] = useState<PartnershipAsset | null>(null);
+    const [hCode, setHCode] = useState('');
+    const [hName, setHName] = useState('');
+    const [hCity, setHCity] = useState('Bandung & Lembang');
+    const [hLocation, setHLocation] = useState('');
+    const [hContact, setHContact] = useState('');
+    const [hPhoto, setHPhoto] = useState('');
+
     const fetchPartnershipAssets = async (isBackground = false) => {
         try {
             if (!isBackground) setLoading(true);
             const ts = Date.now();
-            const res = await fetch(`/api/assets?t=${ts}`, { cache: 'no-store' });
-            if (res.ok) {
-                const data: PartnershipAsset[] = await res.json();
+            const [aRes, cRes] = await Promise.all([
+                fetch(`/api/assets?t=${ts}`, { cache: 'no-store' }),
+                fetch(`/api/categories?t=${ts}`, { cache: 'no-store' })
+            ]);
+            if (aRes.ok) {
+                const data: PartnershipAsset[] = await aRes.json();
                 const filtered = data.filter(a => {
                     const slug = (a.category?.slug || '').toLowerCase();
                     const name = (a.category?.name || '').toLowerCase();
                     return slug.includes('partner') || name.includes('partner') || slug.includes('kerjasama') || name.includes('kerjasama');
                 });
                 setAssets(filtered);
+            }
+            if (cRes.ok) {
+                setCategories(await cRes.json());
             }
         } catch {
             if (!isBackground) toast.error('Gagal memuat data fasilitas partnership.');
@@ -71,7 +92,13 @@ export default function PartnershipPage() {
         };
     }, []);
 
-    // Combine database assets + fallback static dataset for complete 150+ list coverage
+    // Get Partnership Category ID
+    const partnershipCatId = React.useMemo(() => {
+        const found = categories.find(c => (c.slug || '').includes('partner') || (c.name || '').toLowerCase().includes('partner') || (c.slug || '').includes('kerjasama'));
+        return found?.id || categories[0]?.id || 3;
+    }, [categories]);
+
+    // Combine database assets + fallback static dataset for complete list coverage
     const combinedHotels = React.useMemo(() => {
         const map = new Map<string, { id?: number; code: string; name: string; location: string; contact: string; price?: string; photo?: string | null; city: string; featured?: boolean }>();
 
@@ -196,6 +223,97 @@ export default function PartnershipPage() {
         }
     };
 
+    // ─── ADMIN HOTEL CRUD ACTIONS ───
+    const handleOpenAddHotelModal = () => {
+        setEditingHotel(null);
+        setHCode(`AST-PTN-${String(combinedHotels.length + 1).padStart(3, '0')}`);
+        setHName('');
+        setHCity('Bandung & Lembang');
+        setHLocation('');
+        setHContact('');
+        setHPhoto('');
+        setHotelModalOpen(true);
+    };
+
+    const handleOpenEditHotelModal = (hotel: { id?: number; code: string; name: string; location: string; contact: string; photo?: string | null; city: string }) => {
+        const foundDbAsset = assets.find(a => a.id === hotel.id || a.name.toLowerCase() === hotel.name.toLowerCase());
+        if (foundDbAsset) {
+            setEditingHotel(foundDbAsset);
+        } else {
+            setEditingHotel({ id: 0, code: hotel.code, name: hotel.name, location: hotel.location, capacity: hotel.contact, photo: hotel.photo || null, status: 'available', condition: 'good' });
+        }
+        setHCode(hotel.code);
+        setHName(hotel.name);
+        setHCity(hotel.city);
+        setHLocation(hotel.location);
+        setHContact(hotel.contact);
+        setHPhoto(hotel.photo || '');
+        setHotelModalOpen(true);
+    };
+
+    const handleSaveHotelSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!hCode || !hName || !hLocation) {
+            toast.warning('Silakan lengkapi kode, nama hotel, dan alamat lokasi.');
+            return;
+        }
+
+        try {
+            setSubmitting(true);
+            const fullLocation = hLocation.includes(`(${hCity})`) ? hLocation : `${hLocation} (${hCity})`;
+            const payload = {
+                code: hCode,
+                name: hName,
+                category_id: partnershipCatId,
+                location: fullLocation,
+                capacity: hContact || null,
+                status: 'available',
+                condition: 'good',
+                photo: hPhoto || null,
+            };
+
+            const isEditExisting = editingHotel && editingHotel.id > 0;
+            const res = isEditExisting
+                ? await fetch(`/api/assets/${editingHotel.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+                : await fetch('/api/assets', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+
+            if (res.ok) {
+                toast.success(`Hotel Partnership "${hName}" berhasil ${isEditExisting ? 'diperbarui' : 'ditambahkan'}!`);
+                setHotelModalOpen(false);
+                fetchPartnershipAssets();
+            } else {
+                const err = await res.json();
+                toast.error(err.message || 'Gagal menyimpan data hotel.');
+            }
+        } catch {
+            toast.error('Gagal menyimpan data hotel.');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const handleDeleteHotel = async (hotel: { id?: number; name: string }) => {
+        const foundDbAsset = assets.find(a => a.id === hotel.id || a.name.toLowerCase() === hotel.name.toLowerCase());
+        if (!foundDbAsset || foundDbAsset.id === 0) {
+            toast.warning('Hotel ini belum tersimpan di database aktif.');
+            return;
+        }
+
+        if (!window.confirm(`Apakah Anda yakin ingin menghapus "${hotel.name}" dari master partnership?`)) return;
+
+        try {
+            const res = await fetch(`/api/assets/${foundDbAsset.id}`, { method: 'DELETE' });
+            if (res.ok) {
+                toast.success(`Hotel "${hotel.name}" berhasil dihapus.`);
+                fetchPartnershipAssets();
+            } else {
+                toast.error('Gagal menghapus hotel.');
+            }
+        } catch {
+            toast.error('Gagal menghapus hotel.');
+        }
+    };
+
     return (
         <div className="p-6 md:p-8 space-y-8 font-sans pb-16">
             
@@ -214,6 +332,14 @@ export default function PartnershipPage() {
                 </div>
 
                 <div className="flex items-center gap-2.5">
+                    {isAdminOrValidator && (
+                        <Button 
+                            onClick={handleOpenAddHotelModal}
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs px-3.5 py-2 rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5"
+                        >
+                            <Plus className="w-4 h-4" /> Tambah Hotel Partnership
+                        </Button>
+                    )}
                     <Button variant="outline" size="sm" onClick={fetchPartnershipAssets} className="rounded-xl flex items-center gap-1.5 text-xs font-bold">
                         <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> Refresh
                     </Button>
@@ -351,7 +477,7 @@ export default function PartnershipPage() {
                                     <th className="py-3.5 px-4">Wilayah / Kota</th>
                                     <th className="py-3.5 px-4">Alamat Lokasi</th>
                                     {isAdminOrValidator && <th className="py-3.5 px-4">Telepon / Contact Person</th>}
-                                    <th className="py-3.5 px-4 text-right">Aksi Booking</th>
+                                    <th className="py-3.5 px-4 text-right">Aksi & Booking</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
@@ -390,13 +516,33 @@ export default function PartnershipPage() {
                                                 </td>
                                             )}
                                             <td className="py-3 px-4 text-right">
-                                                <Button
-                                                    size="sm"
-                                                    onClick={() => handleOpenResModal(hotel)}
-                                                    className="bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-[11px] px-3 py-1.5 rounded-xl shadow-xs cursor-pointer inline-flex items-center gap-1.5"
-                                                >
-                                                    <PlusCircle className="w-3.5 h-3.5" /> Booking
-                                                </Button>
+                                                <div className="flex items-center justify-end gap-1.5">
+                                                    {isAdminOrValidator && (
+                                                        <>
+                                                            <button 
+                                                                onClick={() => handleOpenEditHotelModal(hotel)}
+                                                                className="px-2 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 text-[10.5px] font-extrabold transition-all cursor-pointer flex items-center gap-1 shadow-2xs"
+                                                                title="Edit Hotel Partnership"
+                                                            >
+                                                                <Edit2 className="w-3 h-3" /> Edit
+                                                            </button>
+                                                            <button 
+                                                                onClick={() => handleDeleteHotel(hotel)}
+                                                                className="px-2 py-1 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-300 text-[10.5px] font-extrabold transition-all cursor-pointer flex items-center gap-1 shadow-2xs"
+                                                                title="Hapus Hotel Partnership"
+                                                            >
+                                                                <Trash2 className="w-3 h-3" /> Hapus
+                                                            </button>
+                                                        </>
+                                                    )}
+                                                    <Button
+                                                        size="sm"
+                                                        onClick={() => handleOpenResModal(hotel)}
+                                                        className="bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-[11px] px-3 py-1 rounded-xl shadow-xs cursor-pointer inline-flex items-center gap-1"
+                                                    >
+                                                        <PlusCircle className="w-3.5 h-3.5" /> Booking
+                                                    </Button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))
@@ -407,7 +553,79 @@ export default function PartnershipPage() {
                 </Card>
             </div>
 
-            {/* Modal Dialog Reservasi Hotel */}
+            {/* Modal Dialog Admin Create/Edit Hotel Partnership */}
+            <Dialog
+                isOpen={hotelModalOpen}
+                onClose={() => setHotelModalOpen(false)}
+                title={editingHotel && editingHotel.id > 0 ? `Edit Hotel: ${editingHotel.name}` : 'Tambah Hotel Partnership Baru'}
+                size="md"
+            >
+                <form onSubmit={handleSaveHotelSubmit} className="space-y-3.5 font-sans text-xs">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <Input 
+                            label="Kode Hotel / Aset" 
+                            placeholder="AST-PTN-001" 
+                            value={hCode} 
+                            onChange={(e) => setHCode(e.target.value)} 
+                            required 
+                        />
+                        <Input 
+                            label="Nama Hotel Partnership" 
+                            placeholder="Contoh: THE PAPANDAYAN HOTEL" 
+                            value={hName} 
+                            onChange={(e) => setHName(e.target.value)} 
+                            required 
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <Select 
+                            label="Wilayah / Kota Scope" 
+                            value={hCity} 
+                            onChange={(e) => setHCity(e.target.value)} 
+                            required
+                        >
+                            <option value="Bandung & Lembang">Bandung & Lembang</option>
+                            <option value="Bogor, Sentul & Puncak">Bogor, Sentul & Puncak</option>
+                            <option value="Bekasi, Cikarang & Karawang">Bekasi, Cikarang & Karawang</option>
+                            <option value="Cirebon, Kuningan & Majalengka">Cirebon, Kuningan & Majalengka</option>
+                            <option value="Garut, Tasik, Sukabumi, Purwakarta & Subang">Garut, Tasik, Sukabumi & Lainnya</option>
+                            <option value="DKI Jakarta">DKI Jakarta</option>
+                        </Select>
+
+                        <Input 
+                            label="Contact Person (CP), Telepon & Tarif" 
+                            placeholder="Contoh: Telp: 022-7310799 | CP: TyaGita (0818635445) | Rp 1.500.000" 
+                            value={hContact} 
+                            onChange={(e) => setHContact(e.target.value)} 
+                        />
+                    </div>
+
+                    <Input 
+                        label="Alamat Lengkap Lokasi Hotel" 
+                        placeholder="Contoh: Jl. Gatot Subroto No. 83, Bandung" 
+                        value={hLocation} 
+                        onChange={(e) => setHLocation(e.target.value)} 
+                        required 
+                    />
+
+                    <Input 
+                        label="URL Foto Hotel (Opsional untuk Featured Header)" 
+                        placeholder="https://images.unsplash.com/photo-..." 
+                        value={hPhoto} 
+                        onChange={(e) => setHPhoto(e.target.value)} 
+                    />
+
+                    <div className="flex justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
+                        <Button variant="secondary" type="button" onClick={() => setHotelModalOpen(false)} className="rounded-xl">Batal</Button>
+                        <Button variant="primary" type="submit" disabled={submitting} className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold">
+                            {submitting ? 'Menyimpan...' : 'Simpan Hotel Partnership'}
+                        </Button>
+                    </div>
+                </form>
+            </Dialog>
+
+            {/* Modal Dialog Permohonan Reservasi Hotel */}
             <Dialog
                 isOpen={resModalOpen}
                 onClose={() => setResModalOpen(false)}

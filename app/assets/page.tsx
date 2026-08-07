@@ -59,19 +59,19 @@ const TABS = [
         presetLabel: 'Pilih Foto Preset Sesuai Jenis Ruangan:',
     },
     {
-        key: 'partnership', label: 'Partnership', icon: Handshake, color: 'emerald',
+        key: 'partnership', label: 'Hotel Partnership & Kerjasama', icon: Handshake, color: 'emerald',
         slugs: ['partnership', 'kerjasama'],
         codePrefix: 'AST-PTN',
-        locationPlaceholder: 'Contoh: Gedung Mitra / Lantai 1',
-        namePlaceholder: 'Contoh: Fasilitas Olahraga Bersama Bank BRI',
+        locationPlaceholder: 'Contoh: Jl. Gatot Subroto No. 289, Bandung (Bandung & Lembang)',
+        namePlaceholder: 'Contoh: THE TRANS LUXURY HOTEL BANDUNG',
         presets: [
-            { name: 'Fasilitas Olahraga', url: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=800&auto=format&fit=crop' },
-            { name: 'Gedung Mitra', url: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=800&auto=format&fit=crop' },
-            { name: 'Ruang Bersama', url: 'https://images.unsplash.com/photo-1556761175-4b46a572b786?q=80&w=800&auto=format&fit=crop' },
-            { name: 'Kantin / Cafetaria', url: 'https://images.unsplash.com/photo-1567521464027-f127ff144326?q=80&w=800&auto=format&fit=crop' },
+            { name: 'Hotel Luxury 5-Star', url: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80' },
+            { name: 'Resort & Nature', url: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=800&q=80' },
+            { name: 'Business Hotel', url: 'https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=800&q=80' },
+            { name: 'Conference & Ball Room', url: 'https://images.unsplash.com/photo-1431540015161-0bf868a2d407?q=80&w=800&auto=format&fit=crop' },
         ],
-        presetEmoji: '🤝',
-        presetLabel: 'Pilih Foto Preset Sesuai Jenis Fasilitas Partnership:',
+        presetEmoji: '🏨',
+        presetLabel: 'Pilih Foto Preset Sesuai Jenis Hotel Kerjasama:',
     },
 ] as const;
 
@@ -663,8 +663,8 @@ export default function AssetsPage() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <Input 
-                            label="Kapasitas Ruangan / Fasilitas" 
-                            placeholder="Contoh: 25 Orang / 100 Kursi / VIP" 
+                            label={activeTab === 'partnership' ? 'Contact Person & Telepon / Tarif' : 'Kapasitas Ruangan / Fasilitas'} 
+                            placeholder={activeTab === 'partnership' ? 'Contoh: Telp: 022-7310799 | CP: TyaGita (0818635445) | Rp 1.500.000' : 'Contoh: 25 Orang / 100 Kursi / VIP'} 
                             value={capacity} 
                             onChange={e => setCapacity(e.target.value)} 
                         />
