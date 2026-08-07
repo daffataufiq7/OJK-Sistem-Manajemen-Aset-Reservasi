@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
+import { PARTNERSHIP_HOTELS_DATA } from '@/lib/partnershipData';
 
 // Secret key to protect this endpoint
 const SETUP_SECRET = process.env.SETUP_SECRET || 'ojk-setup-2026';
@@ -42,6 +43,24 @@ export async function GET(request: Request) {
     // 3. Asset Categories
     const catVehicle = await prisma.assetCategory.create({ data: { name: 'Kendaraan', slug: 'kendaraan' } });
     const catRoom = await prisma.assetCategory.create({ data: { name: 'Ruangan', slug: 'ruangan' } });
+    const catPartnership = await prisma.assetCategory.create({ data: { name: 'Partnership', slug: 'partnership' } });
+    
+    // 5.5 Partnership Hotels
+    for (const h of PARTNERSHIP_HOTELS_DATA) {
+      await prisma.asset.create({
+        data: {
+          code: h.code,
+          name: h.name,
+          categoryId: catPartnership.id,
+          location: `${h.location} (${h.city})`,
+          status: 'available',
+          condition: 'good',
+          photo: h.photo || null,
+          capacity: h.price ? `${h.contact} | ${h.price}` : h.contact,
+          qrCode: `${h.code}|${h.name}|OJK Jawa Barat`,
+        },
+      });
+    }
 
     // 4. Vehicles
     const vehiclesData = [

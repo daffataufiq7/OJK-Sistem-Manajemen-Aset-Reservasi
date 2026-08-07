@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { PARTNERSHIP_HOTELS_DATA } from '../lib/partnershipData';
 
 const prisma = new PrismaClient();
 
@@ -90,11 +91,10 @@ async function main() {
       role: 'validator',
       divisionId: div6.id,
     },
-  });
-
   // 3. Asset Categories
   const catVehicle = await prisma.assetCategory.create({ data: { name: 'Kendaraan', slug: 'kendaraan' } });
   const catRoom = await prisma.assetCategory.create({ data: { name: 'Ruangan', slug: 'ruangan' } });
+  const catPartnership = await prisma.assetCategory.create({ data: { name: 'Partnership', slug: 'partnership' } });
 
   // 4. Vehicles
   const vehiclesData = [
@@ -181,8 +181,22 @@ async function main() {
       condition: 'good',
       photo: 'https://images.unsplash.com/photo-1497366811353-6870744d04b2?q=80&w=300&auto=format&fit=crop',
       qrCode: 'AST-RNG-004|Ruang Rapat Sadewa|OJK Jawa Barat',
-    },
-  });
+  // 5.5. Partnership Hotels
+  for (const h of PARTNERSHIP_HOTELS_DATA) {
+    await prisma.asset.create({
+      data: {
+        code: h.code,
+        name: h.name,
+        categoryId: catPartnership.id,
+        location: `${h.location} (${h.city})`,
+        status: 'available',
+        condition: 'good',
+        photo: h.photo || null,
+        capacity: h.price ? `${h.contact} | ${h.price}` : h.contact,
+        qrCode: `${h.code}|${h.name}|OJK Jawa Barat`,
+      },
+    });
+  }
 
   // 6. Reservations
   const now = new Date();
