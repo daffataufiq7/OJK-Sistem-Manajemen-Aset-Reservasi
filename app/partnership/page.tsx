@@ -97,9 +97,9 @@ export default function PartnershipPage() {
             if (locLower.includes('jakarta')) city = 'DKI Jakarta';
             else if (locLower.includes('bandung') || locLower.includes('lembang')) city = 'Bandung & Lembang';
             else if (locLower.includes('bogor') || locLower.includes('sentul') || locLower.includes('puncak')) city = 'Bogor, Sentul & Puncak';
-            else if (locLower.includes('bekasi') || locLower.includes('cikarang') || locLower.includes('karawang')) city = 'Bekasi & Karawang';
+            else if (locLower.includes('bekasi') || locLower.includes('cikarang') || locLower.includes('karawang')) city = 'Bekasi, Cikarang & Karawang';
             else if (locLower.includes('cirebon') || locLower.includes('kuningan') || locLower.includes('majalengka')) city = 'Cirebon, Kuningan & Majalengka';
-            else if (locLower.includes('garut') || locLower.includes('tasik') || locLower.includes('sukabumi') || locLower.includes('purwakarta')) city = 'Garut, Tasikmalaya & Sukabumi';
+            else if (locLower.includes('garut') || locLower.includes('tasik') || locLower.includes('sukabumi') || locLower.includes('purwakarta') || locLower.includes('subang')) city = 'Garut, Tasik, Sukabumi, Purwakarta & Subang';
 
             map.set(key, {
                 id: a.id,
@@ -315,9 +315,9 @@ export default function PartnershipPage() {
                             { id: 'all', label: 'Semua Wilayah' },
                             { id: 'Bandung & Lembang', label: 'Bandung & Lembang' },
                             { id: 'Bogor, Sentul & Puncak', label: 'Bogor, Sentul & Puncak' },
-                            { id: 'Bekasi & Karawang', label: 'Bekasi & Karawang' },
+                            { id: 'Bekasi, Cikarang & Karawang', label: 'Bekasi, Cikarang & Karawang' },
                             { id: 'Cirebon, Kuningan & Majalengka', label: 'Cirebon, Kuningan & Majalengka' },
-                            { id: 'Garut, Tasikmalaya & Sukabumi', label: 'Garut, Tasikmalaya & Sukabumi' },
+                            { id: 'Garut, Tasik, Sukabumi, Purwakarta & Subang', label: 'Garut, Tasik, Sukabumi & Lainnya' },
                             { id: 'DKI Jakarta', label: 'DKI Jakarta' },
                         ].map(reg => (
                             <button
