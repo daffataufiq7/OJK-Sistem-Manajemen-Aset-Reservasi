@@ -117,13 +117,14 @@ export default function DashboardPage() {
         return 'Tersedia';
     };
 
-    const fetchDashboardData = async () => {
+    const fetchDashboardData = async (isBackground = false) => {
         try {
-            setLoading(true);
+            if (!isBackground) setLoading(true);
+            const ts = Date.now();
             const [dashRes, resList, assetRes] = await Promise.all([
-                fetch('/api/dashboard'),
-                fetch('/api/reservations'),
-                fetch('/api/assets'),
+                fetch(`/api/dashboard?t=${ts}`, { cache: 'no-store' }),
+                fetch(`/api/reservations?t=${ts}`, { cache: 'no-store' }),
+                fetch(`/api/assets?t=${ts}`, { cache: 'no-store' }),
             ]);
             if (dashRes.ok)   setDashData(await dashRes.json());
             if (resList.ok)   setAllReservations(await resList.json());
@@ -175,12 +176,31 @@ export default function DashboardPage() {
         } catch (error) {
             console.error('Error fetching dashboard data', error);
         } finally {
-            setLoading(false);
+            if (!isBackground) setLoading(false);
         }
     };
 
     useEffect(() => {
         fetchDashboardData();
+        const interval = setInterval(() => fetchDashboardData(true), 5000);
+        const handleFocus = () => fetchDashboardData(true);
+        const handleSyncEvent = () => fetchDashboardData(true);
+
+        window.addEventListener('focus', handleFocus);
+        window.addEventListener('sima_asset_updated', handleSyncEvent);
+
+        let bc: BroadcastChannel | null = null;
+        try {
+            bc = new BroadcastChannel('sima_asset_channel');
+            bc.onmessage = () => fetchDashboardData(true);
+        } catch {}
+
+        return () => {
+            clearInterval(interval);
+            window.removeEventListener('focus', handleFocus);
+            window.removeEventListener('sima_asset_updated', handleSyncEvent);
+            if (bc) bc.close();
+        };
     }, [user]);
 
     const scrollToSection = (secId: string) => {

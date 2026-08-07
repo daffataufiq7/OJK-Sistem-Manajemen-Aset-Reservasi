@@ -156,17 +156,56 @@ export default function AssetsPage() {
         return true;
     });
 
-    const fetchData = async () => {
+    const fetchData = async (isBackground = false) => {
         try {
-            setLoading(true);
-            const [aRes, cRes] = await Promise.all([fetch('/api/assets'), fetch('/api/categories')]);
+            if (!isBackground) setLoading(true);
+            const ts = Date.now();
+            const [aRes, cRes] = await Promise.all([
+                fetch(`/api/assets?t=${ts}`, { cache: 'no-store' }),
+                fetch(`/api/categories?t=${ts}`, { cache: 'no-store' })
+            ]);
             if (aRes.ok) setAssets(await aRes.json());
             if (cRes.ok) setCategories(await cRes.json());
-        } catch { toast.error('Gagal memuat daftar aset.'); }
-        finally { setLoading(false); }
+        } catch {
+            if (!isBackground) toast.error('Gagal memuat daftar aset.');
+        } finally {
+            if (!isBackground) setLoading(false);
+        }
     };
 
-    useEffect(() => { fetchData(); }, []);
+    const triggerGlobalAssetSync = () => {
+        if (typeof window !== 'undefined') {
+            window.dispatchEvent(new Event('sima_asset_updated'));
+            try {
+                const bc = new BroadcastChannel('sima_asset_channel');
+                bc.postMessage({ type: 'REFETCH' });
+                bc.close();
+            } catch {}
+        }
+    };
+
+    useEffect(() => {
+        fetchData();
+        const interval = setInterval(() => fetchData(true), 5000);
+        const handleFocus = () => fetchData(true);
+        const handleSyncEvent = () => fetchData(true);
+
+        window.addEventListener('focus', handleFocus);
+        window.addEventListener('sima_asset_updated', handleSyncEvent);
+
+        let bc: BroadcastChannel | null = null;
+        try {
+            bc = new BroadcastChannel('sima_asset_channel');
+            bc.onmessage = () => fetchData(true);
+        } catch {}
+
+        return () => {
+            clearInterval(interval);
+            window.removeEventListener('focus', handleFocus);
+            window.removeEventListener('sima_asset_updated', handleSyncEvent);
+            if (bc) bc.close();
+        };
+    }, []);
 
     const openCreateModal = () => {
         setEditingAsset(null);
@@ -296,6 +335,7 @@ export default function AssetsPage() {
                 toast.success(`Aset berhasil ${editingAsset ? 'diperbarui' : 'ditambahkan'}.`);
                 setModalOpen(false);
                 fetchData();
+                triggerGlobalAssetSync();
             } else {
                 const err = await res.json();
                 toast.error(err.message || 'Gagal menyimpan aset.');
@@ -308,7 +348,11 @@ export default function AssetsPage() {
         if (!window.confirm('Apakah Anda yakin ingin menghapus aset ini?')) return;
         try {
             const res = await fetch(`/api/assets/${id}`, { method: 'DELETE' });
-            if (res.ok) { toast.success('Aset berhasil dihapus.'); fetchData(); }
+            if (res.ok) {
+                toast.success('Aset berhasil dihapus.');
+                fetchData();
+                triggerGlobalAssetSync();
+            }
             else toast.error('Gagal menghapus aset.');
         } catch { toast.error('Gagal menghapus aset.'); }
     };

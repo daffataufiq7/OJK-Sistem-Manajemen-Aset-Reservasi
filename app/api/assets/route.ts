@@ -3,6 +3,9 @@ import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 import { autoSyncReservationStatuses } from '@/lib/statusSync';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET(request: Request) {
   try {
     await autoSyncReservationStatuses();
@@ -25,7 +28,11 @@ export async function GET(request: Request) {
       orderBy: { id: 'asc' },
     });
 
-    return NextResponse.json(assets);
+    return NextResponse.json(assets, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+      },
+    });
   } catch (error: any) {
     console.error('Assets GET error:', error);
     return NextResponse.json({ message: 'Failed to fetch assets' }, { status: 500 });

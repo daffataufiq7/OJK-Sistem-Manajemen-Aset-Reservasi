@@ -73,13 +73,14 @@ function ReservationsContent() {
     const [submitting, setSubmitting] = useState(false);
     const [loading, setLoading] = useState(true);
 
-    const fetchData = async () => {
+    const fetchData = async (isBackground = false) => {
         try {
-            setLoading(true);
+            if (!isBackground) setLoading(true);
+            const ts = Date.now();
             const [resResponse, catResponse, assetResponse] = await Promise.all([
-                fetch('/api/reservations'),
-                fetch('/api/categories'),
-                fetch('/api/assets')
+                fetch(`/api/reservations?t=${ts}`, { cache: 'no-store' }),
+                fetch(`/api/categories?t=${ts}`, { cache: 'no-store' }),
+                fetch(`/api/assets?t=${ts}`, { cache: 'no-store' })
             ]);
             if (resResponse.ok) setReservations(await resResponse.json());
             if (catResponse.ok) {
@@ -98,15 +99,21 @@ function ReservationsContent() {
             }
             if (assetResponse.ok) setAssets(await assetResponse.json());
         } catch (error) {
-            console.error('Error loading data', error);
-            toast.error('Gagal memuat data peminjaman.');
+            console.error('Error fetching reservation data:', error);
         } finally {
-            setLoading(false);
+            if (!isBackground) setLoading(false);
         }
     };
 
     useEffect(() => {
         fetchData();
+        const interval = setInterval(() => fetchData(true), 5000);
+        const handleFocus = () => fetchData(true);
+        window.addEventListener('focus', handleFocus);
+        return () => {
+            clearInterval(interval);
+            window.removeEventListener('focus', handleFocus);
+        };
     }, [searchParams]);
 
     useEffect(() => {

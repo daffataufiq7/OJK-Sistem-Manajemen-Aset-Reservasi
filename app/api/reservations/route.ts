@@ -3,6 +3,9 @@ import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 import { autoSyncReservationStatuses } from '@/lib/statusSync';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET(request: Request) {
   const user = await getCurrentUser(request);
   if (!user) {
@@ -32,7 +35,11 @@ export async function GET(request: Request) {
       orderBy: { createdAt: 'desc' },
     });
 
-    return NextResponse.json(reservations);
+    return NextResponse.json(reservations, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+      },
+    });
   } catch (error: any) {
     console.error('Reservations GET error:', error);
     return NextResponse.json({ message: 'Failed to fetch reservations' }, { status: 500 });

@@ -37,10 +37,11 @@ export default function PartnershipPage() {
     const [purpose, setPurpose] = useState('');
     const [submitting, setSubmitting] = useState(false);
 
-    const fetchPartnershipAssets = async () => {
+    const fetchPartnershipAssets = async (isBackground = false) => {
         try {
-            setLoading(true);
-            const res = await fetch('/api/assets');
+            if (!isBackground) setLoading(true);
+            const ts = Date.now();
+            const res = await fetch(`/api/assets?t=${ts}`, { cache: 'no-store' });
             if (res.ok) {
                 const data: PartnershipAsset[] = await res.json();
                 const filtered = data.filter(a => {
@@ -51,14 +52,21 @@ export default function PartnershipPage() {
                 setAssets(filtered);
             }
         } catch {
-            toast.error('Gagal memuat data fasilitas partnership.');
+            if (!isBackground) toast.error('Gagal memuat data fasilitas partnership.');
         } finally {
-            setLoading(false);
+            if (!isBackground) setLoading(false);
         }
     };
 
     useEffect(() => {
         fetchPartnershipAssets();
+        const interval = setInterval(() => fetchPartnershipAssets(true), 5000);
+        const handleFocus = () => fetchPartnershipAssets(true);
+        window.addEventListener('focus', handleFocus);
+        return () => {
+            clearInterval(interval);
+            window.removeEventListener('focus', handleFocus);
+        };
     }, []);
 
     const filteredAssets = assets.filter(a => {
