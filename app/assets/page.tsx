@@ -467,6 +467,21 @@ export default function AssetsPage() {
         },
     ];
 
+    const partnershipFilterOptions = [
+        {
+            key: 'city',
+            label: 'Wilayah / Kota',
+            options: [
+                { value: 'Bandung & Lembang', label: 'Bandung & Lembang' },
+                { value: 'Bogor, Sentul & Puncak', label: 'Bogor, Sentul & Puncak' },
+                { value: 'Bekasi, Cikarang & Karawang', label: 'Bekasi, Cikarang & Karawang' },
+                { value: 'Cirebon, Kuningan & Majalengka', label: 'Cirebon, Kuningan & Majalengka' },
+                { value: 'Garut, Tasik, Sukabumi, Purwakarta & Subang', label: 'Garut, Tasik, Sukabumi & Lainnya' },
+                { value: 'DKI Jakarta', label: 'DKI Jakarta' },
+            ]
+        }
+    ];
+
     // ─── Guard ───────────────────────────────────────────────────────────────
     if (!user || user.role !== 'super_admin') {
         return (
@@ -593,6 +608,7 @@ export default function AssetsPage() {
                         data={filteredAssets}
                         searchKey="name"
                         searchPlaceholder={`Cari ${currentTabConfig.label.toLowerCase()}...`}
+                        filterOptions={activeTab === 'partnership' ? partnershipFilterOptions : []}
                         exportName={`master_aset_${activeTab}_ojk`}
                     />
                 )}
