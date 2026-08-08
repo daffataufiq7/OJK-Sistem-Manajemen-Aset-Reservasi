@@ -137,57 +137,74 @@ export default function AssetsPage() {
     const currentTabConfig = TABS.find(t => t.key === activeTab)!;
     const colors = TAB_COLORS[activeTab];
 
-    // ─── Filter assets by active tab ─────────────────────────────────────────
+    // ─── Filter assets by category ─────────────────────────────────────────────
+    const vehicleAssets = React.useMemo(() => {
+        return assets.filter(a => {
+            const slug = a.category?.slug?.toLowerCase() || '';
+            const catName = a.category?.name?.toLowerCase() || '';
+            return slug.includes('kendaraan') || catName.includes('kendaraan');
+        });
+    }, [assets]);
+
+    const roomAssets = React.useMemo(() => {
+        return assets.filter(a => {
+            const slug = a.category?.slug?.toLowerCase() || '';
+            const catName = a.category?.name?.toLowerCase() || '';
+            return slug.includes('ruang') || catName.includes('ruang') || slug.includes('aula') || catName.includes('aula');
+        });
+    }, [assets]);
+
+    const partnershipAssets = React.useMemo(() => {
+        const dbPartnerships = assets.filter(a => {
+            const slug = a.category?.slug?.toLowerCase() || '';
+            const catName = a.category?.name?.toLowerCase() || '';
+            return slug.includes('partner') || catName.includes('partner') || slug.includes('kerjasama') || catName.includes('kerjasama');
+        });
+
+        const map = new Map<string, Asset>();
+
+        // 1. Base standard dataset (327 hotels)
+        PARTNERSHIP_HOTELS_DATA.forEach(item => {
+            const key = item.name.toLowerCase().trim();
+            map.set(key, {
+                id: 0,
+                code: item.code,
+                name: item.name,
+                location: `${item.location} (${item.city})`,
+                city: item.city,
+                status: 'available',
+                condition: 'good',
+                photo: item.photo || null,
+                capacity: item.price ? `${item.contact} | ${item.price}` : item.contact,
+                category: { id: 3, name: 'Partnership', slug: 'partnership' },
+            } as any);
+        });
+
+        // 2. Overlay with DB assets if edited/added
+        dbPartnerships.forEach(a => {
+            const key = a.name.toLowerCase().trim();
+            const existing = map.get(key);
+            let city = (existing as any)?.city || 'Jawa Barat';
+            const locLower = a.location.toLowerCase();
+            if (locLower.includes('jakarta')) city = 'DKI Jakarta';
+            else if (locLower.includes('bandung') || locLower.includes('lembang')) city = 'Bandung & Lembang';
+            else if (locLower.includes('bogor') || locLower.includes('sentul') || locLower.includes('puncak')) city = 'Bogor, Sentul & Puncak';
+            else if (locLower.includes('bekasi') || locLower.includes('cikarang') || locLower.includes('karawang')) city = 'Bekasi, Cikarang & Karawang';
+            else if (locLower.includes('cirebon') || locLower.includes('kuningan') || locLower.includes('majalengka')) city = 'Cirebon, Kuningan & Majalengka';
+            else if (locLower.includes('garut') || locLower.includes('tasik') || locLower.includes('sukabumi') || locLower.includes('purwakarta') || locLower.includes('subang')) city = 'Garut, Tasik, Sukabumi, Purwakarta & Subang';
+
+            map.set(key, { ...a, city } as any);
+        });
+
+        return Array.from(map.values());
+    }, [assets]);
+
     const filteredAssets = React.useMemo(() => {
-        if (activeTab === 'kendaraan') {
-            return assets.filter(a => {
-                const slug = a.category?.slug?.toLowerCase() || '';
-                const catName = a.category?.name?.toLowerCase() || '';
-                return slug.includes('kendaraan') || catName.includes('kendaraan');
-            });
-        }
-        if (activeTab === 'ruangan') {
-            return assets.filter(a => {
-                const slug = a.category?.slug?.toLowerCase() || '';
-                const catName = a.category?.name?.toLowerCase() || '';
-                return slug.includes('ruang') || catName.includes('ruang') || slug.includes('aula') || catName.includes('aula');
-            });
-        }
-        if (activeTab === 'partnership') {
-            const dbPartnerships = assets.filter(a => {
-                const slug = a.category?.slug?.toLowerCase() || '';
-                const catName = a.category?.name?.toLowerCase() || '';
-                return slug.includes('partner') || catName.includes('partner') || slug.includes('kerjasama') || catName.includes('kerjasama');
-            });
-
-            const map = new Map<string, Asset>();
-
-            // 1. Base standard dataset (327 hotels)
-            PARTNERSHIP_HOTELS_DATA.forEach(item => {
-                const key = item.name.toLowerCase().trim();
-                map.set(key, {
-                    id: 0,
-                    code: item.code,
-                    name: item.name,
-                    location: `${item.location} (${item.city})`,
-                    status: 'available',
-                    condition: 'good',
-                    photo: item.photo || null,
-                    capacity: item.price ? `${item.contact} | ${item.price}` : item.contact,
-                    category: { id: 3, name: 'Partnership', slug: 'partnership' },
-                });
-            });
-
-            // 2. Overlay with DB assets if edited/added
-            dbPartnerships.forEach(a => {
-                const key = a.name.toLowerCase().trim();
-                map.set(key, a);
-            });
-
-            return Array.from(map.values());
-        }
+        if (activeTab === 'kendaraan')   return vehicleAssets;
+        if (activeTab === 'ruangan')     return roomAssets;
+        if (activeTab === 'partnership') return partnershipAssets;
         return [];
-    }, [assets, activeTab]);
+    }, [activeTab, vehicleAssets, roomAssets, partnershipAssets]);
 
     // Category filtered by tab
     const filteredCategories = categories.filter(c => {
@@ -529,13 +546,11 @@ export default function AssetsPage() {
                     const Icon = tab.icon;
                     const isActive = activeTab === tab.key;
                     const tabColors = TAB_COLORS[tab.key];
-                    const count = tab.key === 'partnership' ? filteredAssets.length : assets.filter(a => {
-                        const slug = a.category?.slug?.toLowerCase() || '';
-                        const n    = a.category?.name?.toLowerCase() || '';
-                        if (tab.key === 'kendaraan')   return slug.includes('kendaraan') || n.includes('kendaraan');
-                        if (tab.key === 'ruangan')     return slug.includes('ruang') || n.includes('ruang') || n.includes('aula');
-                        return false;
-                    }).length;
+                    const count = tab.key === 'kendaraan' 
+                        ? vehicleAssets.length 
+                        : tab.key === 'ruangan' 
+                            ? roomAssets.length 
+                            : partnershipAssets.length;
                     return (
                         <button
                             key={tab.key}
