@@ -18,7 +18,38 @@ export async function GET(request: Request) {
     // Check if already seeded
     const userCount = await prisma.user.count();
     if (userCount > 0) {
-      return NextResponse.json({ message: `Database already seeded with ${userCount} users. No action taken.` });
+      let catPartnership = await prisma.assetCategory.findFirst({
+        where: { OR: [{ slug: 'partnership' }, { name: 'Partnership' }] }
+      });
+      if (!catPartnership) {
+        catPartnership = await prisma.assetCategory.create({ data: { name: 'Partnership', slug: 'partnership' } });
+      }
+
+      let addedCount = 0;
+      for (const h of PARTNERSHIP_HOTELS_DATA) {
+        const existing = await prisma.asset.findFirst({ where: { code: h.code } });
+        if (!existing) {
+          await prisma.asset.create({
+            data: {
+              code: h.code,
+              name: h.name,
+              categoryId: catPartnership.id,
+              location: `${h.location} (${h.city})`,
+              status: 'available',
+              condition: 'good',
+              photo: h.photo || null,
+              capacity: h.price ? `${h.contact} | ${h.price}` : h.contact,
+              qrCode: `${h.code}|${h.name}|OJK Jawa Barat`,
+            },
+          });
+          addedCount++;
+        }
+      }
+
+      const totalAssets = await prisma.asset.count();
+      return NextResponse.json({ 
+        message: `Database already seeded with ${userCount} users. Synced ${addedCount} new partnership hotels. Total assets: ${totalAssets}` 
+      });
     }
 
     const hashedPassword = await bcrypt.hash('password', 10);

@@ -514,12 +514,11 @@ export default function AssetsPage() {
                     const Icon = tab.icon;
                     const isActive = activeTab === tab.key;
                     const tabColors = TAB_COLORS[tab.key];
-                    const count = assets.filter(a => {
+                    const count = tab.key === 'partnership' ? filteredAssets.length : assets.filter(a => {
                         const slug = a.category?.slug?.toLowerCase() || '';
                         const n    = a.category?.name?.toLowerCase() || '';
                         if (tab.key === 'kendaraan')   return slug.includes('kendaraan') || n.includes('kendaraan');
                         if (tab.key === 'ruangan')     return slug.includes('ruang') || n.includes('ruang') || n.includes('aula');
-                        if (tab.key === 'partnership') return slug.includes('partner') || n.includes('partner') || n.includes('kerjasama');
                         return false;
                     }).length;
                     return (
