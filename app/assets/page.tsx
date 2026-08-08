@@ -9,6 +9,7 @@ import {
     CheckCircle2, RefreshCw, MapPin, Handshake, LayoutGrid, ZoomIn, Eye,
     Crop, ZoomOut, RotateCw, Move, Check, Sliders
 } from 'lucide-react';
+import { PARTNERSHIP_HOTELS_DATA } from '@/lib/partnershipData';
 
 interface AssetCategory { id: number; name: string; slug?: string; }
 interface Asset {
@@ -137,14 +138,56 @@ export default function AssetsPage() {
     const colors = TAB_COLORS[activeTab];
 
     // ─── Filter assets by active tab ─────────────────────────────────────────
-    const filteredAssets = assets.filter(a => {
-        const slug = a.category?.slug?.toLowerCase() || '';
-        const catName = a.category?.name?.toLowerCase() || '';
-        if (activeTab === 'kendaraan') return slug.includes('kendaraan') || catName.includes('kendaraan');
-        if (activeTab === 'ruangan')   return slug.includes('ruang') || catName.includes('ruang') || slug.includes('aula') || catName.includes('aula');
-        if (activeTab === 'partnership') return slug.includes('partner') || catName.includes('partner') || slug.includes('kerjasama') || catName.includes('kerjasama');
-        return false;
-    });
+    const filteredAssets = React.useMemo(() => {
+        if (activeTab === 'kendaraan') {
+            return assets.filter(a => {
+                const slug = a.category?.slug?.toLowerCase() || '';
+                const catName = a.category?.name?.toLowerCase() || '';
+                return slug.includes('kendaraan') || catName.includes('kendaraan');
+            });
+        }
+        if (activeTab === 'ruangan') {
+            return assets.filter(a => {
+                const slug = a.category?.slug?.toLowerCase() || '';
+                const catName = a.category?.name?.toLowerCase() || '';
+                return slug.includes('ruang') || catName.includes('ruang') || slug.includes('aula') || catName.includes('aula');
+            });
+        }
+        if (activeTab === 'partnership') {
+            const dbPartnerships = assets.filter(a => {
+                const slug = a.category?.slug?.toLowerCase() || '';
+                const catName = a.category?.name?.toLowerCase() || '';
+                return slug.includes('partner') || catName.includes('partner') || slug.includes('kerjasama') || catName.includes('kerjasama');
+            });
+
+            const map = new Map<string, Asset>();
+
+            // 1. Base standard dataset (327 hotels)
+            PARTNERSHIP_HOTELS_DATA.forEach(item => {
+                const key = item.name.toLowerCase().trim();
+                map.set(key, {
+                    id: 0,
+                    code: item.code,
+                    name: item.name,
+                    location: `${item.location} (${item.city})`,
+                    status: 'available',
+                    condition: 'good',
+                    photo: item.photo || null,
+                    capacity: item.price ? `${item.contact} | ${item.price}` : item.contact,
+                    category: { id: 3, name: 'Partnership', slug: 'partnership' },
+                });
+            });
+
+            // 2. Overlay with DB assets if edited/added
+            dbPartnerships.forEach(a => {
+                const key = a.name.toLowerCase().trim();
+                map.set(key, a);
+            });
+
+            return Array.from(map.values());
+        }
+        return [];
+    }, [assets, activeTab]);
 
     // Category filtered by tab
     const filteredCategories = categories.filter(c => {
